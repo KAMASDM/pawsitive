@@ -3,7 +3,6 @@ import { Route, Routes } from "react-router-dom";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import theme from "./theme";
-
 import Home from "./components/Home/Home";
 import Login from "./components/Login/Login";
 import Header from "./components/Header/Header";
@@ -26,7 +25,7 @@ function App() {
       <ScrollToTop />
       <div className="min-h-screen bg-lavender-50">
         <Header />
-        <main >
+        <main>
           <Routes>
             <Route path="/login" element={<Login />} />
 

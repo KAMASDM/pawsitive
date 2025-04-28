@@ -14,7 +14,6 @@ export function register(config) {
     }
 
     window.addEventListener("load", () => {
-      // Change this line to use the correct path for your service worker
       const swUrl = `${window.location.pathname}service-worker.js`;
 
       if (isLocalhost) {

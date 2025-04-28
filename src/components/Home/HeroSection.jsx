@@ -1,4 +1,3 @@
-// src/components/Home/HeroSection.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaSearch, FaHeart, FaDog, FaCat } from "react-icons/fa";
@@ -22,56 +21,54 @@ const HeroSection = () => {
 
   return (
     <div className="relative bg-gradient-to-r from-lavender-700 to-purple-800 text-white py-20 md:py-28 rounded-b-[40px] shadow-xl overflow-hidden">
-      {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
-        <motion.div 
+        <motion.div
           className="absolute -right-24 -top-24 w-64 h-64 bg-lavender-500 rounded-full opacity-20"
-          animate={{ 
+          animate={{
             scale: [1, 1.2, 1],
-            rotate: [0, 10, 0] 
+            rotate: [0, 10, 0],
           }}
-          transition={{ 
-            duration: 12, 
+          transition={{
+            duration: 12,
             repeat: Infinity,
-            ease: "easeInOut" 
+            ease: "easeInOut",
           }}
         />
-        <motion.div 
+        <motion.div
           className="absolute left-1/2 bottom-0 w-96 h-96 bg-purple-600 rounded-full opacity-10 transform -translate-x-1/2 translate-y-1/2"
-          animate={{ 
+          animate={{
             scale: [1, 1.1, 1],
-            x: ["-50%", "-45%", "-50%"]
+            x: ["-50%", "-45%", "-50%"],
           }}
-          transition={{ 
-            duration: 15, 
+          transition={{
+            duration: 15,
             repeat: Infinity,
-            ease: "easeInOut" 
+            ease: "easeInOut",
           }}
         />
-        <motion.div 
+        <motion.div
           className="absolute left-1/4 top-1/4 w-32 h-32 bg-lavender-400 rounded-full opacity-10"
-          animate={{ 
+          animate={{
             y: [0, -20, 0],
-            x: [0, 15, 0]
+            x: [0, 15, 0],
           }}
-          transition={{ 
-            duration: 10, 
+          transition={{
+            duration: 10,
             repeat: Infinity,
-            ease: "easeInOut" 
+            ease: "easeInOut",
           }}
         />
       </div>
-
       <div className="max-w-6xl mx-auto px-6 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ 
+          transition={{
             duration: 0.8,
-            staggerChildren: 0.2
+            staggerChildren: 0.2,
           }}
         >
-          <motion.h1 
+          <motion.h1
             className="text-4xl md:text-6xl font-bold mb-4 tracking-tight"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -79,8 +76,7 @@ const HeroSection = () => {
           >
             Pawsitive <span className="text-lavender-200">Resources</span>
           </motion.h1>
-          
-          <motion.p 
+          <motion.p
             className="text-lg md:text-xl mb-10 text-lavender-100 max-w-2xl"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -89,10 +85,9 @@ const HeroSection = () => {
             Connecting pet parents with the resources they need for happy,
             healthy furry companions.
           </motion.p>
-
           <AnimatePresence mode="wait">
             {!showCategoryOptions ? (
-              <motion.div 
+              <motion.div
                 className="flex flex-col sm:flex-row gap-4"
                 key="search-buttons"
                 initial={{ opacity: 0, y: 20 }}
@@ -106,7 +101,7 @@ const HeroSection = () => {
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <FaSearch className="mr-2 group-hover:scale-110 transition-transform duration-300" /> 
+                  <FaSearch className="mr-2 group-hover:scale-110 transition-transform duration-300" />
                   Search Resources
                 </motion.button>
                 <motion.button
@@ -115,12 +110,12 @@ const HeroSection = () => {
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <FaHeart className="mr-2 group-hover:scale-110 transition-transform duration-300" /> 
+                  <FaHeart className="mr-2 group-hover:scale-110 transition-transform duration-300" />
                   Find Nearby Mates
                 </motion.button>
               </motion.div>
             ) : (
-              <motion.div 
+              <motion.div
                 className="flex flex-col sm:flex-row gap-4"
                 key="category-buttons"
                 initial={{ opacity: 0, y: 20 }}
@@ -134,7 +129,7 @@ const HeroSection = () => {
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <FaDog className="mr-2 group-hover:scale-110 transition-transform duration-300" /> 
+                  <FaDog className="mr-2 group-hover:scale-110 transition-transform duration-300" />
                   Dog Resources
                 </motion.button>
                 <motion.button
@@ -143,7 +138,7 @@ const HeroSection = () => {
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <FaCat className="mr-2 group-hover:scale-110 transition-transform duration-300" /> 
+                  <FaCat className="mr-2 group-hover:scale-110 transition-transform duration-300" />
                   Cat Resources
                 </motion.button>
                 <motion.button

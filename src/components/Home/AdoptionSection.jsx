@@ -1,4 +1,3 @@
-// src/components/Home/AdoptionSection.jsx
 import React from "react";
 import { motion } from "framer-motion";
 import AdoptionCard from "./AdoptionCard";
@@ -40,7 +39,6 @@ const adoptionCards = [
   },
 ];
 const AdoptionSection = () => {
-
   return (
     <div className="bg-gradient-to-b from-pink-50 to-lavender-50 pt-28 pb-16 mt-8 rounded-t-[40px]">
       <div className="max-w-6xl mx-auto px-6">

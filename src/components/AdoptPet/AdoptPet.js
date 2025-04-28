@@ -1,4 +1,3 @@
-// components/NearbyMates/NearbyMates.jsx
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -95,7 +94,6 @@ const AdoptPet = () => {
           setUserPets(petsArray);
 
           if (petsArray.length > 0) {
-            // setSelectedUserPet(petsArray[0].id);
             setSelectedUserPetData(petsArray[0]);
           }
         }
@@ -125,7 +123,6 @@ const AdoptPet = () => {
   useEffect(() => {
     const fetchAvailablePets = async () => {
       if (!userLocation || !selectedUserPetData) return;
-
       setLoading(true);
       try {
         const userPetsRef = ref(database, "userPets");
@@ -198,11 +195,8 @@ const AdoptPet = () => {
 
     const filtered = availablePets.filter((pet) => {
       if (pet.type !== selectedUserPetData.type) return false;
-
       if (pet.gender === selectedUserPetData.gender) return false;
-
       if (parseFloat(pet.distance) > maxDistance) return false;
-
       return true;
     });
 
@@ -223,7 +217,6 @@ const AdoptPet = () => {
 
   const handleOpenMessageDialog = async (pet) => {
     const conversationId = `adopt_${[user.uid, pet.userId].sort().join("_")}`;
-
     const convoRef = ref(database, `conversations/${conversationId}`);
     const snapshot = await get(convoRef);
 
@@ -249,7 +242,6 @@ const AdoptPet = () => {
       conversationId,
       isAdoption: true,
     });
-
     setOpenMessageDialog(true);
   };
 
@@ -319,7 +311,6 @@ const AdoptPet = () => {
             </Typography>
           </Box>
         </Box>
-
         <Paper
           elevation={2}
           sx={{
@@ -332,7 +323,6 @@ const AdoptPet = () => {
           <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold" }}>
             Find Matches For Your Pet
           </Typography>
-
           {userPets.length === 0 ? (
             <Alert severity="info">
               You don't have any pets in your profile yet. Please add a pet
@@ -362,7 +352,6 @@ const AdoptPet = () => {
             </Grid>
           )}
         </Paper>
-
         {userPets.length > 0 && (
           <>
             <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 3 }}>
@@ -378,7 +367,6 @@ const AdoptPet = () => {
                 <Tab label="Same Breed" />
               </Tabs>
             </Box>
-
             {loading ? (
               <Box
                 sx={{
@@ -436,7 +424,6 @@ const AdoptPet = () => {
                           zIndex: 1,
                         }}
                       />
-
                       <Box
                         sx={{
                           position: "relative",
@@ -475,12 +462,10 @@ const AdoptPet = () => {
                           </Box>
                         )}
                       </Box>
-
                       <CardContent sx={{ flexGrow: 1 }}>
                         <Typography variant="h6" gutterBottom>
                           {pet.name}
                         </Typography>
-
                         <Typography
                           variant="body2"
                           color="textSecondary"
@@ -496,7 +481,6 @@ const AdoptPet = () => {
                         >
                           <strong>Age:</strong> {pet.age || "Unknown age"}
                         </Typography>
-
                         {pet.description && (
                           <Typography
                             variant="body2"
@@ -509,7 +493,6 @@ const AdoptPet = () => {
                           </Typography>
                         )}
                       </CardContent>
-
                       <Box
                         sx={{
                           display: "flex",
@@ -526,7 +509,6 @@ const AdoptPet = () => {
                         >
                           Details
                         </Button>
-
                         <Button
                           variant="contained"
                           color="secondary"
@@ -578,7 +560,6 @@ const AdoptPet = () => {
             )}
           </>
         )}
-
         <MessageDialogForAdoption
           open={openMessageDialog}
           onClose={() => setOpenMessageDialog(false)}

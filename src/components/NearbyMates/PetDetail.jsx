@@ -1,4 +1,3 @@
-// components/PetDetail/PetDetail.jsx
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
@@ -58,54 +57,44 @@ const PetDetail = () => {
         setLoading(false);
         return;
       }
-
       try {
         const allUserPetsRef = ref(database, "userPets");
         const snapshot = await get(allUserPetsRef);
-
         if (snapshot.exists()) {
           const allUserPets = snapshot.val();
           let foundPet = null;
           let ownerId = null;
-
           Object.entries(allUserPets).forEach(([userId, pets]) => {
             if (pets[petId]) {
               foundPet = { ...pets[petId], id: petId, userId };
               ownerId = userId;
             }
           });
-
           if (foundPet) {
             setPet(foundPet);
-
             if (ownerId) {
               const userRef = ref(database, `users/${ownerId}`);
               const userSnapshot = await get(userRef);
-
               if (userSnapshot.exists()) {
                 setPetOwner(userSnapshot.val());
               } else {
                 setPetOwner({ displayName: "Pet Owner" });
               }
             }
-
             if (user && user.uid) {
               const userPetsRef = ref(database, `userPets/${user.uid}`);
               const userPetsSnapshot = await get(userPetsRef);
-
               if (userPetsSnapshot.exists()) {
                 const petsData = userPetsSnapshot.val();
                 const petsArray = Object.keys(petsData).map((id) => ({
                   id,
                   ...petsData[id],
                 }));
-
                 const compatiblePets = petsArray.filter(
                   (userPet) =>
                     userPet.type === foundPet.type &&
                     userPet.gender !== foundPet.gender
                 );
-
                 setUserPets(compatiblePets);
                 if (compatiblePets.length > 0) {
                   setSelectedUserPet(compatiblePets[0]);
@@ -151,16 +140,13 @@ const PetDetail = () => {
       navigate("/login", { state: { from: `/pet-detail/${petId}` } });
       return;
     }
-
     setOpenMatingRequestDialog(true);
   };
 
   const handleSendMatingRequest = async (requestData) => {
     if (!user || !selectedUserPet || !pet) return;
-
     try {
       const requestId = Date.now().toString();
-
       const receiverRequestRef = ref(
         database,
         `matingRequests/received/${pet.userId}/${requestId}`
@@ -198,12 +184,9 @@ const PetDetail = () => {
         createdAt: Date.now(),
         direction: "outgoing",
       });
-
       setOpenMatingRequestDialog(false);
-      alert("Mating request sent successfully!");
     } catch (error) {
       console.error("Error sending mating request:", error);
-      alert("Failed to send mating request. Please try again.");
     }
   };
 
@@ -282,7 +265,6 @@ const PetDetail = () => {
             Pet Details
           </Typography>
         </Box>
-
         <Grid container spacing={0}>
           <Grid item xs={12} md={5}>
             <Card
@@ -304,7 +286,6 @@ const PetDetail = () => {
               />
             </Card>
           </Grid>
-
           <Grid item xs={12} md={7}>
             <Box
               sx={{
@@ -337,7 +318,6 @@ const PetDetail = () => {
                   />
                 )}
               </Box>
-
               <Box display="flex" alignItems="center" gap={1} mb={2}>
                 <PetsIcon color="rgb(139 121 195)" />
                 <Typography variant="h6">
@@ -345,9 +325,7 @@ const PetDetail = () => {
                   {pet.type ? `(${pet.type})` : ""}
                 </Typography>
               </Box>
-
               <Divider sx={{ my: 2 }} />
-
               <Grid container spacing={2} sx={{ mb: 3 }}>
                 <Grid item xs={6} sm={4}>
                   <Box display="flex" alignItems="center">
@@ -359,7 +337,6 @@ const PetDetail = () => {
                     <Typography>{pet.gender || "Unknown"}</Typography>
                   </Box>
                 </Grid>
-
                 <Grid item xs={6} sm={4}>
                   <Box display="flex" alignItems="center">
                     <CakeIcon sx={{ color: "rgb(139 121 195)", mr: 1 }} />
@@ -368,7 +345,6 @@ const PetDetail = () => {
                     </Typography>
                   </Box>
                 </Grid>
-
                 <Grid item xs={6} sm={4}>
                   <Box display="flex" alignItems="center">
                     <ScaleIcon sx={{ color: "rgb(139 121 195)", mr: 1 }} />
@@ -377,7 +353,6 @@ const PetDetail = () => {
                     </Typography>
                   </Box>
                 </Grid>
-
                 {pet.color && (
                   <Grid item xs={6} sm={4}>
                     <Box display="flex" alignItems="center">
@@ -388,7 +363,6 @@ const PetDetail = () => {
                     </Box>
                   </Grid>
                 )}
-
                 {pet.distance && (
                   <Grid item xs={6} sm={4}>
                     <Box display="flex" alignItems="center">
@@ -400,7 +374,6 @@ const PetDetail = () => {
                   </Grid>
                 )}
               </Grid>
-
               {pet.description && (
                 <Box mb={3}>
                   <Box display="flex" alignItems="center" mb={1}>
@@ -412,7 +385,6 @@ const PetDetail = () => {
                   </Typography>
                 </Box>
               )}
-
               {pet.medical && pet.medical.medications && (
                 <Box mb={3}>
                   <Box display="flex" alignItems="center" mb={1}>
@@ -426,7 +398,6 @@ const PetDetail = () => {
                   </Typography>
                 </Box>
               )}
-
               <Box sx={{ mt: "auto", pt: 2 }}>
                 <Divider sx={{ mb: 2 }} />
                 <Box
@@ -466,7 +437,6 @@ const PetDetail = () => {
           </Grid>
         </Grid>
       </Paper>
-
       {openMatingRequestDialog && (
         <MatingRequestDialog
           open={openMatingRequestDialog}

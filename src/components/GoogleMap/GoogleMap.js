@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   GoogleMap,
@@ -351,7 +350,7 @@ const Googlemap = React.forwardRef(
       }
     }, [isLoaded, loadError]);
 
-    const calculateRelevanceScore = (place, keyword) => {
+    const calculateRelevanceScore = useCallback((place, keyword) => {
       let score = 0;
 
       const placeName = place.name.toLowerCase();
@@ -478,9 +477,9 @@ const Googlemap = React.forwardRef(
       }
 
       return score;
-    };
+    },[category, searchQuery]);
 
-    const fetchPlaceDetails = async (service, place) => {
+    const fetchPlaceDetails = useCallback(async (service, place) => {
       return new Promise((resolve) => {
         const detailsRequest = {
           placeId: place.place_id,
@@ -629,9 +628,9 @@ const Googlemap = React.forwardRef(
           }
         });
       });
-    };
+    },[category, searchQuery]);
 
-    const performSearch = async (service, location, keyword) => {
+    const performSearch = useCallback(async (service, location, keyword) => {
       return new Promise((resolve) => {
         let type =
           categoryTypes[category?.toLowerCase()]?.[0] || "establishment";
@@ -667,7 +666,7 @@ const Googlemap = React.forwardRef(
           }
         });
       });
-    };
+    },[category, searchQuery]);
 
     const filterBySearchQuery = (resources, query) => {
       if (!query || query.trim() === "") {
@@ -934,30 +933,36 @@ const Googlemap = React.forwardRef(
         fetchNearbyPlaces(userLocation, keywords);
       }
     };
-    const handleViewModeChange = (mode) => {
+
+    const handleViewModeChange = useCallback((mode) => {
       navigate(`/map/${category}/${mode}`);
-    };
-    const handleDirectionsClick = () => {
+    },[category, navigate]);
+    
+    const handleDirectionsClick = useCallback(() => {
       if (destination) {
         window.open(
           `https://www.google.com/maps/dir/?api=1&destination=${destination.lat},${destination.lng}`,
           "_blank"
         );
       }
-    };
+    },[destination]);
+
     const handleMapLoad = (map) => {
       onMapLoaded(map);
     };
+
     useEffect(() => {
       if (isLoaded && !locationRequested) {
         requestLocation();
       }
     }, [isLoaded, locationRequested, requestLocation]);
+
     useEffect(() => {
       if (mapsError) {
         console.error("Maps error:", mapsError);
       }
     }, [mapsError]);
+
     useEffect(() => {
       if (loadingResources) {
         console.log("Loading resources...");
@@ -965,51 +970,61 @@ const Googlemap = React.forwardRef(
         console.log("Resources loaded");
       }
     }, [loadingResources]);
+
     useEffect(() => {
       if (resourcesError) {
         console.error("Resources error:", resourcesError);
       }
     }, [resourcesError]);
+
     useEffect(() => {
       if (userLocation) {
         console.log("User location updated");
       }
     }, [userLocation]);
+
     useEffect(() => {
       if (nearbyResources.length > 0) {
         console.log("Nearby resources updated:");
       }
     }, [nearbyResources]);
+
     useEffect(() => {
       if (selectedMarker) {
         console.log("Selected marker:");
       }
     }, [selectedMarker]);
+
     useEffect(() => {
       if (searchQuery) {
         console.log("Search query updated:");
       }
     }, [searchQuery]);
+
     useEffect(() => {
       if (viewMode) {
         console.log("View mode changed:");
       }
     }, [viewMode]);
+
     useEffect(() => {
       if (directions) {
         console.log("Directions mode enabled");
       }
     }, [directions]);
+
     useEffect(() => {
       if (destination) {
         console.log("Destination set:");
       }
     }, [destination]);
+
     useEffect(() => {
       if (category) {
         console.log("Category changed:");
       }
     }, [category]);
+
     useEffect(() => {
       if (ref) {
         ref.current = {
@@ -1026,12 +1041,15 @@ const Googlemap = React.forwardRef(
       handleViewModeChange,
       handleDirectionsClick,
     ]);
+
     if (mapsError) {
       return <div>Error loading map: {mapsError}</div>;
     }
+
     if (!isLoaded) {
       return <div>Loading map...</div>;
     }
+
     return (
       <div className="relative">
         <GoogleMap
