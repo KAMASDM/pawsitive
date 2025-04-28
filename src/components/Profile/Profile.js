@@ -1053,6 +1053,8 @@ const Profile = () => {
           onSave={handleSaveVaccination}
           isEditMode={vaccinationEditIndex >= 0}
           isMobile={isMobile}
+          petType={currentPet.type} // Pass the pet type from currentPet
+          vaccinationEditIndex={vaccinationEditIndex} 
         />
       )}
 

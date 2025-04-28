@@ -35,20 +35,28 @@ function TabPanel(props) {
 const PetDialog = ({
   open,
   onClose,
-  currentPet,
-  setCurrentPet,
+  pet, // Changed from currentPet to pet to match Profile.js
+  setPet, // Changed from setCurrentPet to setPet to match Profile.js
   isEditMode,
   tabValue,
-  handleTabChange,
+  onTabChange, // Changed from handleTabChange to onTabChange to match Profile.js
   onSave,
   onAddVaccination,
   onEditVaccination,
   onDeleteVaccination,
-  vaccinations = []
+  isMobile
 }) => {
+  // Rename the prop to currentPet internally for compatibility with existing code
+  const currentPet = pet;
+  const setCurrentPet = setPet;
+  const handleTabChange = onTabChange;
+  
   const [otherBreed, setOtherBreed] = useState("");
   const [otherConditions, setOtherConditions] = useState("");
   const [otherAllergies, setOtherAllergies] = useState("");
+
+  // Get vaccinations from currentPet
+  const vaccinations = currentPet?.vaccinations || [];
 
   // Initialize medical information if it doesn't exist
   useEffect(() => {
@@ -209,7 +217,7 @@ const PetDialog = ({
             {/* Dialog Header */}
             <div className="px-6 py-4 bg-gradient-to-r from-lavender-600 to-purple-600 text-white rounded-t-2xl flex justify-between items-center">
               <h2 className="text-xl font-bold">
-                {isEditMode ? `Edit ${currentPet.name}'s Profile` : "Add New Pet"}
+                {isEditMode ? `Edit ${currentPet?.name}'s Profile` : "Add New Pet"}
               </h2>
               <button
                 onClick={onClose}
@@ -266,7 +274,7 @@ const PetDialog = ({
                   {/* Image Upload */}
                   <div className="md:col-span-2 mb-2">
                     <div className="border-2 border-dashed border-lavender-200 rounded-xl p-6 bg-lavender-50/50 flex flex-col items-center justify-center">
-                      {currentPet.image ? (
+                      {currentPet?.image ? ( // Add optional chaining here
                         <div className="relative max-w-xs">
                           <img
                             src={currentPet.image}
@@ -314,7 +322,7 @@ const PetDialog = ({
                     </label>
                     <input
                       type="text"
-                      value={currentPet.name || ""}
+                      value={currentPet?.name || ""} // Add optional chaining here
                       onChange={(e) => setCurrentPet({ ...currentPet, name: e.target.value })}
                       placeholder="Enter pet name"
                       className="w-full px-4 py-2.5 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent"
@@ -328,7 +336,7 @@ const PetDialog = ({
                       Pet Type
                     </label>
                     <select
-                      value={currentPet.type || ""}
+                      value={currentPet?.type || ""} // Add optional chaining here
                       onChange={(e) => setCurrentPet({ ...currentPet, type: e.target.value, breed: "" })}
                       className="w-full px-4 py-2.5 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent bg-white"
                     >
@@ -345,8 +353,8 @@ const PetDialog = ({
                   {/* Breed */}
                   <div>
                     <BreedSelect
-                      petType={currentPet.type}
-                      value={currentPet.breed || ""}
+                      petType={currentPet?.type} // Add optional chaining here
+                      value={currentPet?.breed || ""} // Add optional chaining here
                       onChange={handleBreedChange}
                       otherValue={otherBreed}
                       onOtherChange={handleOtherBreedChange}
@@ -359,7 +367,7 @@ const PetDialog = ({
                       Gender
                     </label>
                     <select
-                      value={currentPet.gender || ""}
+                      value={currentPet?.gender || ""} // Add optional chaining here
                       onChange={(e) => setCurrentPet({ ...currentPet, gender: e.target.value })}
                       className="w-full px-4 py-2.5 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent bg-white"
                     >
@@ -377,7 +385,7 @@ const PetDialog = ({
                     </label>
                     <input
                       type="text"
-                      value={currentPet.age || ""}
+                      value={currentPet?.age || ""} // Add optional chaining here
                       onChange={(e) => setCurrentPet({ ...currentPet, age: e.target.value })}
                       placeholder="e.g., 2 years"
                       className="w-full px-4 py-2.5 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent"
@@ -391,7 +399,7 @@ const PetDialog = ({
                     </label>
                     <input
                       type="text"
-                      value={currentPet.weight || ""}
+                      value={currentPet?.weight || ""} // Add optional chaining here
                       onChange={(e) => setCurrentPet({ ...currentPet, weight: e.target.value })}
                       placeholder="e.g., 15 kg"
                       className="w-full px-4 py-2.5 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent"
@@ -405,7 +413,7 @@ const PetDialog = ({
                     </label>
                     <input
                       type="text"
-                      value={currentPet.color || ""}
+                      value={currentPet?.color || ""} // Add optional chaining here
                       onChange={(e) => setCurrentPet({ ...currentPet, color: e.target.value })}
                       placeholder="e.g., Brown with white markings"
                       className="w-full px-4 py-2.5 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent"
@@ -420,11 +428,11 @@ const PetDialog = ({
                           <input
                             type="checkbox"
                             className="sr-only"
-                            checked={currentPet.availableForMating || false}
+                            checked={currentPet?.availableForMating || false} // Add optional chaining here
                             onChange={(e) => setCurrentPet({ ...currentPet, availableForMating: e.target.checked })}
                           />
-                          <div className={`w-10 h-5 rounded-full transition-colors ${currentPet.availableForMating ? 'bg-pink-500' : 'bg-gray-300'}`}></div>
-                          <div className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform ${currentPet.availableForMating ? 'translate-x-5' : ''}`}></div>
+                          <div className={`w-10 h-5 rounded-full transition-colors ${currentPet?.availableForMating ? 'bg-pink-500' : 'bg-gray-300'}`}></div>
+                          <div className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform ${currentPet?.availableForMating ? 'translate-x-5' : ''}`}></div>
                         </div>
                         <span className="ml-2 text-gray-700">Available for Mating</span>
                       </label>
@@ -436,11 +444,11 @@ const PetDialog = ({
                           <input
                             type="checkbox"
                             className="sr-only"
-                            checked={currentPet.availableForAdoption || false}
+                            checked={currentPet?.availableForAdoption || false} // Add optional chaining here
                             onChange={(e) => setCurrentPet({ ...currentPet, availableForAdoption: e.target.checked })}
                           />
-                          <div className={`w-10 h-5 rounded-full transition-colors ${currentPet.availableForAdoption ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                          <div className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform ${currentPet.availableForAdoption ? 'translate-x-5' : ''}`}></div>
+                          <div className={`w-10 h-5 rounded-full transition-colors ${currentPet?.availableForAdoption ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                          <div className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform ${currentPet?.availableForAdoption ? 'translate-x-5' : ''}`}></div>
                         </div>
                         <span className="ml-2 text-gray-700">Available for Adoption</span>
                       </label>
@@ -453,7 +461,7 @@ const PetDialog = ({
                       Description
                     </label>
                     <textarea
-                      value={currentPet.description || ""}
+                      value={currentPet?.description || ""} // Add optional chaining here
                       onChange={(e) => setCurrentPet({ ...currentPet, description: e.target.value })}
                       placeholder="Special traits, personality, etc."
                       className="w-full px-4 py-2.5 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent resize-none"
@@ -474,7 +482,7 @@ const PetDialog = ({
 
                 {/* Medical Conditions */}
                 <MedicalConditionsSelect
-                  value={currentPet.medical?.conditions || []}
+                  value={currentPet?.medical?.conditions || []} // Add optional chaining here
                   onChange={handleConditionsChange}
                   otherValue={otherConditions}
                   onOtherChange={handleOtherConditionsChange}
@@ -482,7 +490,7 @@ const PetDialog = ({
 
                 {/* Allergies */}
                 <AllergiesSelect
-                  value={currentPet.medical?.allergies || []}
+                  value={currentPet?.medical?.allergies || []} // Add optional chaining here
                   onChange={handleAllergiesChange}
                   otherValue={otherAllergies}
                   onOtherChange={handleOtherAllergiesChange}
@@ -494,7 +502,7 @@ const PetDialog = ({
                     Medications
                   </label>
                   <textarea
-                    value={currentPet.medical?.medications || ""}
+                    value={currentPet?.medical?.medications || ""} // Add optional chaining here
                     onChange={(e) =>
                       setCurrentPet({
                         ...currentPet,
@@ -569,7 +577,7 @@ const PetDialog = ({
                               <div>
                                 <p className="text-xs text-gray-500 mb-1">Date Administered</p>
                                 <p className="text-sm font-medium">
-                                  {formatDate(vaccine.date)}
+                                  {formatDate(vaccine?.date)}
                                 </p>
                               </div>
 
@@ -577,7 +585,7 @@ const PetDialog = ({
                                 <div>
                                   <p className="text-xs text-gray-500 mb-1">Next Due</p>
                                   <p className="text-sm font-medium">
-                                    {formatDate(vaccine.nextDue)}
+                                    {formatDate(vaccine?.nextDue)}
                                   </p>
                                 </div>
                               )}
@@ -644,9 +652,9 @@ const PetDialog = ({
               </button>
               <button
                 onClick={onSave}
-                disabled={!currentPet.name}
+                disabled={!currentPet?.name}
                 className={`px-4 py-2 rounded-lg flex items-center transition-colors ${
-                  !currentPet.name
+                  !currentPet?.name
                     ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                     : "bg-lavender-600 hover:bg-lavender-700 text-white"
                 }`}

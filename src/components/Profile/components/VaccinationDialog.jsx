@@ -32,12 +32,18 @@ const CAT_VACCINATIONS = [
 const VaccinationDialog = ({
   open,
   onClose,
-  currentVaccination,
-  setCurrentVaccination,
-  vaccinationEditIndex,
+  vaccination,
+  setVaccination,
   onSave,
-  petType
+  isEditMode,
+  isMobile,
+  petType,
+  vaccinationEditIndex
 }) => {
+  // Create local reference to the passed in vaccination
+  const currentVaccination = vaccination;
+  const setCurrentVaccination = setVaccination;
+  
   const [selectedVaccine, setSelectedVaccine] = useState("");
   const [vaccineSearch, setVaccineSearch] = useState("");
   const [vaccineDropdownOpen, setVaccineDropdownOpen] = useState(false);
@@ -46,8 +52,10 @@ const VaccinationDialog = ({
   // Reset state when dialog opens or vaccination changes
   useEffect(() => {
     if (open) {
-      setSelectedVaccine(currentVaccination.name || "");
-      setCustomVaccine(currentVaccination.name === "Other" ? currentVaccination.name : "");
+      console.log("Dialog opened with vaccination:", currentVaccination);
+      console.log("Pet type:", petType);
+      setSelectedVaccine(currentVaccination?.name || "");
+      setCustomVaccine(currentVaccination?.name === "Other" ? currentVaccination.customName || "" : "");
       setVaccineSearch("");
       setVaccineDropdownOpen(false);
     }
@@ -69,6 +77,7 @@ const VaccinationDialog = ({
   
   // Handle vaccination selection
   const handleVaccinationSelect = (vaccination) => {
+    console.log("Selected vaccination:", vaccination);
     setSelectedVaccine(vaccination);
     setCurrentVaccination({
       ...currentVaccination,
@@ -83,7 +92,8 @@ const VaccinationDialog = ({
     setCustomVaccine(value);
     setCurrentVaccination({
       ...currentVaccination,
-      name: value
+      customName: value,
+      name: "Other"
     });
   };
   
@@ -105,8 +115,15 @@ const VaccinationDialog = ({
     let d;
     if (typeof date === 'string') {
       d = new Date(date);
-    } else {
+    } else if (date instanceof Date) {
       d = date;
+    } else {
+      return "";
+    }
+    
+    // Check if date is valid before formatting
+    if (isNaN(d.getTime())) {
+      return "";
     }
     
     const year = d.getFullYear();
@@ -134,6 +151,10 @@ const VaccinationDialog = ({
     });
   };
   
+  // For debugging
+  console.log("Rendering VaccinationDialog with petType:", petType);
+  console.log("Filtered vaccinations:", filteredVaccinations);
+  
   return (
     <AnimatePresence>
       {open && (
@@ -150,7 +171,7 @@ const VaccinationDialog = ({
               <div className="flex items-center">
                 <FaSyringe className="mr-2" />
                 <h2 className="text-lg font-semibold">
-                  {vaccinationEditIndex >= 0 ? "Edit Vaccination" : "Add Vaccination"}
+                  {isEditMode ? "Edit Vaccination" : "Add Vaccination"}
                 </h2>
               </div>
               <button
@@ -173,7 +194,7 @@ const VaccinationDialog = ({
                 <div className="relative">
                   <button
                     type="button"
-                    onClick={() => petType && setVaccineDropdownOpen(!vaccineDropdownOpen)}
+                    onClick={() => setVaccineDropdownOpen(!vaccineDropdownOpen)}
                     className={`w-full px-4 py-2.5 rounded-lg border ${
                       !petType || !['dog', 'cat'].includes(petType) 
                         ? 'border-gray-200 bg-gray-100 cursor-not-allowed' 
@@ -288,7 +309,7 @@ const VaccinationDialog = ({
                 <div className="relative">
                   <input
                     type="date"
-                    value={formatDateForInput(currentVaccination.date)}
+                    value={formatDateForInput(currentVaccination?.date)}
                     onChange={handleDateChange}
                     className="w-full px-4 py-2 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent pr-10"
                   />
@@ -304,7 +325,7 @@ const VaccinationDialog = ({
                 <div className="relative">
                   <input
                     type="date"
-                    value={formatDateForInput(currentVaccination.nextDue)}
+                    value={formatDateForInput(currentVaccination?.nextDue)}
                     onChange={handleNextDueDateChange}
                     className="w-full px-4 py-2 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent pr-10"
                   />
@@ -318,7 +339,7 @@ const VaccinationDialog = ({
                   Notes
                 </label>
                 <textarea
-                  value={currentVaccination.notes || ""}
+                  value={currentVaccination?.notes || ""}
                   onChange={(e) => setCurrentVaccination({
                     ...currentVaccination,
                     notes: e.target.value
@@ -347,15 +368,15 @@ const VaccinationDialog = ({
                 </button>
                 <button
                   onClick={onSave}
-                  disabled={!currentVaccination.name || !currentVaccination.date}
+                  disabled={!currentVaccination?.name || !currentVaccination?.date}
                   className={`px-4 py-2 rounded-lg flex items-center ${
-                    !currentVaccination.name || !currentVaccination.date
+                    !currentVaccination?.name || !currentVaccination?.date
                       ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       : 'bg-lavender-600 hover:bg-lavender-700 text-white'
                   } transition-colors`}
                 >
                   <FiCheck className="mr-1" />
-                  {vaccinationEditIndex >= 0 ? "Update" : "Save"}
+                  {isEditMode ? "Update" : "Save"}
                 </button>
               </div>
             </div>

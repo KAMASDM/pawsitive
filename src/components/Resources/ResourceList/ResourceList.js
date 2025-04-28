@@ -6,6 +6,8 @@ import { db, database } from "../../../firebase";
 import Googlemap from "../../GoogleMap/GoogleMap";
 import ResourceCard from "../ResourceCard/ResourceCard";
 import { SkeletonLoader } from "../../Loaders";
+import { motion, AnimatePresence } from "framer-motion";
+import { FiSearch, FiGrid, FiMap, FiRefreshCw, FiX, FiFilter, FiArrowLeft, FiChevronLeft, FiChevronRight, FiInfo } from "react-icons/fi";
 
 const ResourceList = () => {
   const { category } = useParams();
@@ -20,6 +22,7 @@ const ResourceList = () => {
   const [loading, setLoading] = useState(true);
   const [mapLoading, setMapLoading] = useState(true);
   const [viewMode, setViewMode] = useState("grid");
+  const [showFilters, setShowFilters] = useState(false);
   const mapComponentRef = useRef(null);
 
   useEffect(() => {
@@ -30,10 +33,6 @@ const ResourceList = () => {
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
-
-  useEffect(() => {
-    console.log("Current category:", category);
-  }, [category]);
 
   const fetchWebResources = useCallback(async () => {
     try {
@@ -162,9 +161,9 @@ const ResourceList = () => {
   const isCatCategory = isPetType("cat_");
 
   const themeColor = isDogCategory
-    ? "blue"
+    ? "lavender"
     : isCatCategory
-    ? "amber"
+    ? "lavender"
     : "lavender";
 
   const getCategoryName = () => {
@@ -183,22 +182,9 @@ const ResourceList = () => {
       <button
         onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
         disabled={currentPage === 1}
-        className={`p-2 rounded-full bg-${themeColor}-100 text-${themeColor}-600 hover:bg-${themeColor}-200 disabled:opacity-50 transition-colors duration-200`}
+        className={`p-2 rounded-full bg-${themeColor}-100 text-${themeColor}-600 hover:bg-${themeColor}-200 disabled:opacity-50 transition-colors duration-200 flex items-center justify-center`}
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-5 w-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M15 19l-7-7 7-7"
-          />
-        </svg>
+        <FiChevronLeft className="h-5 w-5" />
       </button>
       <span className={`text-${themeColor}-800 font-medium`}>
         {currentPage} / {totalPages || 1}
@@ -206,22 +192,9 @@ const ResourceList = () => {
       <button
         onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
         disabled={currentPage === totalPages || totalPages === 0}
-        className={`p-2 rounded-full bg-${themeColor}-100 text-${themeColor}-600 hover:bg-${themeColor}-200 disabled:opacity-50 transition-colors duration-200`}
+        className={`p-2 rounded-full bg-${themeColor}-100 text-${themeColor}-600 hover:bg-${themeColor}-200 disabled:opacity-50 transition-colors duration-200 flex items-center justify-center`}
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-5 w-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 5l7 7-7 7"
-          />
-        </svg>
+        <FiChevronRight className="h-5 w-5" />
       </button>
     </div>
   );
@@ -233,149 +206,120 @@ const ResourceList = () => {
     }
   };
 
+  // Animation variants
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+  
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 }
+  };
+
   return (
-    <div
-      className={`min-h-screen bg-${themeColor}-50 p-4 sm:p-6 pb-16 sm:pb-6`}
-    >
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-6">
-          <button
-            onClick={() =>
-              navigate(
-                isDogCategory
-                  ? "/dog-resources"
-                  : isCatCategory
-                  ? "/cat-resources"
-                  : "/"
-              )
-            }
-            className={`flex items-center text-${themeColor}-600 hover:text-${themeColor}-800 transition-colors duration-300 mb-4`}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5 mr-2"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
-                clipRule="evenodd"
-              />
-            </svg>
-            Back
-          </button>
+    <div className={`min-h-screen bg-${themeColor}-50`}>
+      {/* Sticky Header */}
+      <div className="sticky top-0 z-30 max-w-7xl mx-auto px-4 sm:px-6">
+        <div className={`sticky top-0 z-30 bg-lavender-100 rounded-2xl shadow-md p-4 sm:p-6 mb-6 border border-${themeColor}-100 mt-6`}>
+          {/* Header Content */}
+          <div>
+            {/* Top Row: Back Button, Title, Filter Button */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center">
+                <button
+                  onClick={() =>
+                    navigate(
+                      isDogCategory
+                        ? "/dog-resources"
+                        : isCatCategory
+                        ? "/cat-resources"
+                        : "/"
+                    )
+                  }
+                  className={`mr-3 p-2 hover:bg-${themeColor}-200 rounded-full transition-colors text-${themeColor}-700 hover:text-${themeColor}-900`}
+                >
+                  <FiArrowLeft className="w-5 h-5" />
+                </button>
+                <h2 className={`text-lg font-bold text-${themeColor}-900 flex items-center`}>
+                  {getCategoryName()} Resources
+                </h2>
+              </div>
 
-          <h1
-            className={`text-3xl sm:text-4xl font-bold text-${themeColor}-900 mb-2`}
-          >
-            {getCategoryName()} Resources
-          </h1>
+             
+            </div>
 
-          <p className={`text-${themeColor}-700`}>
-            Find the best {getCategoryName().toLowerCase()} resources for your
-            pet
-          </p>
-        </div>
-
-        <div
-          className={`bg-white rounded-lg shadow-md p-4 mb-6 flex flex-wrap gap-4 justify-between items-center`}
-        >
-          <div className="flex space-x-2">
-            <button
-              onClick={() => setViewMode("grid")}
-              className={`p-2 rounded ${
-                viewMode === "grid"
-                  ? `bg-${themeColor}-100 text-${themeColor}-600`
-                  : "bg-gray-100 text-gray-600"
-              }`}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+            {/* Search Bar */}
+            <div className="mb-4">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search resources..."
+                  value={searchTerm}
+                  onChange={handleSearchChange}
+                  className={`w-full py-2 pl-10 pr-10 rounded-full border border-${themeColor}-300 bg-${themeColor}-50 text-${themeColor}-900 focus:ring-2 focus:ring-${themeColor}-500 focus:border-transparent focus:outline-none`}
                 />
-              </svg>
-            </button>
-            <button
-              onClick={() => setViewMode("map")}
-              className={`p-2 rounded ${
-                viewMode === "map"
-                  ? `bg-${themeColor}-100 text-${themeColor}-600`
-                  : "bg-gray-100 text-gray-600"
-              }`}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
-                />
-              </svg>
-            </button>
+                <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <FiX className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
+            </div>
 
-            <button
-              onClick={refreshMapData}
-              className={`p-2 rounded bg-${themeColor}-500 text-white hover:bg-${themeColor}-600`}
-              title="Refresh map data"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                />
-              </svg>
-            </button>
-          </div>
-
-          <div className="relative w-64">
-            <input
-              type="text"
-              placeholder="Search resources..."
-              value={searchTerm}
-              onChange={handleSearchChange}
-              className={`w-full py-2 pl-10 pr-4 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-${themeColor}-300 focus:border-${themeColor}-500`}
-            />
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
+            {/* View Mode Tabs */}
+            
           </div>
         </div>
+      </div>
 
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 pb-16 sm:px-6 pt-0">
+        {/* Filter Panel */}
+        <AnimatePresence>
+          {showFilters && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className={`bg-white rounded-2xl shadow-md overflow-hidden mb-6 border border-${themeColor}-100`}
+            >
+              <div className="p-4 sm:p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className={`font-bold text-${themeColor}-900`}>Filter Options</h3>
+                  <button
+                    onClick={() => setShowFilters(false)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <FiX className="w-5 h-5" />
+                  </button>
+                </div>
+                
+                {/* Information */}
+                <div className={`mt-4 p-3 bg-${themeColor}-50 rounded-lg`}>
+                  <p className={`text-sm text-${themeColor}-900 flex items-start`}>
+                    <FiInfo className="mt-0.5 mr-2 flex-shrink-0 text-${themeColor}-600" />
+                    <span>
+                      You can search for resources by name, description, or address. 
+                      Use the map view to see resources near your location.
+                    </span>
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Hidden Googlemap for initial data loading */}
         <div className="hidden">
           <Googlemap
             ref={mapComponentRef}
@@ -385,7 +329,7 @@ const ResourceList = () => {
         </div>
 
         {loading || mapLoading ? (
-          <div className="min-h-screen bg-gradient-to-b from-lavender-50 to-white p-6">
+          <div className={`bg-${themeColor}-50 p-6`}>
             <div className="max-w-7xl mx-auto">
               <SkeletonLoader type="list" count={9} />
             </div>
@@ -393,77 +337,109 @@ const ResourceList = () => {
         ) : (
           <>
             {viewMode === "map" ? (
-              <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-                <div className="h-96">
+              <div className="bg-white rounded-2xl shadow-md p-6 mb-8">
+                <div className="h-96 rounded-xl overflow-hidden">
                   <Googlemap
                     ref={mapComponentRef}
                     category={category}
                     onResourcesFetched={handleMapResourcesFetched}
                   />
                 </div>
-                <p className="text-center mt-4 text-gray-500 text-sm">
+                <p className={`text-center mt-4 text-${themeColor}-600 font-medium`}>
                   Showing {mapResources.length} resources on the map
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+              <motion.div
+                variants={container}
+                initial="hidden"
+                animate="show"
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
+              >
                 {displayedResources.length > 0 ? (
                   displayedResources.map((resource) => (
-                    <ResourceCard
+                    <ResourceCardWrapper 
                       key={resource.id || `${resource.name}-${Math.random()}`}
                       resource={resource}
                       onResourceUpdated={handleResourceUpdated}
+                      themeColor={themeColor}
                     />
                   ))
                 ) : (
-                  <div className="col-span-full text-center py-16">
-                    <div className="text-6xl mb-4">
-                      {isDogCategory ? "🐕" : isCatCategory ? "😿" : "🔍"}
+                  <div className="col-span-full bg-white rounded-2xl shadow-md p-6 sm:p-8 text-center border border-${themeColor}-100">
+                    <div className="flex flex-col items-center">
+                      <div className={`h-20 w-20 bg-${themeColor}-100 rounded-full flex items-center justify-center mb-4`}>
+                        {isDogCategory ? "🐕" : isCatCategory ? "😿" : "🔍"}
+                      </div>
+
+                      <h3 className={`text-xl font-bold text-${themeColor}-900 mb-2`}>
+                        {searchTerm
+                          ? `No resources found matching "${searchTerm}"`
+                          : `No ${getCategoryName()} resources found`}
+                      </h3>
+                      
+                      <p className="text-gray-600 max-w-md mx-auto mb-6">
+                        Try adjusting your search or check back later
+                      </p>
+
+                      <div className="flex flex-wrap justify-center gap-4">
+                        <button
+                          onClick={refreshMapData}
+                          className={`px-6 py-3 bg-${themeColor}-600 hover:bg-${themeColor}-700 text-white rounded-full transition-colors duration-300`}
+                        >
+                          <FiRefreshCw className="mr-1.5 inline-block" /> Refresh Resources
+                        </button>
+                        
+                        {searchTerm && (
+                          <button
+                            onClick={() => setSearchTerm("")}
+                            className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-full transition-colors duration-300"
+                          >
+                            <FiX className="mr-1.5 inline-block" /> Clear Search
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <h3 className="text-xl font-bold text-gray-700 mb-2">
-                      {searchTerm
-                        ? `No resources found matching "${searchTerm}"`
-                        : `No ${getCategoryName()} resources found`}
-                    </h3>
-                    <p className="text-gray-600 mb-6">
-                      Try adjusting your search or check back later
-                    </p>
-                    <button
-                      onClick={refreshMapData}
-                      className={`bg-${themeColor}-500 text-white px-6 py-2 rounded-full hover:bg-${themeColor}-600 transition-colors duration-300 mr-4`}
-                    >
-                      Refresh Resources
-                    </button>
-                    {searchTerm && (
-                      <button
-                        onClick={() => setSearchTerm("")}
-                        className={`bg-gray-500 text-white px-6 py-2 rounded-full hover:bg-gray-600 transition-colors duration-300`}
-                      >
-                        Clear Search
-                      </button>
-                    )}
                   </div>
                 )}
-              </div>
+              </motion.div>
             )}
 
-            {viewMode === "grid" &&
-              displayedResources.length > 0 &&
-              totalPages > 1 && (
-                <div
-                  className={`mt-8 ${
-                    isMobile
-                      ? "fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-2 shadow-md"
-                      : ""
-                  }`}
-                >
-                  <PaginationControls />
-                </div>
-              )}
+            {viewMode === "grid" && displayedResources.length > 0 && totalPages > 1 && (
+              <div
+                className={`mt-8 ${
+                  isMobile
+                    ? "fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-md z-20"
+                    : ""
+                }`}
+              >
+                <PaginationControls />
+              </div>
+            )}
           </>
         )}
       </div>
     </div>
+  );
+};
+
+// Wrapper component to apply motion animation to ResourceCard
+const ResourceCardWrapper = ({ resource, onResourceUpdated, themeColor }) => {
+  return (
+    <motion.div
+      variants={{
+        hidden: { opacity: 0, y: 20 },
+        show: { opacity: 1, y: 0 }
+      }}
+      whileHover={{ y: -5 }}
+      transition={{ duration: 0.3 }}
+      className="pet-card-shadow"
+    >
+      <ResourceCard 
+        resource={resource} 
+        onResourceUpdated={onResourceUpdated} 
+      />
+    </motion.div>
   );
 };
 
