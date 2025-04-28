@@ -1,18 +1,16 @@
-// src/components/Profile/components/MessageDialog.jsx
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useLocation } from "react-router-dom";
 import { ref, get, onValue, off, push, set, update } from "firebase/database";
 import { database, auth } from "../../../firebase";
-import { 
-  FiSend, 
-  FiX, 
-  FiHeart, 
-  FiPaperclip, 
-  FiImage, 
-  FiSmile, 
+import {
+  FiSend,
+  FiX,
+  FiHeart,
+  FiPaperclip,
+  FiImage,
+  FiSmile,
   FiMessageCircle,
-  FiCheckCircle
+  FiCheckCircle,
 } from "react-icons/fi";
 import { FaPaw } from "react-icons/fa";
 
@@ -24,23 +22,18 @@ const MessageDialog = ({
   senderPet,
   receiverPet,
   matingRequestId,
-  tabValue,
 }) => {
-  const location = useLocation();
   const user = auth.currentUser;
-  
-  // State
+
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [matingRequest, setMatingRequest] = useState(null);
   const [typingTimeout, setTypingTimeout] = useState(null);
-  
-  // Refs
+
   const messagesEndRef = useRef(null);
   const messageInputRef = useRef(null);
-  
-  // Scroll to bottom of messages
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -51,7 +44,6 @@ const MessageDialog = ({
     }
   }, [messages]);
 
-  // Focus input when dialog opens
   useEffect(() => {
     if (open) {
       setTimeout(() => {
@@ -60,10 +52,8 @@ const MessageDialog = ({
     }
   }, [open]);
 
-  // Fetch mating request details
   useEffect(() => {
     if (!open || !matingRequestId) return;
-
     const fetchMatingRequest = async () => {
       try {
         const sentRef = ref(
@@ -76,7 +66,6 @@ const MessageDialog = ({
           setMatingRequest(sentSnapshot.val());
           return;
         }
-
         const receivedRef = ref(
           database,
           `matingRequests/received/${user.uid}/${matingRequestId}`
@@ -94,10 +83,8 @@ const MessageDialog = ({
     fetchMatingRequest();
   }, [open, matingRequestId, user]);
 
-  // Fetch messages
   useEffect(() => {
     if (!open || !conversationId) return;
-
     setLoading(true);
     const messagesRef = ref(
       database,
@@ -117,7 +104,6 @@ const MessageDialog = ({
       } else {
         setMessages([]);
       }
-
       setLoading(false);
     });
 
@@ -126,7 +112,6 @@ const MessageDialog = ({
     };
   }, [open, conversationId]);
 
-  // Handle typing indicator
   const handleTyping = () => {
     if (typingTimeout) {
       clearTimeout(typingTimeout);
@@ -145,11 +130,9 @@ const MessageDialog = ({
       );
       update(typingRef, { typing: false });
     }, 2000);
-
     setTypingTimeout(timeout);
   };
 
-  // Send message
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !user || !conversationId) return;
 
@@ -187,15 +170,12 @@ const MessageDialog = ({
         `conversations/${conversationId}/typing/${user.uid}`
       );
       update(typingRef, { typing: false });
-
       setNewMessage("");
     } catch (error) {
       console.error("Error sending message:", error);
-      alert("Failed to send message. Please try again.");
     }
   };
 
-  // Format message time
   const formatMessageTime = (timestamp) => {
     const date = new Date(timestamp);
     const now = new Date();
@@ -224,7 +204,6 @@ const MessageDialog = ({
     );
   };
 
-  // Group messages by date
   const groupedMessages = messages.reduce((groups, message) => {
     const date = new Date(message.timestamp).toDateString();
     if (!groups[date]) {
@@ -234,7 +213,6 @@ const MessageDialog = ({
     return groups;
   }, {});
 
-  // Function to determine pet avatar background
   const getPetGradient = (type) => {
     if (!type) return "bg-gray-100";
 
@@ -248,19 +226,17 @@ const MessageDialog = ({
     }
   };
 
-  // Handle keyboard shortcuts
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
   };
 
-  // Suggested replies for empty conversations
   const suggestedReplies = [
     "Hello! I'm interested in arranging a meeting for our pets. When would be a good time to discuss the details?",
     `I'd love to know more about ${receiverPet?.name}. Can you share some details about their temperament?`,
-    "I'm excited about this potential mating. Can we discuss health records and genetic testing?"
+    "I'm excited about this potential mating. Can we discuss health records and genetic testing?",
   ];
 
   return (
@@ -274,23 +250,37 @@ const MessageDialog = ({
             transition={{ type: "spring", duration: 0.4 }}
             className="bg-white w-full max-w-4xl rounded-2xl shadow-xl overflow-hidden flex flex-col h-[80vh] max-h-[700px]"
           >
-            {/* Header */}
             <div className="p-4 bg-gradient-to-r from-lavender-600 to-purple-600 text-white flex items-center justify-between">
               <div className="flex items-center">
                 <div className="relative mr-3">
-                  {/* Pet avatars */}
-                  <div className={`w-10 h-10 rounded-full overflow-hidden ${getPetGradient(senderPet?.type)} border-2 border-white`}>
+                  <div
+                    className={`w-10 h-10 rounded-full overflow-hidden ${getPetGradient(
+                      senderPet?.type
+                    )} border-2 border-white`}
+                  >
                     {senderPet?.image ? (
-                      <img src={senderPet.image} alt={senderPet?.name} className="w-full h-full object-cover" />
+                      <img
+                        src={senderPet.image}
+                        alt={senderPet?.name}
+                        className="w-full h-full object-cover"
+                      />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <FaPaw className="text-lavender-600" />
                       </div>
                     )}
                   </div>
-                  <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full overflow-hidden ${getPetGradient(receiverPet?.type)} border-2 border-white`}>
+                  <div
+                    className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full overflow-hidden ${getPetGradient(
+                      receiverPet?.type
+                    )} border-2 border-white`}
+                  >
                     {receiverPet?.image ? (
-                      <img src={receiverPet.image} alt={receiverPet?.name} className="w-full h-full object-cover" />
+                      <img
+                        src={receiverPet.image}
+                        alt={receiverPet?.name}
+                        className="w-full h-full object-cover"
+                      />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <FaPaw className="text-lavender-600 text-xs" />
@@ -298,24 +288,23 @@ const MessageDialog = ({
                     )}
                   </div>
                 </div>
-                
                 <div>
                   <h3 className="font-semibold">Chat with Pets</h3>
                   <div className="text-sm text-lavender-100 flex items-center">
-                    {senderPet?.name} 
-                    <FiHeart className="mx-1 text-pink-200" /> 
+                    {senderPet?.name}
+                    <FiHeart className="mx-1 text-pink-200" />
                     {receiverPet?.name}
-                    
+
                     {matingRequest && (
                       <span className="ml-2 bg-white bg-opacity-20 text-xs px-2 py-0.5 rounded-full flex items-center">
                         {matingRequest.status === "accepted" ? (
                           <>
-                            <FiCheckCircle className="mr-1" /> 
+                            <FiCheckCircle className="mr-1" />
                             Accepted
                           </>
                         ) : (
                           <>
-                            <FiHeart className="mr-1" /> 
+                            <FiHeart className="mr-1" />
                             Pending
                           </>
                         )}
@@ -324,7 +313,6 @@ const MessageDialog = ({
                   </div>
                 </div>
               </div>
-              
               <button
                 onClick={onClose}
                 className="p-1 rounded-full hover:bg-white hover:bg-opacity-20 transition-colors"
@@ -332,29 +320,35 @@ const MessageDialog = ({
                 <FiX className="w-6 h-6" />
               </button>
             </div>
-            
-            {/* Mating request info banner */}
             {matingRequest && (
-              <div className={`px-4 py-2 flex items-center justify-between text-sm ${
-                matingRequest.status === "accepted" 
-                  ? "bg-green-50 text-green-800 border-b border-green-100" 
-                  : "bg-lavender-50 text-lavender-800 border-b border-lavender-100"
-              }`}>
+              <div
+                className={`px-4 py-2 flex items-center justify-between text-sm ${
+                  matingRequest.status === "accepted"
+                    ? "bg-green-50 text-green-800 border-b border-green-100"
+                    : "bg-lavender-50 text-lavender-800 border-b border-lavender-100"
+                }`}
+              >
                 <div className="flex items-center">
-                  <FiHeart className={`mr-2 ${
-                    matingRequest.status === "accepted" ? "text-green-500" : "text-pink-500"
-                  }`} />
+                  <FiHeart
+                    className={`mr-2 ${
+                      matingRequest.status === "accepted"
+                        ? "text-green-500"
+                        : "text-pink-500"
+                    }`}
+                  />
                   <span>
-                    Mating Request: {matingRequest.status === "accepted" ? "Accepted" : "Pending"} 
+                    Mating Request:{" "}
+                    {matingRequest.status === "accepted"
+                      ? "Accepted"
+                      : "Pending"}
                     <span className="ml-1 text-gray-500">
-                      • Requested on {new Date(matingRequest.createdAt).toLocaleDateString()}
+                      • Requested on{" "}
+                      {new Date(matingRequest.createdAt).toLocaleDateString()}
                     </span>
                   </span>
                 </div>
               </div>
             )}
-            
-            {/* Messages container */}
             <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
               {loading ? (
                 <div className="h-full flex flex-col items-center justify-center">
@@ -366,16 +360,13 @@ const MessageDialog = ({
                   <div className="w-16 h-16 bg-lavender-100 rounded-full flex items-center justify-center mb-4">
                     <FiMessageCircle className="w-8 h-8 text-lavender-600" />
                   </div>
-                  
                   <h3 className="text-lg font-semibold text-lavender-900 mb-2">
                     Start Your Conversation
                   </h3>
-                  
                   <p className="text-gray-600 max-w-md mb-6">
                     This is the beginning of your conversation about the mating
                     request between {senderPet?.name} and {receiverPet?.name}.
                   </p>
-                  
                   <div className="w-full max-w-md space-y-2">
                     {suggestedReplies.map((reply, index) => (
                       <motion.button
@@ -392,10 +383,8 @@ const MessageDialog = ({
                 </div>
               ) : (
                 <>
-                  {/* Grouped messages by date */}
                   {Object.keys(groupedMessages).map((date) => (
                     <div key={date}>
-                      {/* Date separator */}
                       <div className="flex items-center justify-center my-4">
                         <div className="border-t border-gray-200 flex-grow"></div>
                         <span className="mx-4 text-xs px-2 py-1 bg-lavender-100 text-lavender-800 rounded-full">
@@ -407,25 +396,32 @@ const MessageDialog = ({
                         </span>
                         <div className="border-t border-gray-200 flex-grow"></div>
                       </div>
-
-                      {/* Messages for this date */}
                       {groupedMessages[date].map((message, idx) => {
                         const isSender = message.senderId === user?.uid;
                         const showAvatar =
                           idx === 0 ||
-                          groupedMessages[date][idx - 1].senderId !== message.senderId;
-                        const isConsecutive = idx > 0 && groupedMessages[date][idx - 1].senderId === message.senderId;
+                          groupedMessages[date][idx - 1].senderId !==
+                            message.senderId;
+                        const isConsecutive =
+                          idx > 0 &&
+                          groupedMessages[date][idx - 1].senderId ===
+                            message.senderId;
 
                         return (
                           <div
                             key={message.id}
-                            className={`flex mb-3 ${isSender ? "justify-end" : "justify-start"}`}
+                            className={`flex mb-3 ${
+                              isSender ? "justify-end" : "justify-start"
+                            }`}
                           >
-                            {/* Avatar for receiver */}
                             {!isSender && showAvatar && (
                               <div className="w-8 h-8 rounded-full bg-lavender-200 flex-shrink-0 mr-2 overflow-hidden">
                                 {receiverPet?.image ? (
-                                  <img src={receiverPet.image} alt={receiverPet?.name} className="w-full h-full object-cover" />
+                                  <img
+                                    src={receiverPet.image}
+                                    alt={receiverPet?.name}
+                                    className="w-full h-full object-cover"
+                                  />
                                 ) : (
                                   <div className="w-full h-full flex items-center justify-center bg-lavender-200">
                                     <FaPaw className="text-lavender-600 text-xs" />
@@ -433,35 +429,36 @@ const MessageDialog = ({
                                 )}
                               </div>
                             )}
-                            
-                            {/* Spacer if consecutive message */}
                             {!isSender && isConsecutive && (
                               <div className="w-8 mr-2 flex-shrink-0"></div>
                             )}
-
-                            {/* Message content */}
-                            <div className={`max-w-[75%] ${isConsecutive ? 'mt-1' : ''}`}>
-                              {/* Sender name */}
+                            <div
+                              className={`max-w-[75%] ${
+                                isConsecutive ? "mt-1" : ""
+                              }`}
+                            >
                               {!isSender && showAvatar && (
                                 <div className="text-xs text-gray-500 ml-1 mb-1">
                                   {message.senderName}
                                 </div>
                               )}
-                              
-                              {/* Message bubble */}
                               <div
                                 className={`px-4 py-2 rounded-t-2xl ${
                                   isSender
                                     ? "bg-lavender-600 text-white rounded-bl-2xl rounded-br-md"
                                     : "bg-white border border-gray-200 rounded-br-2xl rounded-bl-md"
-                                } ${isConsecutive ? (isSender ? 'rounded-tr-md' : 'rounded-tl-md') : ''}`}
+                                } ${
+                                  isConsecutive
+                                    ? isSender
+                                      ? "rounded-tr-md"
+                                      : "rounded-tl-md"
+                                    : ""
+                                }`}
                               >
                                 <p className="whitespace-pre-wrap break-words">
                                   {message.text}
                                 </p>
                               </div>
-                              
-                              {/* Message time */}
                               <div
                                 className={`text-xs mt-1 ${
                                   isSender ? "text-right mr-1" : "ml-1"
@@ -470,12 +467,14 @@ const MessageDialog = ({
                                 {formatMessageTime(message.timestamp)}
                               </div>
                             </div>
-
-                            {/* Avatar for sender */}
                             {isSender && showAvatar && (
                               <div className="w-8 h-8 rounded-full bg-lavender-200 flex-shrink-0 ml-2 overflow-hidden">
                                 {senderPet?.image ? (
-                                  <img src={senderPet.image} alt={senderPet?.name} className="w-full h-full object-cover" />
+                                  <img
+                                    src={senderPet.image}
+                                    alt={senderPet?.name}
+                                    className="w-full h-full object-cover"
+                                  />
                                 ) : (
                                   <div className="w-full h-full flex items-center justify-center bg-lavender-200">
                                     <FaPaw className="text-lavender-600 text-xs" />
@@ -483,8 +482,6 @@ const MessageDialog = ({
                                 )}
                               </div>
                             )}
-                            
-                            {/* Spacer if consecutive message */}
                             {isSender && isConsecutive && (
                               <div className="w-8 ml-2 flex-shrink-0"></div>
                             )}
@@ -497,8 +494,6 @@ const MessageDialog = ({
                 </>
               )}
             </div>
-            
-            {/* Message input */}
             <div className="p-3 border-t border-gray-200 bg-white">
               <div className="flex items-center">
                 <div className="flex space-x-1 mr-2">
@@ -512,7 +507,6 @@ const MessageDialog = ({
                     <FiSmile className="w-5 h-5" />
                   </button>
                 </div>
-                
                 <div className="relative flex-1">
                   <textarea
                     ref={messageInputRef}
@@ -527,14 +521,13 @@ const MessageDialog = ({
                     rows={1}
                   ></textarea>
                 </div>
-                
                 <button
                   onClick={handleSendMessage}
                   disabled={!newMessage.trim()}
                   className={`p-3 ml-2 rounded-full ${
                     newMessage.trim()
-                      ? 'bg-lavender-600 hover:bg-lavender-700'
-                      : 'bg-gray-200 cursor-not-allowed'
+                      ? "bg-lavender-600 hover:bg-lavender-700"
+                      : "bg-gray-200 cursor-not-allowed"
                   } text-white transition-colors`}
                 >
                   <FiSend className="w-5 h-5" />

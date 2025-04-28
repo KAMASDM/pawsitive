@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { SkeletonLoader } from "../../components/Loaders";
+import SkeletonLoader from "../Loaders/SkeletonLoader";
+import {
+  FiArrowLeft,
+  FiArrowRight,
+  FiMap,
+  FiSearch,
+  FiX,
+} from "react-icons/fi";
 
 const style = document.createElement("style");
 style.textContent = `
@@ -210,92 +217,58 @@ const CatResources = () => {
 
   return (
     <div className="min-h-screen bg-lavender-50">
-      <div className="bg-lavender-700 text-white py-8">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="flex items-center mb-3">
-            <button
-              onClick={() => navigate("/")}
-              className="mr-4 text-white hover:text-lavender-200"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                />
-              </svg>
-            </button>
-            <h1 className="text-2xl md:text-3xl font-bold">Cat Resources</h1>
-          </div>
-          <p className="text-lg text-lavender-100">
-            Find everything your feline friend needs
-          </p>
-        </div>
-      </div>
-
-      <div className="bg-white shadow-sm sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-6 py-3">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search for cat resources..."
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setActiveMobileCategory(null);
-              }}
-              className="w-full py-2 pl-10 pr-4 rounded-lg border border-lavender-200 focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent text-sm"
-            />
-            <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 text-lavender-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-            </div>
-            {searchTerm && (
-              <button
-                onClick={() => setSearchTerm("")}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-lavender-400 hover:text-lavender-600"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
+      <header className="sticky top-0 z-30 bg-lavender-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="bg-lavender-100 rounded-2xl shadow-md p-4 sm:p-6 mb-6 border border-lavender-100 mt-6">
+            <div>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+                <div className="flex items-center">
+                  <button
+                    onClick={() => navigate("/")}
+                    className="mr-3 p-2 hover:bg-lavender-200 rounded-full transition-colors text-lavender-700 hover:text-lavender-900"
+                    aria-label="Go back"
+                  >
+                    <FiArrowLeft className="w-5 h-5" />
+                  </button>
+                  <h1 className="text-lg font-bold text-lavender-900">
+                    Cat Resources
+                  </h1>
+                </div>
+                <p className="text-sm sm:text-base text-lavender-900 text-center sm:text-left">
+                  Find everything your feline friend needs
+                </p>
+              </div>
+              <div className="mb-4">
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search resources..."
+                    value={searchTerm}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value);
+                      setActiveMobileCategory(null);
+                    }}
+                    className="w-full py-2 pl-10 pr-10 rounded-full border border-lavender-300 bg-lavender-50 text-lavender-900 focus:ring-2 focus:ring-lavender-500 focus:border-transparent focus:outline-none"
+                    aria-label="Search dog resources"
                   />
-                </svg>
-              </button>
-            )}
+                  <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  {searchTerm && (
+                    <button
+                      onClick={() => setSearchTerm("")}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      aria-label="Clear search"
+                    >
+                      <FiX className="w-5 h-5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-
+      </header>
       {isMobile && !searchTerm && (
-        <div className="sticky top-14 z-10 bg-lavender-50 pt-4 pb-2 px-6 -mx-6">
+        <div className="sticky top-24 z-20 bg-lavender-50 pt-2 pb-2 px-4 border-b border-lavender-200">
           <MobileCategorySelector
             categories={catResourceCategories}
             onSelect={(id) =>
@@ -306,183 +279,151 @@ const CatResources = () => {
         </div>
       )}
 
-      <div className="max-w-6xl mx-auto px-6 py-8">
-        {!isMobile && (
-          <h2 className="text-xl font-bold text-lavender-900 mb-6">
-            Resource Categories
-          </h2>
-        )}
-
-        {filteredCategories.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filteredCategories.map((category) => (
-              <CategoryCard key={category.id} category={category} />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12 bg-white rounded-lg shadow-sm">
-            <div className="text-5xl mb-4">😿</div>
-            <h3 className="text-xl font-semibold text-lavender-900 mb-2">
-              No categories found
-            </h3>
-            <p className="text-gray-600 mb-4">Try adjusting your search term</p>
-            <button
-              onClick={() => {
-                setSearchTerm("");
-                setActiveMobileCategory(null);
-              }}
-              className="bg-lavender-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-lavender-700"
-            >
-              Clear Search
-            </button>
-          </div>
-        )}
-      </div>
-
-      <div className="bg-lavender-100/50 py-8">
-        <div className="max-w-6xl mx-auto px-6">
-          <h2 className="text-xl font-bold text-lavender-900 mb-6">
-            Featured Resources
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden h-full flex flex-col">
-              <div className="p-4 border-l-3 border-lavender-500 flex-grow">
-                <div className="flex items-center mb-3">
-                  <span className="text-2xl mr-3">🏥</span>
-                  <h3 className="text-lg font-semibold text-lavender-900">
-                    Feline Health Center
-                  </h3>
-                </div>
-                <p className="text-gray-600 text-sm mb-2">
-                  Specialized veterinary care for cats of all breeds and ages.
-                </p>
-                <p className="text-xs text-gray-500">
-                  Near City Park, Vadodara
-                </p>
-              </div>
-              <div className="px-4 py-3 bg-lavender-50 border-t border-lavender-100 mt-auto">
-                <button
-                  onClick={() => navigate("/resources/cat_health")}
-                  className="text-lavender-700 font-medium text-xs hover:text-lavender-900 flex items-center"
-                >
-                  Find Cat Clinics
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-3 w-3 ml-1"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden h-full flex flex-col">
-              <div className="p-4 border-l-3 border-lavender-500 flex-grow">
-                <div className="flex items-center mb-3">
-                  <span className="text-2xl mr-3">🧶</span>
-                  <h3 className="text-lg font-semibold text-lavender-900">
-                    Cat Supplies Boutique
-                  </h3>
-                </div>
-                <p className="text-gray-600 text-sm mb-2">
-                  Premium cat supplies, toys, and specialty products.
-                </p>
-                <p className="text-xs text-gray-500">Alkapuri, Vadodara</p>
-              </div>
-              <div className="px-4 py-3 bg-lavender-50 border-t border-lavender-100 mt-auto">
-                <button
-                  onClick={() => navigate("/resources/cat_supplies")}
-                  className="text-lavender-700 font-medium text-xs hover:text-lavender-900 flex items-center"
-                >
-                  Find Cat Supplies
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-3 w-3 ml-1"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden h-full flex flex-col">
-              <div className="p-4 border-l-3 border-lavender-500 flex-grow">
-                <div className="flex items-center mb-3">
-                  <span className="text-2xl mr-3">🐾</span>
-                  <h3 className="text-lg font-semibold text-lavender-900">
-                    Whiskers Grooming Salon
-                  </h3>
-                </div>
-                <p className="text-gray-600 text-sm mb-2">
-                  Professional cat grooming services and spa treatments.
-                </p>
-                <p className="text-xs text-gray-500">Sayajigunj, Vadodara</p>
-              </div>
-              <div className="px-4 py-3 bg-lavender-50 border-t border-lavender-100 mt-auto">
-                <button
-                  onClick={() => navigate("/resources/cat_services")}
-                  className="text-lavender-700 font-medium text-xs hover:text-lavender-900 flex items-center"
-                >
-                  Find Grooming Services
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-3 w-3 ml-1"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-6xl mx-auto px-6 py-8">
-        <div className="bg-white rounded-lg shadow-sm p-6 flex flex-col md:flex-row items-center border border-lavender-200">
-          <div className="md:w-2/3 mb-6 md:mb-0 md:pr-8">
-            <h2 className="text-xl font-semibold text-lavender-900 mb-3">
-              Find Cat Resources Near You
+      <main className="max-w-6xl mx-auto px-4 sm:px-6">
+        <section className="py-6">
+          {!isMobile && (
+            <h2 className="text-xl font-bold text-lavender-900 mb-6">
+              Resource Categories
             </h2>
-            <p className="text-gray-600 text-sm mb-4">
-              Use our location-based search to discover cat-friendly services,
-              stores, and facilities in your neighborhood.
-            </p>
-            <button
-              onClick={() => navigate("/map/cat_resources")}
-              className="bg-lavender-600 text-white px-6 py-2 rounded-md text-sm font-medium hover:bg-lavender-700 transition-colors duration-300"
-            >
-              Open Map View
-            </button>
-          </div>
-          <div className="md:w-1/3 flex justify-center">
-            <div className="relative w-48 h-48 bg-lavender-100 rounded-full flex items-center justify-center">
-              <span className="text-6xl">🗺️</span>
-              <div className="absolute bottom-2 right-2 h-12 w-12 bg-lavender-600 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
-                <span className="text-2xl">🐈</span>
+          )}
+          {filteredCategories.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {filteredCategories.map((category) => (
+                <CategoryCard key={category.id} category={category} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 bg-white rounded-lg shadow-sm">
+              <div className="text-5xl mb-4">😿</div>
+              <h3 className="text-xl font-semibold text-lavender-900 mb-2">
+                No categories found
+              </h3>
+              <button
+                onClick={() => {
+                  setSearchTerm("");
+                  setActiveMobileCategory(null);
+                }}
+                className="bg-lavender-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-lavender-700 transition-colors"
+                aria-label="Clear search"
+              >
+                Clear Search
+              </button>
+            </div>
+          )}
+        </section>
+        <section className="bg-lavender-100/50 py-8 rounded-xl">
+          <div className="px-4 sm:px-6">
+            <h2 className="text-xl font-bold text-lavender-900 mb-6">
+              Featured Resources
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              <div className="bg-white rounded-lg shadow-sm overflow-hidden h-full flex flex-col">
+                <div className="p-4 border-l-4 border-lavender-500 flex-grow">
+                  <div className="flex items-center mb-3">
+                    <span className="text-2xl mr-3">🏥</span>
+                    <h3 className="text-lg font-semibold text-lavender-900">
+                      Feline Health Center
+                    </h3>
+                  </div>
+                  <p className="text-gray-600 text-sm mb-2">
+                    Specialized veterinary care for cats of all breeds and ages.
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Near City Park, Vadodara
+                  </p>
+                </div>
+                <div className="px-4 py-3 bg-lavender-50 border-t border-lavender-100 mt-auto">
+                  <button
+                    onClick={() => navigate("/resources/dog_health")}
+                    className="text-lavender-700 font-medium text-xs hover:text-lavender-900 flex items-center"
+                    aria-label="Find vet clinics"
+                  >
+                    Find Cat Clinics
+                    <FiArrowRight className="ml-1" />
+                  </button>
+                </div>
+              </div>
+              <div className="bg-white rounded-lg shadow-sm overflow-hidden h-full flex flex-col">
+                <div className="p-4 border-l-4 border-lavender-500 flex-grow">
+                  <div className="flex items-center mb-3">
+                    <span className="text-2xl mr-3">🍖</span>
+                    <h3 className="text-lg font-semibold text-lavender-900">
+                      Cat Supplies Boutique
+                    </h3>
+                  </div>
+                  <p className="text-gray-600 text-sm mb-2">
+                    Premium cat supplies, toys, and specialty products.
+                  </p>
+                  <p className="text-xs text-gray-500">Alkapuri, Vadodara</p>
+                </div>
+                <div className="px-4 py-3 bg-lavender-50 border-t border-lavender-100 mt-auto">
+                  <button
+                    onClick={() => navigate("/resources/dog_nutrition")}
+                    className="text-lavender-700 font-medium text-xs hover:text-lavender-900 flex items-center"
+                    aria-label="Find pet food"
+                  >
+                    Find Cat Supplies
+                    <FiArrowRight className="ml-1" />
+                  </button>
+                </div>
+              </div>
+              <div className="bg-white rounded-lg shadow-sm overflow-hidden h-full flex flex-col">
+                <div className="p-4 border-l-4 border-lavender-500 flex-grow">
+                  <div className="flex items-center mb-3">
+                    <span className="text-2xl mr-3">🦮</span>
+                    <h3 className="text-lg font-semibold text-lavender-900">
+                      Whiskers Grooming Salon
+                    </h3>
+                  </div>
+                  <p className="text-gray-600 text-sm mb-2">
+                    Professional cat grooming services and spa treatments.
+                  </p>
+                  <p className="text-xs text-gray-500">Sayajigunj, Vadodara</p>
+                </div>
+                <div className="px-4 py-3 bg-lavender-50 border-t border-lavender-100 mt-auto">
+                  <button
+                    onClick={() => navigate("/resources/dog_services")}
+                    className="text-lavender-700 font-medium text-xs hover:text-lavender-900 flex items-center"
+                    aria-label="Find training services"
+                  >
+                    Find Grooming Services
+                    <FiArrowRight className="ml-1" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
+        </section>
+        <section className="py-8">
+          <div className="bg-white rounded-lg shadow-sm p-6 flex flex-col md:flex-row items-center border border-lavender-200">
+            <div className="md:w-2/3 mb-6 md:mb-0 md:pr-8">
+              <h2 className="text-xl font-semibold text-lavender-900 mb-3">
+                Find Cat Resources Near You
+              </h2>
+              <p className="text-gray-600 text-sm mb-4">
+                Use our location-based search to discover cat-friendly services,
+                stores, and facilities in your neighborhood.
+              </p>
+              <button
+                onClick={() => navigate("/map/cat_resources")}
+                className="bg-lavender-600 text-white px-6 py-2 rounded-md text-sm font-medium hover:bg-lavender-700 transition-colors flex items-center"
+                aria-label="Open map view"
+              >
+                Open Map View
+                <FiMap className="ml-2" />
+              </button>
+            </div>
+            <div className="md:w-1/3 flex justify-center">
+              <div className="relative w-40 h-40 md:w-48 md:h-48 bg-lavender-100 rounded-full flex items-center justify-center">
+                <span className="text-5xl">🗺️</span>
+                <div className="absolute bottom-2 right-2 h-10 w-10 md:h-12 md:w-12 bg-lavender-600 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
+                  <span className="text-xl">🐈</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
     </div>
   );
 };

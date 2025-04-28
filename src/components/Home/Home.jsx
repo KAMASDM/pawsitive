@@ -1,4 +1,3 @@
-// src/pages/Home.jsx (Main Component)
 import React, { useState, useEffect } from "react";
 import SkeletonLoader from "../Loaders/SkeletonLoader";
 import HeroSection from "./HeroSection";
@@ -15,7 +14,6 @@ const Home = () => {
   const isMobile = width < 768;
 
   useEffect(() => {
-    // Simulate loading
     const timer = setTimeout(() => {
       setLoading(false);
     }, 1000);
@@ -45,7 +43,6 @@ const Home = () => {
           </motion.div>
         )}
       </AnimatePresence>
-
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

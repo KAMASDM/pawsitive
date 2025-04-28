@@ -1,4 +1,3 @@
-// src/components/Profile/components/index.js
 export { default as UserInfo } from './UserInfo';
 export { default as PetCard } from './PetCard';
 export { default as PetDialog } from './PetDialog';

@@ -1,4 +1,3 @@
-// src/components/Home/FeaturedServicesSection.jsx
 import React from "react";
 import { motion } from "framer-motion";
 import FeaturedServiceCard from "./FeaturedServiceCard";

@@ -1,22 +1,29 @@
-// src/components/Home/FeaturedServiceCard.jsx
 import React from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { FaArrowRight } from "react-icons/fa";
 
-const FeaturedServiceCard = ({ icon, title, description, location, buttonText, route, borderColor }) => {
+const FeaturedServiceCard = ({
+  icon,
+  title,
+  description,
+  location,
+  buttonText,
+  route,
+  borderColor,
+}) => {
   const navigate = useNavigate();
 
   return (
-    <motion.div 
+    <motion.div
       className="bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 border border-lavender-100"
       variants={{
         hidden: { opacity: 0, y: 20 },
-        visible: { 
-          opacity: 1, 
+        visible: {
+          opacity: 1,
           y: 0,
-          transition: { duration: 0.6 }
-        }
+          transition: { duration: 0.6 },
+        },
       }}
       whileHover={{ y: -5 }}
     >
@@ -27,17 +34,37 @@ const FeaturedServiceCard = ({ icon, title, description, location, buttonText, r
         </div>
         <p className="text-gray-600 text-sm mb-3">{description}</p>
         <p className="text-xs text-gray-500 flex items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" className={`h-3 w-3 mr-1 text-${borderColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className={`h-3 w-3 mr-1 text-${borderColor}`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+            />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+            />
           </svg>
           {location}
         </p>
       </div>
       <div className="px-5 py-3 bg-lavender-50 border-t border-lavender-100">
-        <button 
+        <button
           onClick={() => navigate(route)}
-          className={`text-${borderColor === 'pink-500' ? 'pink-600' : 'lavender-700'} font-medium text-xs hover:text-${borderColor === 'pink-500' ? 'pink-800' : 'lavender-900'} flex items-center`}
+          className={`text-${
+            borderColor === "pink-500" ? "pink-600" : "lavender-700"
+          } font-medium text-xs hover:text-${
+            borderColor === "pink-500" ? "pink-800" : "lavender-900"
+          } flex items-center`}
         >
           {buttonText}
           <FaArrowRight className="ml-2 text-xs" />

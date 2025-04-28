@@ -1,7 +1,14 @@
-// src/components/Profile/components/PetDialog.jsx
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiX, FiUpload, FiCamera, FiPlus, FiEdit2, FiTrash2, FiCheck } from "react-icons/fi";
+import {
+  FiX,
+  FiUpload,
+  FiCamera,
+  FiPlus,
+  FiEdit2,
+  FiTrash2,
+  FiCheck,
+} from "react-icons/fi";
 import { FaPaw, FaSyringe, FaNotesMedical } from "react-icons/fa";
 import AllergiesSelect from "./AllergiesSelect";
 import BreedSelect from "./BreedSelect";
@@ -35,30 +42,26 @@ function TabPanel(props) {
 const PetDialog = ({
   open,
   onClose,
-  pet, // Changed from currentPet to pet to match Profile.js
-  setPet, // Changed from setCurrentPet to setPet to match Profile.js
+  pet,
+  setPet,
   isEditMode,
   tabValue,
-  onTabChange, // Changed from handleTabChange to onTabChange to match Profile.js
+  onTabChange,
   onSave,
   onAddVaccination,
   onEditVaccination,
   onDeleteVaccination,
-  isMobile
 }) => {
-  // Rename the prop to currentPet internally for compatibility with existing code
   const currentPet = pet;
   const setCurrentPet = setPet;
   const handleTabChange = onTabChange;
-  
+
   const [otherBreed, setOtherBreed] = useState("");
   const [otherConditions, setOtherConditions] = useState("");
   const [otherAllergies, setOtherAllergies] = useState("");
 
-  // Get vaccinations from currentPet
   const vaccinations = currentPet?.vaccinations || [];
 
-  // Initialize medical information if it doesn't exist
   useEffect(() => {
     if (currentPet) {
       if (!currentPet.medical) {
@@ -67,8 +70,8 @@ const PetDialog = ({
           medical: {
             conditions: [],
             allergies: [],
-            medications: ""
-          }
+            medications: "",
+          },
         });
       } else if (!Array.isArray(currentPet.medical.conditions)) {
         const conditionsArray = currentPet.medical.conditions
@@ -84,14 +87,13 @@ const PetDialog = ({
           medical: {
             ...currentPet.medical,
             conditions: conditionsArray,
-            allergies: allergiesArray
-          }
+            allergies: allergiesArray,
+          },
         });
       }
     }
   }, [currentPet, currentPet?.id, setCurrentPet]);
 
-  // Format date for display
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
 
@@ -99,7 +101,6 @@ const PetDialog = ({
     return date.toLocaleDateString();
   };
 
-  // Check if vaccination is due soon or overdue
   const getVaccinationStatus = (nextDue) => {
     if (!nextDue) return "up-to-date";
 
@@ -113,7 +114,6 @@ const PetDialog = ({
     return "up-to-date";
   };
 
-  // Handle image upload
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
@@ -125,7 +125,6 @@ const PetDialog = ({
     }
   };
 
-  // Handle breed selection
   const handleBreedChange = (event) => {
     const selectedBreed = event.target.value;
     setCurrentPet({ ...currentPet, breed: selectedBreed });
@@ -135,7 +134,6 @@ const PetDialog = ({
     }
   };
 
-  // Handle custom breed input
   const handleOtherBreedChange = (event) => {
     const value = event.target.value;
     setOtherBreed(value);
@@ -145,14 +143,13 @@ const PetDialog = ({
     }
   };
 
-  // Handle medical conditions selection
   const handleConditionsChange = (selectedConditions) => {
     setCurrentPet({
       ...currentPet,
       medical: {
         ...currentPet.medical,
-        conditions: selectedConditions
-      }
+        conditions: selectedConditions,
+      },
     });
 
     if (!selectedConditions.includes("Other")) {
@@ -160,7 +157,6 @@ const PetDialog = ({
     }
   };
 
-  // Handle custom conditions input
   const handleOtherConditionsChange = (event) => {
     const value = event.target.value;
     setOtherConditions(value);
@@ -169,19 +165,18 @@ const PetDialog = ({
       ...currentPet,
       medical: {
         ...currentPet.medical,
-        otherConditions: value
-      }
+        otherConditions: value,
+      },
     });
   };
 
-  // Handle allergies selection
   const handleAllergiesChange = (selectedAllergies) => {
     setCurrentPet({
       ...currentPet,
       medical: {
         ...currentPet.medical,
-        allergies: selectedAllergies
-      }
+        allergies: selectedAllergies,
+      },
     });
 
     if (!selectedAllergies.includes("Other")) {
@@ -189,7 +184,6 @@ const PetDialog = ({
     }
   };
 
-  // Handle custom allergies input
   const handleOtherAllergiesChange = (event) => {
     const value = event.target.value;
     setOtherAllergies(value);
@@ -198,8 +192,8 @@ const PetDialog = ({
       ...currentPet,
       medical: {
         ...currentPet.medical,
-        otherAllergies: value
-      }
+        otherAllergies: value,
+      },
     });
   };
 
@@ -214,10 +208,11 @@ const PetDialog = ({
             transition={{ duration: 0.3 }}
             className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col"
           >
-            {/* Dialog Header */}
             <div className="px-6 py-4 bg-gradient-to-r from-lavender-600 to-purple-600 text-white rounded-t-2xl flex justify-between items-center">
               <h2 className="text-xl font-bold">
-                {isEditMode ? `Edit ${currentPet?.name}'s Profile` : "Add New Pet"}
+                {isEditMode
+                  ? `Edit ${currentPet?.name}'s Profile`
+                  : "Add New Pet"}
               </h2>
               <button
                 onClick={onClose}
@@ -226,8 +221,6 @@ const PetDialog = ({
                 <FiX className="w-5 h-5" />
               </button>
             </div>
-
-            {/* Tabs */}
             <div className="border-b border-lavender-100">
               <div className="flex">
                 <button
@@ -238,7 +231,11 @@ const PetDialog = ({
                       : "text-gray-500 hover:text-lavender-600 hover:bg-lavender-50"
                   }`}
                 >
-                  <FaPaw className={`${tabValue === 0 ? "text-lavender-600" : "text-gray-400"} mr-2`} />
+                  <FaPaw
+                    className={`${
+                      tabValue === 0 ? "text-lavender-600" : "text-gray-400"
+                    } mr-2`}
+                  />
                   General Information
                 </button>
                 <button
@@ -249,7 +246,11 @@ const PetDialog = ({
                       : "text-gray-500 hover:text-lavender-600 hover:bg-lavender-50"
                   }`}
                 >
-                  <FaNotesMedical className={`${tabValue === 1 ? "text-lavender-600" : "text-gray-400"} mr-2`} />
+                  <FaNotesMedical
+                    className={`${
+                      tabValue === 1 ? "text-lavender-600" : "text-gray-400"
+                    } mr-2`}
+                  />
                   Medical Profile
                 </button>
                 <button
@@ -260,31 +261,33 @@ const PetDialog = ({
                       : "text-gray-500 hover:text-lavender-600 hover:bg-lavender-50"
                   }`}
                 >
-                  <FaSyringe className={`${tabValue === 2 ? "text-lavender-600" : "text-gray-400"} mr-2`} />
+                  <FaSyringe
+                    className={`${
+                      tabValue === 2 ? "text-lavender-600" : "text-gray-400"
+                    } mr-2`}
+                  />
                   Vaccination Records
                 </button>
               </div>
             </div>
-
-            {/* Dialog Content with Scrollable Area */}
             <div className="flex-1 overflow-y-auto">
-              {/* General Information Tab */}
               <TabPanel value={tabValue} index={0}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Image Upload */}
                   <div className="md:col-span-2 mb-2">
                     <div className="border-2 border-dashed border-lavender-200 rounded-xl p-6 bg-lavender-50/50 flex flex-col items-center justify-center">
-                      {currentPet?.image ? ( // Add optional chaining here
+                      {currentPet?.image ? (
                         <div className="relative max-w-xs">
                           <img
                             src={currentPet.image}
-                            alt={`${currentPet.name || 'Pet'} preview`}
+                            alt={`${currentPet.name || "Pet"} preview`}
                             className="w-full h-48 object-cover rounded-lg shadow-md"
                           />
                           <label className="absolute bottom-3 right-3 cursor-pointer">
                             <div className="bg-lavender-600/90 hover:bg-lavender-700 text-white p-2 rounded-full shadow-md flex items-center">
                               <FiCamera className="w-4 h-4" />
-                              <span className="ml-1 text-xs font-medium">Change</span>
+                              <span className="ml-1 text-xs font-medium">
+                                Change
+                              </span>
                               <input
                                 type="file"
                                 hidden
@@ -299,7 +302,9 @@ const PetDialog = ({
                           <div className="w-20 h-20 bg-lavender-200 rounded-full flex items-center justify-center mb-4 mx-auto">
                             <FiCamera className="w-8 h-8 text-lavender-600" />
                           </div>
-                          <p className="text-lavender-900 font-medium mb-4">Upload a photo of your pet</p>
+                          <p className="text-lavender-900 font-medium mb-4">
+                            Upload a photo of your pet
+                          </p>
                           <label className="px-4 py-2 bg-lavender-600 hover:bg-lavender-700 text-white rounded-lg cursor-pointer inline-flex items-center transition-colors">
                             <FiUpload className="mr-2" />
                             <span>Upload Image</span>
@@ -314,30 +319,34 @@ const PetDialog = ({
                       )}
                     </div>
                   </div>
-
-                  {/* Name */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Pet Name <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
-                      value={currentPet?.name || ""} // Add optional chaining here
-                      onChange={(e) => setCurrentPet({ ...currentPet, name: e.target.value })}
+                      value={currentPet?.name || ""}
+                      onChange={(e) =>
+                        setCurrentPet({ ...currentPet, name: e.target.value })
+                      }
                       placeholder="Enter pet name"
                       className="w-full px-4 py-2.5 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent"
                       required
                     />
                   </div>
-
-                  {/* Type */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Pet Type
                     </label>
                     <select
-                      value={currentPet?.type || ""} // Add optional chaining here
-                      onChange={(e) => setCurrentPet({ ...currentPet, type: e.target.value, breed: "" })}
+                      value={currentPet?.type || ""}
+                      onChange={(e) =>
+                        setCurrentPet({
+                          ...currentPet,
+                          type: e.target.value,
+                          breed: "",
+                        })
+                      }
                       className="w-full px-4 py-2.5 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent bg-white"
                     >
                       <option value="">Select pet type</option>
@@ -349,26 +358,24 @@ const PetDialog = ({
                       <option value="other">Other</option>
                     </select>
                   </div>
-
-                  {/* Breed */}
                   <div>
                     <BreedSelect
-                      petType={currentPet?.type} // Add optional chaining here
-                      value={currentPet?.breed || ""} // Add optional chaining here
+                      petType={currentPet?.type}
+                      value={currentPet?.breed || ""}
                       onChange={handleBreedChange}
                       otherValue={otherBreed}
                       onOtherChange={handleOtherBreedChange}
                     />
                   </div>
-
-                  {/* Gender */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Gender
                     </label>
                     <select
-                      value={currentPet?.gender || ""} // Add optional chaining here
-                      onChange={(e) => setCurrentPet({ ...currentPet, gender: e.target.value })}
+                      value={currentPet?.gender || ""}
+                      onChange={(e) =>
+                        setCurrentPet({ ...currentPet, gender: e.target.value })
+                      }
                       className="w-full px-4 py-2.5 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent bg-white"
                     >
                       <option value="">Select gender</option>
@@ -377,50 +384,48 @@ const PetDialog = ({
                       <option value="Unknown">Unknown</option>
                     </select>
                   </div>
-
-                  {/* Age */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Age
                     </label>
                     <input
                       type="text"
-                      value={currentPet?.age || ""} // Add optional chaining here
-                      onChange={(e) => setCurrentPet({ ...currentPet, age: e.target.value })}
+                      value={currentPet?.age || ""}
+                      onChange={(e) =>
+                        setCurrentPet({ ...currentPet, age: e.target.value })
+                      }
                       placeholder="e.g., 2 years"
                       className="w-full px-4 py-2.5 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent"
                     />
                   </div>
-
-                  {/* Weight */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Weight
                     </label>
                     <input
                       type="text"
-                      value={currentPet?.weight || ""} // Add optional chaining here
-                      onChange={(e) => setCurrentPet({ ...currentPet, weight: e.target.value })}
+                      value={currentPet?.weight || ""}
+                      onChange={(e) =>
+                        setCurrentPet({ ...currentPet, weight: e.target.value })
+                      }
                       placeholder="e.g., 15 kg"
                       className="w-full px-4 py-2.5 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent"
                     />
                   </div>
-
-                  {/* Color */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Color/Markings
                     </label>
                     <input
                       type="text"
-                      value={currentPet?.color || ""} // Add optional chaining here
-                      onChange={(e) => setCurrentPet({ ...currentPet, color: e.target.value })}
+                      value={currentPet?.color || ""}
+                      onChange={(e) =>
+                        setCurrentPet({ ...currentPet, color: e.target.value })
+                      }
                       placeholder="e.g., Brown with white markings"
                       className="w-full px-4 py-2.5 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent"
                     />
                   </div>
-
-                  {/* Toggles */}
                   <div className="md:col-span-2 flex flex-wrap gap-6">
                     <div>
                       <label className="inline-flex items-center cursor-pointer">
@@ -428,41 +433,81 @@ const PetDialog = ({
                           <input
                             type="checkbox"
                             className="sr-only"
-                            checked={currentPet?.availableForMating || false} // Add optional chaining here
-                            onChange={(e) => setCurrentPet({ ...currentPet, availableForMating: e.target.checked })}
+                            checked={currentPet?.availableForMating || false}
+                            onChange={(e) =>
+                              setCurrentPet({
+                                ...currentPet,
+                                availableForMating: e.target.checked,
+                              })
+                            }
                           />
-                          <div className={`w-10 h-5 rounded-full transition-colors ${currentPet?.availableForMating ? 'bg-pink-500' : 'bg-gray-300'}`}></div>
-                          <div className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform ${currentPet?.availableForMating ? 'translate-x-5' : ''}`}></div>
+                          <div
+                            className={`w-10 h-5 rounded-full transition-colors ${
+                              currentPet?.availableForMating
+                                ? "bg-pink-500"
+                                : "bg-gray-300"
+                            }`}
+                          ></div>
+                          <div
+                            className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform ${
+                              currentPet?.availableForMating
+                                ? "translate-x-5"
+                                : ""
+                            }`}
+                          ></div>
                         </div>
-                        <span className="ml-2 text-gray-700">Available for Mating</span>
+                        <span className="ml-2 text-gray-700">
+                          Available for Mating
+                        </span>
                       </label>
                     </div>
-
                     <div>
                       <label className="inline-flex items-center cursor-pointer">
                         <div className="relative">
                           <input
                             type="checkbox"
                             className="sr-only"
-                            checked={currentPet?.availableForAdoption || false} // Add optional chaining here
-                            onChange={(e) => setCurrentPet({ ...currentPet, availableForAdoption: e.target.checked })}
+                            checked={currentPet?.availableForAdoption || false}
+                            onChange={(e) =>
+                              setCurrentPet({
+                                ...currentPet,
+                                availableForAdoption: e.target.checked,
+                              })
+                            }
                           />
-                          <div className={`w-10 h-5 rounded-full transition-colors ${currentPet?.availableForAdoption ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                          <div className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform ${currentPet?.availableForAdoption ? 'translate-x-5' : ''}`}></div>
+                          <div
+                            className={`w-10 h-5 rounded-full transition-colors ${
+                              currentPet?.availableForAdoption
+                                ? "bg-green-500"
+                                : "bg-gray-300"
+                            }`}
+                          ></div>
+                          <div
+                            className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform ${
+                              currentPet?.availableForAdoption
+                                ? "translate-x-5"
+                                : ""
+                            }`}
+                          ></div>
                         </div>
-                        <span className="ml-2 text-gray-700">Available for Adoption</span>
+                        <span className="ml-2 text-gray-700">
+                          Available for Adoption
+                        </span>
                       </label>
                     </div>
                   </div>
-
-                  {/* Description */}
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Description
                     </label>
                     <textarea
-                      value={currentPet?.description || ""} // Add optional chaining here
-                      onChange={(e) => setCurrentPet({ ...currentPet, description: e.target.value })}
+                      value={currentPet?.description || ""}
+                      onChange={(e) =>
+                        setCurrentPet({
+                          ...currentPet,
+                          description: e.target.value,
+                        })
+                      }
                       placeholder="Special traits, personality, etc."
                       className="w-full px-4 py-2.5 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent resize-none"
                       rows={4}
@@ -470,43 +515,41 @@ const PetDialog = ({
                   </div>
                 </div>
               </TabPanel>
-
-              {/* Medical Profile Tab */}
               <TabPanel value={tabValue} index={1}>
                 <div className="bg-lavender-50 p-4 rounded-xl mb-6">
-                  <h3 className="text-lg font-semibold text-lavender-900 mb-2">Medical Information</h3>
+                  <h3 className="text-lg font-semibold text-lavender-900 mb-2">
+                    Medical Information
+                  </h3>
                   <p className="text-gray-600">
-                    Keep track of your pet's health conditions, allergies, and medications to ensure they receive the best care.
+                    Keep track of your pet's health conditions, allergies, and
+                    medications to ensure they receive the best care.
                   </p>
                 </div>
-
-                {/* Medical Conditions */}
                 <MedicalConditionsSelect
-                  value={currentPet?.medical?.conditions || []} // Add optional chaining here
+                  value={currentPet?.medical?.conditions || []}
                   onChange={handleConditionsChange}
                   otherValue={otherConditions}
                   onOtherChange={handleOtherConditionsChange}
                 />
-
-                {/* Allergies */}
                 <AllergiesSelect
-                  value={currentPet?.medical?.allergies || []} // Add optional chaining here
+                  value={currentPet?.medical?.allergies || []}
                   onChange={handleAllergiesChange}
                   otherValue={otherAllergies}
                   onOtherChange={handleOtherAllergiesChange}
                 />
-
-                {/* Medications */}
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Medications
                   </label>
                   <textarea
-                    value={currentPet?.medical?.medications || ""} // Add optional chaining here
+                    value={currentPet?.medical?.medications || ""}
                     onChange={(e) =>
                       setCurrentPet({
                         ...currentPet,
-                        medical: { ...currentPet.medical, medications: e.target.value }
+                        medical: {
+                          ...currentPet.medical,
+                          medications: e.target.value,
+                        },
                       })
                     }
                     placeholder="Current medications and dosage"
@@ -515,14 +558,15 @@ const PetDialog = ({
                   ></textarea>
                 </div>
               </TabPanel>
-
-              {/* Vaccination Records Tab */}
               <TabPanel value={tabValue} index={2}>
                 <div className="flex justify-between items-center bg-lavender-50 p-4 rounded-xl mb-6">
                   <div>
-                    <h3 className="text-lg font-semibold text-lavender-900 mb-1">Vaccination Records</h3>
+                    <h3 className="text-lg font-semibold text-lavender-900 mb-1">
+                      Vaccination Records
+                    </h3>
                     <p className="text-gray-600">
-                      Keep track of your pet's vaccinations and upcoming renewal dates.
+                      Keep track of your pet's vaccinations and upcoming renewal
+                      dates.
                     </p>
                   </div>
                   <button
@@ -533,7 +577,6 @@ const PetDialog = ({
                     Add Vaccination
                   </button>
                 </div>
-
                 {vaccinations && vaccinations.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {vaccinations.map((vaccine, index) => {
@@ -543,7 +586,6 @@ const PetDialog = ({
                           key={index}
                           className="bg-white border border-lavender-100 rounded-xl shadow-sm overflow-hidden relative"
                         >
-                          {/* Status badge */}
                           {vaccine.nextDue && (
                             <div
                               className={`absolute top-0 right-0 px-3 py-1 text-xs font-medium rounded-bl-xl ${
@@ -561,46 +603,43 @@ const PetDialog = ({
                                 : "Up to Date"}
                             </div>
                           )}
-
-                          {/* Vaccine icon */}
                           <div className="absolute -left-3 -top-3 w-12 h-12 bg-lavender-600 rounded-full p-2 shadow-md">
                             <FaSyringe className="w-full h-full text-white" />
                           </div>
-
-                          {/* Content */}
                           <div className="p-5 pt-6 pl-10">
                             <h4 className="text-lg font-semibold text-lavender-900 mb-3">
                               {vaccine.name}
                             </h4>
-
                             <div className="grid grid-cols-2 gap-4 mb-3">
                               <div>
-                                <p className="text-xs text-gray-500 mb-1">Date Administered</p>
+                                <p className="text-xs text-gray-500 mb-1">
+                                  Date Administered
+                                </p>
                                 <p className="text-sm font-medium">
                                   {formatDate(vaccine?.date)}
                                 </p>
                               </div>
-
                               {vaccine.nextDue && (
                                 <div>
-                                  <p className="text-xs text-gray-500 mb-1">Next Due</p>
+                                  <p className="text-xs text-gray-500 mb-1">
+                                    Next Due
+                                  </p>
                                   <p className="text-sm font-medium">
                                     {formatDate(vaccine?.nextDue)}
                                   </p>
                                 </div>
                               )}
                             </div>
-
                             {vaccine.notes && (
                               <div className="mt-2 text-sm text-gray-600 border-t border-lavender-100 pt-2">
                                 {vaccine.notes}
                               </div>
                             )}
-
-                            {/* Actions */}
                             <div className="flex justify-end gap-2 mt-3 pt-3 border-t border-lavender-100">
                               <button
-                                onClick={() => onEditVaccination(vaccine, index)}
+                                onClick={() =>
+                                  onEditVaccination(vaccine, index)
+                                }
                                 className="p-1.5 text-lavender-600 hover:bg-lavender-50 rounded-md flex items-center"
                               >
                                 <FiEdit2 className="w-4 h-4 mr-1" />
@@ -628,7 +667,9 @@ const PetDialog = ({
                       No vaccination records added yet
                     </h4>
                     <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                      Add vaccination records to keep track of your pet's immunization schedule and receive reminders for upcoming vaccines.
+                      Add vaccination records to keep track of your pet's
+                      immunization schedule and receive reminders for upcoming
+                      vaccines.
                     </p>
                     <button
                       onClick={onAddVaccination}
@@ -641,8 +682,6 @@ const PetDialog = ({
                 )}
               </TabPanel>
             </div>
-
-            {/* Dialog Footer */}
             <div className="border-t border-lavender-100 p-4 flex justify-end gap-3 bg-gray-50 rounded-b-2xl">
               <button
                 onClick={onClose}
