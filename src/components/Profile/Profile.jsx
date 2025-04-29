@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState,useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { auth, db, database } from "../../firebase";
@@ -116,7 +116,7 @@ const Profile = () => {
     (req) => req.direction === "incoming" && req.status === "pending"
   ).length;
 
-  const fetchLikedResources = async () => {
+  const fetchLikedResources = useCallback(async () => {
     if (!user) return;
     try {
       const userLikesRef = ref(database, `userLikes/${user.uid}`);
@@ -183,9 +183,9 @@ const Profile = () => {
     } catch (error) {
       console.error("Error fetching liked resources:", error);
     }
-  };
+  },[user]);
 
-  const fetchUserComments = async () => {
+  const fetchUserComments = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -249,9 +249,9 @@ const Profile = () => {
     } catch (error) {
       console.error("Error fetching user comments:", error);
     }
-  };
+  },[user]);
 
-  const fetchUserPets = async () => {
+  const fetchUserPets = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -279,9 +279,9 @@ const Profile = () => {
     } catch (error) {
       console.error("Error fetching user pets:", error);
     }
-  };
+  },[user]);
 
-  const fetchMatingRequests = async () => {
+  const fetchMatingRequests = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -396,7 +396,7 @@ const Profile = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  },[user]);
 
   const handleProfileTabChange = (newValue) => {
     setProfileTabValue(newValue);
@@ -702,7 +702,7 @@ const Profile = () => {
           setIsLoading(false);
         });
     }
-  }, [user]);
+  }, [fetchLikedResources, fetchMatingRequests, fetchUserComments, fetchUserPets, user]);
 
   if (isLoading) {
     return (
@@ -729,7 +729,7 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen bg-lavender-50 pb-16">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
         {pendingRequestsCount > 0 && (
           <button
             onClick={() => handleProfileTabChange(2)}
@@ -742,10 +742,8 @@ const Profile = () => {
           </button>
         )}
       </div>
-
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
         <UserInfo user={user} />
-
         <div className="mt-6 mb-2 border-b border-lavender-200 overflow-x-auto hide-scrollbar">
           <div className="flex">
             <button
@@ -809,7 +807,6 @@ const Profile = () => {
             </button>
           </div>
         </div>
-
         <TabPanel value={profileTabValue} index={0}>
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-bold text-lavender-900">My Pets</h2>
@@ -820,7 +817,6 @@ const Profile = () => {
               <FiPlus className="w-5 h-5" />
             </button>
           </div>
-
           {pets.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {pets.map((pet) => (
@@ -854,18 +850,15 @@ const Profile = () => {
             </div>
           )}
         </TabPanel>
-
         <TabPanel value={profileTabValue} index={1}>
           <ResourcesList resources={likedResources} navigate={navigate} />
         </TabPanel>
-
         <TabPanel value={profileTabValue} index={2}>
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-bold text-lavender-900">
               Mating Requests
             </h2>
           </div>
-
           {matingRequests.length > 0 ? (
             <div className="space-y-4">
               {matingRequests.map((request) => (
@@ -923,7 +916,6 @@ const Profile = () => {
                         )}
                       </div>
                     </div>
-
                     <div className="flex items-center space-x-1">
                       <div className="text-xs px-2 py-1 rounded-full font-medium mr-2">
                         {request.status === "pending" ? (
@@ -940,7 +932,6 @@ const Profile = () => {
                           </span>
                         )}
                       </div>
-
                       {request.status === "pending" &&
                         request.direction === "incoming" && (
                           <div className="relative">
@@ -952,7 +943,6 @@ const Profile = () => {
                             >
                               <FiMoreVertical className="w-5 h-5 text-gray-500" />
                             </button>
-
                             {selectedRequest &&
                               selectedRequest.id === request.id &&
                               showDropdown && (
@@ -975,7 +965,6 @@ const Profile = () => {
                               )}
                           </div>
                         )}
-
                       {request.status === "accepted" && (
                         <button
                           onClick={() => handleOpenMessageDialog(request)}
@@ -1011,12 +1000,10 @@ const Profile = () => {
             </div>
           )}
         </TabPanel>
-
         <TabPanel value={profileTabValue} index={3}>
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-bold text-lavender-900">Messages</h2>
           </div>
-
           <ConversationsList
             user={user}
             pets={pets}
@@ -1024,7 +1011,6 @@ const Profile = () => {
           />
         </TabPanel>
       </div>
-
       {openPetDialog && (
         <PetDialog
           open={openPetDialog}
@@ -1041,7 +1027,6 @@ const Profile = () => {
           isMobile={isMobile}
         />
       )}
-
       {openVaccinationDialog && (
         <VaccinationDialog
           open={openVaccinationDialog}
@@ -1055,7 +1040,6 @@ const Profile = () => {
           vaccinationEditIndex={vaccinationEditIndex}
         />
       )}
-
       {openMessageDialog && (
         <MessageDialog
           open={openMessageDialog}

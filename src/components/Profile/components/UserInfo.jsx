@@ -3,15 +3,6 @@ import { motion } from "framer-motion";
 import { FiMail, FiPhone } from "react-icons/fi";
 
 const UserInfo = ({ user }) => {
-  const getInitials = (name) => {
-    if (!name) return "?";
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase();
-  };
-
   return (
     <div className="relative overflow-hidden">
       <motion.div
@@ -22,23 +13,17 @@ const UserInfo = ({ user }) => {
       >
         <div className="flex flex-col sm:flex-row items-center sm:items-start">
           <div className="mb-4 sm:mb-0 sm:mr-6">
-            {user?.photoURL ? (
-              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-4 border-lavender-200 shadow-md">
-                <img
-                  src={user.photoURL}
-                  alt={user.displayName || "User"}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            ) : (
-              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-br from-lavender-400 to-purple-500 text-white flex items-center justify-center text-3xl font-bold border-4 border-lavender-200 shadow-md">
-                {getInitials(user?.displayName || user?.email || "User")}
-              </div>
-            )}
+            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-br from-lavender-400 to-purple-500 text-white flex items-center justify-center text-3xl font-bold border-4 border-lavender-200 shadow-md">
+              {user?.displayName
+                ?.split(" ")
+                .map((word) => word[0].toUpperCase())
+                .join("")
+                .slice(0, 2)}
+            </div>
           </div>
           <div className="flex-1 text-center sm:text-left">
             <h2 className="text-2xl font-bold text-lavender-900 mb-2">
-              {user?.displayName || "Pet Owner"}
+              {user?.displayName}
             </h2>
             <div className="space-y-2">
               {user?.email && (

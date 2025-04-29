@@ -4,14 +4,7 @@ import { auth, database } from "../../firebase";
 import logo from "../../images/logo.png";
 import BottomNavigation from "./BottomNavigation";
 import { get, ref } from "firebase/database";
-import {
-  FiHome,
-  FiUser,
-  FiLogOut,
-  FiMenu,
-  FiX,
-  FiBell,
-} from "react-icons/fi";
+import { FiHome, FiUser, FiLogOut, FiMenu, FiX, FiBell } from "react-icons/fi";
 import { FaDog, FaCat } from "react-icons/fa";
 
 const Header = () => {
@@ -176,7 +169,7 @@ const Header = () => {
                   <NavLink to="/profile">
                     <FiUser className="mr-1" /> Profile
                   </NavLink>
-                  <NavLink to="/profile">
+                  <NavLink>
                     <div className="flex items-center relative">
                       <FiBell className="mr-1" />
                       {pendingRequestsCount > 0 && (
@@ -249,7 +242,6 @@ const Header = () => {
         )}
       </header>
       {user && <BottomNavigation />}
-      {user && <div className="md:hidden pb-16"></div>}
     </>
   );
 };
