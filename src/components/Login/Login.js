@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth, signInWithPopup, googleProvider } from "../../firebase";
 import logo from "../../images/logo.png";
+import { FaGoogle, FaDownload, FaStar } from "react-icons/fa";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -158,16 +159,7 @@ const Login = () => {
               </span>
             </span>
 
-            <svg
-              className="w-6 h-6 mr-2 relative z-10"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M12.24 10.285V14.4h6.806c-.275 1.765-2.056 5.174-6.806 5.174-4.095 0-7.439-3.389-7.439-7.574s3.345-7.574 7.439-7.574c2.33 0 3.891.989 4.785 1.849l3.254-3.138C18.189 1.186 15.479 0 12.24 0c-6.635 0-12 5.365-12 12s5.365 12 12 12c6.926 0 11.52-4.869 11.52-11.726 0-.788-.085-1.39-.189-1.989H12.24z"
-                fill="currentColor"
-              />
-            </svg>
+            <FaGoogle className="w-6 h-6 mr-2 relative z-10" />
             <span className="relative z-10">Sign in with Google</span>
           </button>
 
@@ -181,20 +173,7 @@ const Login = () => {
                   <span className="text-lg animate-bounce">⬇️</span>
                 </span>
 
-                <svg
-                  className="w-5 h-5 mr-2 relative z-10"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                  ></path>
-                </svg>
+                <FaDownload className="w-5 h-5 mr-2 relative z-10" />
                 <span className="relative z-10">Install App</span>
               </button>
             </div>
@@ -224,14 +203,7 @@ const Login = () => {
               <div className="mt-2 flex">
                 <div className="flex animate-shimmer">
                   {[...Array(5)].map((_, i) => (
-                    <svg
-                      key={i}
-                      className="w-4 h-4 text-yellow-400"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
+                    <FaStar key={i} className="w-4 h-4 text-yellow-400" />
                   ))}
                 </div>
               </div>

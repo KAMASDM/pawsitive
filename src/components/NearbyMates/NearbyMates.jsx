@@ -308,92 +308,95 @@ const NearbyMates = () => {
   }
 
   return (
-    <div className="min-h-screen bg-lavender-50">
-      <div className="sticky top-0 z-30 max-w-6xl mx-auto px-4 sm:px-6">
-        <div className="sticky top-0 z-30 bg-lavender-100 rounded-2xl shadow-md p-4 sm:p-6 mb-6 border border-lavender-100">
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center">
-                <button
-                  onClick={() => navigate(-1)}
-                  className="mr-3 p-2 hover:bg-lavender-100 rounded-full transition-colors text-lavender-700 hover:text-lavender-900"
-                >
-                  <FiArrowLeft className="w-5 h-5" />
-                </button>
-                <h2 className="text-lg font-bold text-lavender-900 flex items-center">
-                  <FiHeart className="mr-2 text-pink-500" />
-                  Nearby Mates
-                </h2>
-              </div>
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center text-sm font-medium text-lavender-600 hover:text-lavender-800"
-              >
-                Filters <FiFilter className="ml-1 w-4 h-4" />
-              </button>
-            </div>
-            <div className="mb-4">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search by name, breed..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full py-2 pl-4 pr-10 rounded-full border border-lavender-300 bg-lavender-50 text-lavender-900 focus:ring-2 focus:ring-lavender-500 focus:border-transparent focus:outline-none"
-                />
-                {searchQuery && (
+    <div className="min-h-screen bg-lavender-50 pb-16">
+      <div className="sticky top-16 z-40 bg-lavender-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="bg-lavender-100 rounded-2xl shadow-md p-4 sm:p-6 mb-6 border border-lavender-100 mt-6">
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center">
                   <button
-                    onClick={() => setSearchQuery("")}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    onClick={() => navigate(-1)}
+                    className="mr-3 p-2 hover:bg-lavender-100 rounded-full transition-colors text-lavender-700 hover:text-lavender-900"
                   >
-                    <FiX className="w-5 h-5" />
+                    <FiArrowLeft className="w-5 h-5" />
                   </button>
-                )}
+                  <h2 className="text-lg font-bold text-lavender-900 flex items-center">
+                    <FiHeart className="mr-2 text-pink-500" />
+                    Nearby Mates
+                  </h2>
+                </div>
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="flex items-center text-sm font-medium text-lavender-600 hover:text-lavender-800"
+                >
+                  Filters <FiFilter className="ml-1 w-4 h-4" />
+                </button>
               </div>
-            </div>
-            <div className="flex items-center space-x-3 overflow-x-auto hide-scrollbar">
-              <button
-                onClick={() => setActiveCategory("all")}
-                className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-all ${
-                  activeCategory === "all"
-                    ? "bg-lavender-600 text-white font-medium shadow-sm"
-                    : "text-lavender-700 hover:bg-lavender-100"
-                }`}
-              >
-                All Matches
-              </button>
-              <button
-                onClick={() => setActiveCategory("nearby")}
-                className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-all flex items-center ${
-                  activeCategory === "nearby"
-                    ? "bg-lavender-600 text-white font-medium shadow-sm"
-                    : "text-lavender-700 hover:bg-lavender-100"
-                }`}
-              >
-                <FiMapPin
-                  className={`mr-1 ${
-                    activeCategory === "nearby"
-                      ? "text-white"
-                      : "text-lavender-600"
+              <div className="mb-4">
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search by name, breed..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full py-2 pl-4 pr-10 rounded-full border border-lavender-300 bg-lavender-50 text-lavender-900 focus:ring-2 focus:ring-lavender-500 focus:border-transparent focus:outline-none"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      <FiX className="w-5 h-5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-2 sm:flex sm:items-center sm:space-x-3">
+                <button
+                  onClick={() => setActiveCategory("all")}
+                  className={`px-3 py-2 sm:px-4 rounded-full text-sm whitespace-nowrap transition-all ${
+                    activeCategory === "all"
+                      ? "bg-lavender-600 text-white font-medium shadow-sm"
+                      : "text-lavender-700 hover:bg-lavender-100"
                   }`}
-                />
-                Nearby ({"<"}5km)
-              </button>
-              <button
-                onClick={() => setActiveCategory("breed")}
-                className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-all ${
-                  activeCategory === "breed"
-                    ? "bg-lavender-600 text-white font-medium shadow-sm"
-                    : "text-lavender-700 hover:bg-lavender-100"
-                }`}
-              >
-                Same Breed
-              </button>
+                >
+                  All Matches
+                </button>
+                <button
+                  onClick={() => setActiveCategory("nearby")}
+                  className={`px-3 py-2 sm:px-4 rounded-full text-sm whitespace-nowrap transition-all flex items-center justify-center ${
+                    activeCategory === "nearby"
+                      ? "bg-lavender-600 text-white font-medium shadow-sm"
+                      : "text-lavender-700 hover:bg-lavender-100"
+                  }`}
+                >
+                  <FiMapPin
+                    className={`mr-1 ${
+                      activeCategory === "nearby"
+                        ? "text-white"
+                        : "text-lavender-600"
+                    }`}
+                  />
+                  <span className="hidden sm:inline">Nearby</span>
+                  <span className="sm:hidden">{"<"}5km</span>
+                </button>
+                <button
+                  onClick={() => setActiveCategory("breed")}
+                  className={`px-3 py-2 sm:px-4 rounded-full text-sm whitespace-nowrap transition-all ${
+                    activeCategory === "breed"
+                      ? "bg-lavender-600 text-white font-medium shadow-sm"
+                      : "text-lavender-700 hover:bg-lavender-100"
+                  }`}
+                >
+                  Same Breed
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
-      <div className="max-w-6xl mx-auto px-4 pb-6 sm:px-6 pt-0">
+      <div className="max-w-7xl mx-auto px-4 pb-6 sm:px-6 pt-0">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}

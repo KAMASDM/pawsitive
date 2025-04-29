@@ -207,8 +207,8 @@ const DogResources = () => {
   }
 
   return (
-    <div className="min-h-screen bg-lavender-50">
-      <header className="sticky top-0 z-30 bg-lavender-50">
+    <div className="min-h-screen bg-lavender-50 relative pb-16">
+      <header className="sticky top-16 z-40 bg-lavender-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="bg-lavender-100 rounded-2xl shadow-md p-4 sm:p-6 mb-6 border border-lavender-100 mt-6">
             <div>
@@ -259,7 +259,7 @@ const DogResources = () => {
         </div>
       </header>
       {isMobile && !searchTerm && (
-        <div className="sticky top-24 z-20 bg-lavender-50 pt-2 pb-2 px-4 border-b border-lavender-200">
+        <div className="sticky top-24 z-30 bg-lavender-50 pt-2 pb-2 px-4 border-b border-lavender-200 shadow-sm">
           <MobileCategorySelector
             categories={dogResourceCategories}
             onSelect={(id) =>
@@ -269,8 +269,7 @@ const DogResources = () => {
           />
         </div>
       )}
-
-      <main className="max-w-6xl mx-auto px-4 sm:px-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10 pt-4">
         <section className="py-6">
           {!isMobile && (
             <h2 className="text-xl font-bold text-lavender-900 mb-6">

@@ -79,8 +79,8 @@ const ResourcesList = ({ resources = [] }) => {
 
   return (
     <div className="min-h-screen bg-lavender-50">
-      <div className="sticky top-0 z-30 max-w-6xl mx-auto px-4 sm:px-6">
-        <div className="sticky top-0 z-30 bg-lavender-100 rounded-2xl shadow-md p-4 sm:p-6 mb-6 border border-lavender-100">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="bg-lavender-100 rounded-2xl shadow-md p-4 sm:p-6 mb-6 border border-lavender-100">
           <div>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-lavender-900 flex items-center">
