@@ -23,6 +23,7 @@ const ResourceList = () => {
   const mapComponentRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [mapLoading, setMapLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [mapResources, setMapResources] = useState([]);
@@ -95,6 +96,7 @@ const ResourceList = () => {
         category: resource.category || category,
       }));
       setMapResources(formattedResources);
+      setMapLoading(false);
     },
     [category]
   );
@@ -186,6 +188,7 @@ const ResourceList = () => {
   );
 
   const refreshMapData = () => {
+    setMapLoading(true);
     if (mapComponentRef.current && mapComponentRef.current.requestLocation) {
       mapComponentRef.current.requestLocation();
     }
@@ -258,8 +261,8 @@ const ResourceList = () => {
             onResourcesFetched={handleMapResourcesFetched}
           />
         </div>
-        {loading ? (
-          <div className={`bg-lavender-50 p-6`}>
+        {loading || mapLoading ? (
+          <div className="bg-lavender-50 p-6">
             <div className="max-w-7xl mx-auto">
               <SkeletonLoader type="list" count={9} />
             </div>
@@ -300,8 +303,8 @@ const ResourceList = () => {
                         onClick={refreshMapData}
                         className="px-6 py-3 bg-lavender-600 hover:bg-lavender-700 text-white rounded-full transition-colors duration-300"
                       >
-                        <FiRefreshCw className="mr-1.5 inline-block" /> Refresh
-                        Resources
+                        <FiRefreshCw className="mr-1.5 inline-block" />
+                        Refresh Resources
                       </button>
                       {searchTerm && (
                         <button
