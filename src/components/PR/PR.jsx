@@ -4,7 +4,7 @@ import { auth } from "../../firebase";
 import { alpha, Box, Container, useTheme } from "@mui/material";
 import MeetingDetailsSkeleton from "../../UI/MeetingDetailsSkeleton";
 
-const ProtectedRoute = ({ children }) => {
+const PR = ({ children }) => {
   const theme = useTheme();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -43,7 +43,8 @@ const ProtectedRoute = ({ children }) => {
   if (!user) {
     return <Navigate to="/login" />;
   }
+
   return children;
 };
 
-export default ProtectedRoute;
+export default PR;

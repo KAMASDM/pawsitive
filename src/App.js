@@ -12,6 +12,7 @@ import NotFound from "./components/NotFound/NotFound";
 import NearbyMates from "./components/NearbyMates/NearbyMates";
 import AdoptPet from "./components/AdoptPet/AdoptPet";
 import PetDetail from "./components/NearbyMates/PetDetail";
+import PR from "./components/PR/PR";
 import ScrollToTop from "./UI/ScrollToTop";
 
 function App() {
@@ -22,20 +23,87 @@ function App() {
         <Header />
         <main>
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route
+              path="/"
+              element={
+                <PR>
+                  <Home />
+                </PR>
+              }
+            />
             <Route path="/login" element={<Login />} />
-            <Route path="/dog-resources" element={<DogResources />} />
-            <Route path="/cat-resources" element={<CatResources />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/resources/:category" element={<ResourceList />} />
+            <Route
+              path="/dog-resources"
+              element={
+                <PR>
+                  <DogResources />
+                </PR>
+              }
+            />
+            <Route
+              path="/resources/:category"
+              element={
+                <PR>
+                  <ResourceList />
+                </PR>
+              }
+            />
+            <Route
+              path="/cat-resources"
+              element={
+                <PR>
+                  <CatResources />
+                </PR>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <PR>
+                  <Profile />
+                </PR>
+              }
+            />
             <Route
               path="/resource-details/:resourceId"
-              element={<ResourceDetail />}
+              element={
+                <PR>
+                  <ResourceDetail />
+                </PR>
+              }
             />
-            <Route path="/map/:category" element={<ResourceList />} />
-            <Route path="/nearby-mates" element={<NearbyMates />} />
-            <Route path="/pet-detail/:petId" element={<PetDetail />} />
-            <Route path="/adopt-pets" element={<AdoptPet />} />
+            <Route
+              path="/map/:category"
+              element={
+                <PR>
+                  <ResourceList viewMode="map" />
+                </PR>
+              }
+            />
+            <Route
+              path="/nearby-mates"
+              element={
+                <PR>
+                  <NearbyMates />
+                </PR>
+              }
+            />
+            <Route
+              path="/pet-detail/:petId"
+              element={
+                <PR>
+                  <PetDetail />
+                </PR>
+              }
+            />
+            <Route
+              path="/adopt-pets"
+              element={
+                <PR>
+                  <AdoptPet />
+                </PR>
+              }
+            />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </main>

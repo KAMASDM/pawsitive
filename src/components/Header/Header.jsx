@@ -13,10 +13,12 @@ const Header = () => {
   const [user, setUser] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [matingRequests, setMatingRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       setUser(user ? user : null);
+      setLoading(false);
     });
     return () => unsubscribe();
   }, []);
@@ -140,6 +142,10 @@ const Header = () => {
     (req) => req.direction === "incoming" && req.status === "pending"
   ).length;
 
+  if (loading || !user) {
+    return null;
+  }
+
   return (
     <>
       <header className="bg-lavender-900 text-lavender-100 shadow-lg sticky top-0 z-50">
@@ -155,42 +161,38 @@ const Header = () => {
               </span>
             </Link>
             <nav className="hidden md:flex items-center space-x-2">
-              {user && (
-                <>
-                  <NavLink to="/">
-                    <FiHome className="mr-1" /> Home
-                  </NavLink>
-                  <NavLink to="/dog-resources">
-                    <FaDog className="mr-1" /> Dogs
-                  </NavLink>
-                  <NavLink to="/cat-resources">
-                    <FaCat className="mr-1" /> Cats
-                  </NavLink>
-                  <NavLink to="/profile">
-                    <FiUser className="mr-1" /> Profile
-                  </NavLink>
-                  <NavLink>
-                    <div className="flex items-center relative">
-                      <FiBell className="mr-1" />
-                      {pendingRequestsCount > 0 && (
-                        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                          {pendingRequestsCount}
-                        </span>
-                      )}
-                      Notifications
-                    </div>
-                  </NavLink>
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center text-lavender-200 hover:text-white hover:bg-lavender-700 px-3 py-2 rounded-lg transition-colors"
-                  >
-                    <FiLogOut className="mr-1" /> Logout
-                  </button>
-                </>
-              )}
+              <NavLink to="/">
+                <FiHome className="mr-1" /> Home
+              </NavLink>
+              <NavLink to="/dog-resources">
+                <FaDog className="mr-1" /> Dogs
+              </NavLink>
+              <NavLink to="/cat-resources">
+                <FaCat className="mr-1" /> Cats
+              </NavLink>
+              <NavLink to="/profile">
+                <FiUser className="mr-1" /> Profile
+              </NavLink>
+              <NavLink>
+                <div className="flex items-center relative">
+                  <FiBell className="mr-1" />
+                  {pendingRequestsCount > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                      {pendingRequestsCount}
+                    </span>
+                  )}
+                  Notifications
+                </div>
+              </NavLink>
+              <button
+                onClick={handleLogout}
+                className="flex items-center text-lavender-200 hover:text-white hover:bg-lavender-700 px-3 py-2 rounded-lg transition-colors"
+              >
+                <FiLogOut className="mr-1" /> Logout
+              </button>
             </nav>
             <div className="md:hidden flex items-center">
-              {user && pendingRequestsCount > 0 && (
+              {pendingRequestsCount > 0 && (
                 <div className="relative mr-4">
                   <Link to="/profile" className="text-white">
                     <FiBell size={20} />
@@ -210,7 +212,7 @@ const Header = () => {
             </div>
           </div>
         </div>
-        {isMenuOpen && user && (
+        {isMenuOpen && (
           <div className="md:hidden bg-lavender-800 animate-fadeIn">
             <div className="container mx-auto px-4 py-2 space-y-1">
               <MobileNavLink to="/" onClick={() => setIsMenuOpen(false)}>
@@ -241,7 +243,7 @@ const Header = () => {
           </div>
         )}
       </header>
-      {user && <BottomNavigation />}
+      <BottomNavigation />
     </>
   );
 };
