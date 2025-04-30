@@ -37,7 +37,7 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
   const [showHours, setShowHours] = useState(false);
   const [editComment, setEditComment] = useState(null);
   const [commentDialogOpen, setCommentDialogOpen] = useState(false);
-  const [directionsVisible, setDirectionsVisible] = useState(false);
+  const directionsVisible = false;
   const [mapLoading, setMapLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [checkedOpenStatus, setCheckedOpenStatus] = useState(false);

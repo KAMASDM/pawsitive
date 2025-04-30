@@ -91,7 +91,7 @@ const Login = () => {
             <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-24 h-24 bg-lavender-100 rounded-full animate-pulse"></div>
             <img
               src={logo}
-              alt="Pawsitive Logo"
+              alt="Pawppy Logo"
               className="w-32 h-32 rounded-full border-4 border-lavender-300 shadow-lg relative z-10 animate-bounce-slow"
             />
             <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 text-2xl filter drop-shadow-md">
@@ -100,7 +100,7 @@ const Login = () => {
           </div>
 
           <h2 className="text-3xl font-bold text-center text-lavender-900 mb-2">
-            Welcome to Pawsitive
+            Welcome to Pawppy
           </h2>
           <p className="text-center text-lavender-600 mb-6">
             Your ultimate pet resource finder

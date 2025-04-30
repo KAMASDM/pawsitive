@@ -74,7 +74,7 @@ const HeroSection = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            Pawsitive <span className="text-lavender-200">Resources</span>
+            Pawppy <span className="text-lavender-200">Resources</span>
           </motion.h1>
           <motion.p
             className="text-lg md:text-xl mb-10 text-lavender-100 max-w-2xl"
