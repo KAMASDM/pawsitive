@@ -149,9 +149,9 @@ const Header = () => {
               to="/"
               className="flex items-center hover:opacity-90 transition-opacity"
             >
-              <img src={logo} alt="Pawsitive Logo" className="h-10 mr-3" />
+              <img src={logo} alt="Pawppy" className="h-10 mr-3" />
               <span className="text-2xl font-bold text-white hidden sm:inline">
-                Pawsitive
+                Pawppy
               </span>
             </Link>
             <nav className="hidden md:flex items-center space-x-2">

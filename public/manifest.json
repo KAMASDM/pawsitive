@@ -1,26 +1,11 @@
 {
-  "short_name": "Pawsitiv",
-  "name": "Pawsitiv App",
-  "description": "Pawsitiv is a web app that provides resources",
+  "short_name": "Pawppy",
+  "name": "Pawppy App",
+  "description": "Pawppy is a web app that provides resources",
   "icons": [
     {
-      "src": "icons/icon-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "icons/icon-256x256.png",
-      "sizes": "256x256",
-      "type": "image/png"
-    },
-    {
-      "src": "icons/icon-384x384.png",
-      "sizes": "384x384",
-      "type": "image/png"
-    },
-    {
-      "src": "icons/icon-512x512.png",
-      "sizes": "512x512",
+      "src": "favicon.png",
+      "sizes": "192x192 256x256 384x384 512x512",
       "type": "image/png"
     }
   ],
@@ -38,7 +23,7 @@
       "url": "/DogResources",
       "icons": [
         {
-          "src": "icons/women.png",
+          "src": "favicon.png",
           "sizes": "192x192",
           "type": "image/png"
         }
@@ -51,7 +36,7 @@
       "url": "/CatResources",
       "icons": [
         {
-          "src": "icons/lgbtqia.png",
+          "src": "favicon.png",
           "sizes": "192x192",
           "type": "image/png"
         }

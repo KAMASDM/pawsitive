@@ -12,30 +12,34 @@ import NotFound from "./components/NotFound/NotFound";
 import NearbyMates from "./components/NearbyMates/NearbyMates";
 import AdoptPet from "./components/AdoptPet/AdoptPet";
 import PetDetail from "./components/NearbyMates/PetDetail";
+import ScrollToTop from "./UI/ScrollToTop";
 
 function App() {
   return (
-    <div className="min-h-screen bg-lavender-50">
-      <Header />
-      <main>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/dog-resources" element={<DogResources />} />
-          <Route path="/cat-resources" element={<CatResources />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/resources/:category" element={<ResourceList />} />
-          <Route
-            path="/resource-details/:resourceId"
-            element={<ResourceDetail />}
-          />
-          <Route path="/map/:category" element={<ResourceList />} />
-          <Route path="/nearby-mates" element={<NearbyMates />} />
-          <Route path="/pet-detail/:petId" element={<PetDetail />} />
-          <Route path="/adopt-pets" element={<AdoptPet />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </main>
+    <div>
+      <ScrollToTop />
+      <div className="min-h-screen bg-lavender-50">
+        <Header />
+        <main>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/dog-resources" element={<DogResources />} />
+            <Route path="/cat-resources" element={<CatResources />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/resources/:category" element={<ResourceList />} />
+            <Route
+              path="/resource-details/:resourceId"
+              element={<ResourceDetail />}
+            />
+            <Route path="/map/:category" element={<ResourceList />} />
+            <Route path="/nearby-mates" element={<NearbyMates />} />
+            <Route path="/pet-detail/:petId" element={<PetDetail />} />
+            <Route path="/adopt-pets" element={<AdoptPet />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </main>
+      </div>
     </div>
   );
 }
