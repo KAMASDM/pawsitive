@@ -137,7 +137,7 @@ const PetDetail = () => {
 
   const handleRequestMating = () => {
     if (!user) {
-      navigate("/login", { state: { from: `/pet-detail/${petId}` } });
+      navigate("/", { state: { from: `/pet-detail/${petId}` } });
       return;
     }
     setOpenMatingRequestDialog(true);

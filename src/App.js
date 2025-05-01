@@ -23,15 +23,15 @@ function App() {
         <Header />
         <main>
           <Routes>
+            <Route path="/" element={<Login />} />
             <Route
-              path="/"
+              path="/dashboard"
               element={
                 <PR>
                   <Home />
                 </PR>
               }
             />
-            <Route path="/login" element={<Login />} />
             <Route
               path="/dog-resources"
               element={
