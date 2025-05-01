@@ -25,7 +25,7 @@ const Header = () => {
 
   const handleLogout = () => {
     auth.signOut();
-    navigate("/login");
+    navigate("/");
     setIsMenuOpen(false);
   };
 
@@ -161,7 +161,7 @@ const Header = () => {
               </span>
             </Link>
             <nav className="hidden md:flex items-center space-x-2">
-              <NavLink to="/">
+              <NavLink to="/dashboard">
                 <FiHome className="mr-1" /> Home
               </NavLink>
               <NavLink to="/dog-resources">
@@ -173,7 +173,7 @@ const Header = () => {
               <NavLink to="/profile">
                 <FiUser className="mr-1" /> Profile
               </NavLink>
-              <NavLink>
+              <NavLink to="/profile">
                 <div className="flex items-center relative">
                   <FiBell className="mr-1" />
                   {pendingRequestsCount > 0 && (
@@ -254,11 +254,10 @@ const NavLink = ({ to, children }) => {
   return (
     <Link
       to={to}
-      className={`flex items-center px-3 py-2 rounded-lg transition-colors ${
-        isActive
-          ? "text-white bg-lavender-700"
-          : "text-lavender-200 hover:text-white hover:bg-lavender-700"
-      }`}
+      className={`flex items-center px-3 py-2 rounded-lg transition-colors ${isActive
+        ? "text-white bg-lavender-700"
+        : "text-lavender-200 hover:text-white hover:bg-lavender-700"
+        }`}
     >
       {children}
     </Link>
@@ -272,11 +271,10 @@ const MobileNavLink = ({ to, onClick, children }) => {
     <Link
       to={to}
       onClick={onClick}
-      className={`flex items-center py-2 px-4 rounded-lg transition-colors ${
-        isActive
-          ? "text-white bg-lavender-700"
-          : "text-lavender-200 hover:text-white hover:bg-lavender-700"
-      }`}
+      className={`flex items-center py-2 px-4 rounded-lg transition-colors ${isActive
+        ? "text-white bg-lavender-700"
+        : "text-lavender-200 hover:text-white hover:bg-lavender-700"
+        }`}
     >
       {children}
     </Link>

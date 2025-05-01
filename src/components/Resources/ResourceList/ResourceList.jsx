@@ -151,8 +151,8 @@ const ResourceList = () => {
   const themeColor = isDogCategory
     ? "lavender"
     : isCatCategory
-    ? "lavender"
-    : "lavender";
+      ? "lavender"
+      : "lavender";
 
   const getCategoryName = () => {
     let name = category?.replace(/^(dog_|cat_)/, "").replace(/_/g, " ");
@@ -217,8 +217,8 @@ const ResourceList = () => {
                       isDogCategory
                         ? "/dog-resources"
                         : isCatCategory
-                        ? "/cat-resources"
-                        : "/"
+                          ? "/cat-resources"
+                          : "/dashboard"
                     )
                   }
                   className="mr-3 p-2 hover:bg-lavender-200 rounded-full transition-colors text-lavender-700 hover:text-lavender-900"
@@ -321,11 +321,10 @@ const ResourceList = () => {
             </motion.div>
             {displayedResources.length > 0 && totalPages > 1 && (
               <div
-                className={`mt-8 ${
-                  isMobile
+                className={`mt-8 ${isMobile
                     ? "fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-md z-20"
                     : ""
-                }`}
+                  }`}
               >
                 <PaginationControls />
               </div>

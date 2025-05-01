@@ -120,10 +120,10 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
         );
         setLiked(likeDoc.exists());
       } catch (firestoreErr) {
-        console.warn("Firestore check failed:", firestoreErr);
+        console.log("Firestore check failed");
       }
     } catch (error) {
-      console.warn("Failed to check if resource is liked:", error);
+      console.log("Failed to check if resource is liked");
     }
   }, [resource.id]);
 
@@ -154,7 +154,7 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
         }));
         setComments(commentsList);
       } catch (firestoreErr) {
-        console.warn("Firestore comments fetch failed:", firestoreErr);
+        console.log("Firestore comments fetch failed");
         setComments([]);
       }
     } catch (error) {
@@ -222,14 +222,12 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
   };
 
   const handleShare = () => {
-    const detailUrl = `${window.location.origin}/resource-details/${
-      resource.id || resource.place_id
-    }`;
+    const detailUrl = `${window.location.origin}/resource-details/${resource.id || resource.place_id
+      }`;
     const shareData = {
       title: resource.name,
-      text: `Check out this pet resource: ${resource.name} at ${
-        resource.address || resource.vicinity
-      }.`,
+      text: `Check out this pet resource: ${resource.name} at ${resource.address || resource.vicinity
+        }.`,
       url: detailUrl,
     };
     if (navigator.share) {
@@ -346,7 +344,7 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
     if (!resource.id || !commentId) return;
     if (!window.confirm("Delete comment?")) return;
     try {
-    } catch (rtdbError) {}
+    } catch (rtdbError) { }
   };
 
   const handleViewDetails = (resource) => {
@@ -374,8 +372,8 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
   const themeColor = isDogResource
     ? "lavender"
     : isCatResource
-    ? "lavender"
-    : "lavender";
+      ? "lavender"
+      : "lavender";
   const bgTheme = {
     lavender: "bg-lavender-600 hover:bg-lavender-700",
     blue: "bg-blue-600 hover:bg-blue-700",
@@ -428,10 +426,6 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
             }
             alt={resource.name}
             className="w-full h-full object-cover transition-transform duration-500 ease-in-out group-hover:scale-105"
-            onError={(e) => {
-              e.target.src =
-                "https://via.placeholder.com/400x300.png?text=Error";
-            }}
           />
         </div>
         <div className="absolute top-0 left-0 w-full p-3 flex justify-between items-start">
@@ -449,16 +443,14 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
           </div>
           {checkedOpenStatus && (
             <div
-              className={`px-3 py-1 text-xs font-semibold rounded-full shadow flex items-center ${
-                isOpen
-                  ? "bg-green-100 text-green-800"
-                  : "bg-red-100 text-red-800"
-              }`}
+              className={`px-3 py-1 text-xs font-semibold rounded-full shadow flex items-center ${isOpen
+                ? "bg-green-100 text-green-800"
+                : "bg-red-100 text-red-800"
+                }`}
             >
               <div
-                className={`w-2 h-2 rounded-full mr-1.5 ${
-                  isOpen ? "bg-green-500" : "bg-red-500"
-                } animate-pulse`}
+                className={`w-2 h-2 rounded-full mr-1.5 ${isOpen ? "bg-green-500" : "bg-red-500"
+                  } animate-pulse`}
               ></div>
               {isOpen ? "Open" : "Closed"}
             </div>
@@ -469,9 +461,8 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={handleLike}
-            className={`bg-white w-9 h-9 rounded-full flex items-center justify-center shadow-md transition-colors ${
-              liked ? "text-red-500" : "text-gray-500 hover:text-red-400"
-            }`}
+            className={`bg-white w-9 h-9 rounded-full flex items-center justify-center shadow-md transition-colors ${liked ? "text-red-500" : "text-gray-500 hover:text-red-400"
+              }`}
             disabled={!userAuthenticated}
             title={
               userAuthenticated
@@ -687,11 +678,10 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
                 <button
                   onClick={handleCommentSubmit}
                   disabled={!userAuthenticated || !newComment.trim()}
-                  className={`px-4 py-2 text-sm text-white rounded-lg ${
-                    !userAuthenticated || !newComment.trim()
-                      ? "bg-gray-300 cursor-not-allowed"
-                      : `${bgTheme[themeColor]}`
-                  }`}
+                  className={`px-4 py-2 text-sm text-white rounded-lg ${!userAuthenticated || !newComment.trim()
+                    ? "bg-gray-300 cursor-not-allowed"
+                    : `${bgTheme[themeColor]}`
+                    }`}
                 >
                   {editComment ? "Update" : "Submit"}
                 </button>

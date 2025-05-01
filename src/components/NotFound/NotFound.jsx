@@ -22,7 +22,7 @@ const NotFound = () => {
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <button
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/dashboard")}
             className="bg-lavender-600 hover:bg-lavender-700 text-white font-semibold py-3 px-8 rounded-full transition-colors duration-300"
           >
             Go Home
