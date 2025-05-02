@@ -28,7 +28,6 @@ import VaccinationDialog from "./components/VaccinationDialog";
 import MessageDialog from "./components/MessageDialog";
 import ConversationsList from "./components/ConversationsList";
 import useResponsive from "../../hooks/useResponsive";
-import { alpha, Box, Container, useTheme } from "@mui/material";
 import MeetingDetailsSkeleton from "../../UI/MeetingDetailsSkeleton";
 
 const TabPanel = ({ children, value, index }) => {
@@ -61,7 +60,6 @@ const Profile = () => {
   const navigate = useNavigate();
   const { isMobile } = useResponsive();
   const user = auth.currentUser;
-  const theme = useTheme();
 
   const [likedResources, setLikedResources] = useState([]);
   const [pets, setPets] = useState([]);
@@ -70,6 +68,7 @@ const Profile = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [openPetDialog, setOpenPetDialog] = useState(false);
   const [openVaccinationDialog, setOpenVaccinationDialog] = useState(false);
+  const [isSavingVaccination, setIsSavingVaccination] = useState(false);
   const [openMessageDialog, setOpenMessageDialog] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
@@ -398,7 +397,6 @@ const Profile = () => {
     }
   }, [user]);
 
-
   const handleProfileTabChange = (newValue) => {
     setProfileTabValue(newValue);
   };
@@ -507,20 +505,28 @@ const Profile = () => {
     setOpenVaccinationDialog(true);
   };
 
-  const handleSaveVaccination = () => {
+  const handleSaveVaccination = async () => {
     if (!currentVaccination.name || !currentVaccination.date) return;
 
-    const updatedPet = { ...currentPet };
-    updatedPet.vaccinations = updatedPet.vaccinations || [];
+    setIsSavingVaccination(true);
 
-    if (vaccinationEditIndex >= 0) {
-      updatedPet.vaccinations[vaccinationEditIndex] = currentVaccination;
-    } else {
-      updatedPet.vaccinations.push(currentVaccination);
+    try {
+      const updatedPet = { ...currentPet };
+      updatedPet.vaccinations = updatedPet.vaccinations || [];
+
+      if (vaccinationEditIndex >= 0) {
+        updatedPet.vaccinations[vaccinationEditIndex] = currentVaccination;
+      } else {
+        updatedPet.vaccinations.push(currentVaccination);
+      }
+
+      setCurrentPet(updatedPet);
+      setOpenVaccinationDialog(false);
+    } catch (error) {
+      console.error("Error saving vaccination:", error);
+    } finally {
+      setIsSavingVaccination(false);
     }
-
-    setCurrentPet(updatedPet);
-    setOpenVaccinationDialog(false);
   };
 
   const handleDeleteVaccination = (index) => {
@@ -703,28 +709,21 @@ const Profile = () => {
           setIsLoading(false);
         });
     }
-  }, [fetchLikedResources, fetchMatingRequests, fetchUserComments, fetchUserPets, user]);
+  }, [
+    fetchLikedResources,
+    fetchMatingRequests,
+    fetchUserComments,
+    fetchUserPets,
+    user,
+  ]);
 
   if (isLoading) {
     return (
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          minHeight: "100vh",
-          bgcolor: alpha(theme.palette.background.default, 0.97),
-          backgroundImage: `radial-gradient(${alpha(
-            theme.palette.primary.main,
-            0.05
-          )} 1px, transparent 0)`,
-          backgroundSize: "20px 20px",
-          backgroundPosition: "0 0",
-        }}
-      >
-        <Container maxWidth="lg" sx={{ py: { xs: 3, md: 4 }, flexGrow: 1 }}>
+      <div className="min-h-screen bg-lavender-50">
+        <div className="container max-w-7xl mx-auto py-6 px-4">
           <MeetingDetailsSkeleton />
-        </Container>
-      </Box>
+        </div>
+      </div>
     );
   }
 
@@ -745,47 +744,53 @@ const Profile = () => {
       </div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
         <UserInfo user={user} />
-        <div className="mt-6 mb-2 border-b border-lavender-200 overflow-x-auto hide-scrollbar">
+        <div className="mt-6 mb-2 border-b border-gray-200 overflow-x-auto hide-scrollbar">
           <div className="flex">
             <button
               onClick={() => handleProfileTabChange(0)}
-              className={`px-4 py-3 text-sm font-medium flex items-center border-b-2 transition-colors ${profileTabValue === 0
-                ? "text-lavender-700 border-lavender-600"
-                : "text-gray-500 border-transparent hover:text-lavender-600 hover:border-lavender-200"
-                }`}
+              className={`px-4 py-3 text-sm font-medium flex items-center border-b-2 transition-colors ${
+                profileTabValue === 0
+                  ? "text-lavender-700 border-lavender-600"
+                  : "text-gray-500 border-transparent hover:text-lavender-600 hover:border-lavender-200"
+              }`}
             >
               <FaPaw
-                className={`${profileTabValue === 0 ? "text-lavender-600" : "text-gray-400"
-                  } mr-2`}
+                className={`${
+                  profileTabValue === 0 ? "text-lavender-600" : "text-gray-400"
+                } mr-2`}
               />
               My Pets
             </button>
             <button
               onClick={() => handleProfileTabChange(1)}
-              className={`px-4 py-3 text-sm font-medium flex items-center border-b-2 transition-colors ${profileTabValue === 1
-                ? "text-lavender-700 border-lavender-600"
-                : "text-gray-500 border-transparent hover:text-lavender-600 hover:border-lavender-200"
-                }`}
+              className={`px-4 py-3 text-sm font-medium flex items-center border-b-2 transition-colors ${
+                profileTabValue === 1
+                  ? "text-lavender-700 border-lavender-600"
+                  : "text-gray-500 border-transparent hover:text-lavender-600 hover:border-lavender-200"
+              }`}
             >
               <FiHeart
-                className={`${profileTabValue === 1 ? "text-lavender-600" : "text-gray-400"
-                  } mr-2`}
+                className={`${
+                  profileTabValue === 1 ? "text-lavender-600" : "text-gray-400"
+                } mr-2`}
               />
               Resources
             </button>
             <button
               onClick={() => handleProfileTabChange(2)}
-              className={`px-4 py-3 text-sm font-medium flex items-center border-b-2 transition-colors ${profileTabValue === 2
-                ? "text-lavender-700 border-lavender-600"
-                : "text-gray-500 border-transparent hover:text-lavender-600 hover:border-lavender-200"
-                }`}
+              className={`px-4 py-3 text-sm font-medium flex items-center border-b-2 transition-colors ${
+                profileTabValue === 2
+                  ? "text-lavender-700 border-lavender-600"
+                  : "text-gray-500 border-transparent hover:text-lavender-600 hover:border-lavender-200"
+              }`}
             >
               <div className="relative mr-2">
                 <FiHeart
-                  className={`${profileTabValue === 2
-                    ? "text-lavender-600"
-                    : "text-gray-400"
-                    }`}
+                  className={`${
+                    profileTabValue === 2
+                      ? "text-lavender-600"
+                      : "text-gray-400"
+                  }`}
                 />
                 {pendingRequestsCount > 0 && (
                   <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
@@ -795,14 +800,16 @@ const Profile = () => {
             </button>
             <button
               onClick={() => handleProfileTabChange(3)}
-              className={`px-4 py-3 text-sm font-medium flex items-center border-b-2 transition-colors ${profileTabValue === 3
-                ? "text-lavender-700 border-lavender-600"
-                : "text-gray-500 border-transparent hover:text-lavender-600 hover:border-lavender-200"
-                }`}
+              className={`px-4 py-3 text-sm font-medium flex items-center border-b-2 transition-colors ${
+                profileTabValue === 3
+                  ? "text-lavender-700 border-lavender-600"
+                  : "text-gray-500 border-transparent hover:text-lavender-600 hover:border-lavender-200"
+              }`}
             >
               <FiMessageSquare
-                className={`${profileTabValue === 3 ? "text-lavender-600" : "text-gray-400"
-                  } mr-2`}
+                className={`${
+                  profileTabValue === 3 ? "text-lavender-600" : "text-gray-400"
+                } mr-2`}
               />
               Messages
             </button>
@@ -880,16 +887,14 @@ const Profile = () => {
                           ) : (
                             <span>{request.senderPetName?.[0] || "P"}</span>
                           )
+                        ) : request.receiverPetImage ? (
+                          <img
+                            src={request.receiverPetImage}
+                            alt={request.receiverPetName}
+                            className="w-full h-full object-cover"
+                          />
                         ) : (
-                          request.receiverPetImage ? (
-                            <img
-                              src={request.receiverPetImage}
-                              alt={request.receiverPetName}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <span>{request.receiverPetName?.[0] || "P"}</span>
-                          )
+                          <span>{request.receiverPetName?.[0] || "P"}</span>
                         )}
                       </div>
                       <div className="ml-3">
@@ -905,10 +910,12 @@ const Profile = () => {
                         </div>
                         <div className="text-sm text-gray-600 mt-1">
                           {request.direction === "incoming"
-                            ? `${request.senderPetName} (${request.senderPetBreed || "Unknown breed"
-                            })`
-                            : `${request.receiverPetName} (${request.receiverPetBreed || "Unknown breed"
-                            })`}{" "}
+                            ? `${request.senderPetName} (${
+                                request.senderPetBreed || "Unknown breed"
+                              })`
+                            : `${request.receiverPetName} (${
+                                request.receiverPetBreed || "Unknown breed"
+                              })`}{" "}
                           for your{" "}
                           {request.direction === "incoming"
                             ? request.receiverPetName
@@ -1043,6 +1050,7 @@ const Profile = () => {
           isMobile={isMobile}
           petType={currentPet.type}
           vaccinationEditIndex={vaccinationEditIndex}
+          loading={isSavingVaccination}
         />
       )}
       {openMessageDialog && (

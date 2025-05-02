@@ -119,7 +119,7 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
             doc(db, "resources", resource.id, "likes", userUid)
           );
           setLiked(likeDoc.exists());
-        } catch (firestoreErr) { }
+        } catch (firestoreErr) {}
       }
     } catch (error) {
       try {
@@ -225,8 +225,8 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
     const newLikesCount = newLikedState
       ? currentLikes + 1
       : currentLikes > 0
-        ? currentLikes - 1
-        : 0;
+      ? currentLikes - 1
+      : 0;
 
     setLiked(newLikedState);
     setLikes(newLikesCount);
@@ -291,12 +291,14 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
   };
 
   const handleShare = () => {
-    const detailUrl = `${window.location.origin}/resource-details/${resource.id || resource.place_id
-      }`;
+    const detailUrl = `${window.location.origin}/resource-details/${
+      resource.id || resource.place_id
+    }`;
     const shareData = {
       title: resource.name,
-      text: `Check out this pet resource: ${resource.name} at ${resource.address || resource.vicinity || "N/A"
-        }.`,
+      text: `Check out this pet resource: ${resource.name} at ${
+        resource.address || resource.vicinity || "N/A"
+      }.`,
       url: detailUrl,
     };
     if (navigator.share) {
@@ -537,55 +539,6 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
     );
   };
 
-  const isDogResource = resource.category?.startsWith("dog_");
-  const isCatResource = resource.category?.startsWith("cat_");
-  const themeColor = isDogResource
-    ? "blue"
-    : isCatResource
-      ? "amber"
-      : "lavender";
-
-  const bgTheme = {
-    lavender: "bg-lavender-600 hover:bg-lavender-700",
-    blue: "bg-blue-600 hover:bg-blue-700",
-    amber: "bg-amber-600 hover:bg-amber-700",
-  };
-  const textTheme = {
-    lavender: "text-lavender-600 hover:text-lavender-800",
-    blue: "text-blue-600 hover:text-blue-800",
-    amber: "text-amber-600 hover:text-amber-800",
-  };
-  const ringTheme = {
-    lavender: "focus:ring-lavender-500",
-    blue: "focus:ring-blue-500",
-    amber: "focus:ring-amber-500",
-  };
-  const bgLight = {
-    lavender: "bg-lavender-50",
-    blue: "bg-blue-50",
-    amber: "bg-amber-50",
-  };
-  const textDark = {
-    lavender: "text-lavender-900",
-    blue: "text-blue-900",
-    amber: "text-amber-900",
-  };
-  const textMedium = {
-    lavender: "text-lavender-800",
-    blue: "text-blue-800",
-    amber: "text-amber-800",
-  };
-  const borderTheme = {
-    lavender: "border-lavender-200",
-    blue: "border-blue-200",
-    amber: "border-amber-200",
-  };
-  const tagBgTheme = {
-    lavender: "bg-lavender-600",
-    blue: "bg-blue-600",
-    amber: "bg-amber-600",
-  };
-
   return (
     <>
       <motion.div
@@ -611,9 +564,7 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
             />
           </div>
           <div className="absolute top-0 left-0 w-full p-3 flex justify-between items-start">
-            <div
-              className={`${tagBgTheme[themeColor]} text-white px-3 py-1 text-xs font-semibold rounded-full shadow capitalize`}
-            >
+            <div className="bg-lavender-600 text-white px-3 py-1 text-xs font-semibold rounded-full shadow capitalize">
               {resource.type ||
                 resource.category
                   ?.replace(/^(dog_|cat_)/, "")
@@ -622,14 +573,16 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
             </div>
             {checkedOpenStatus && (
               <div
-                className={`px-3 py-1 text-xs font-semibold rounded-full shadow flex items-center ${isOpen
+                className={`px-3 py-1 text-xs font-semibold rounded-full shadow flex items-center ${
+                  isOpen
                     ? "bg-green-100 text-green-800"
                     : "bg-red-100 text-red-800"
-                  }`}
+                }`}
               >
                 <div
-                  className={`w-2 h-2 rounded-full mr-1.5 ${isOpen ? "bg-green-500" : "bg-red-500"
-                    } ${isOpen ? "animate-pulse" : ""}`}
+                  className={`w-2 h-2 rounded-full mr-1.5 ${
+                    isOpen ? "bg-green-500" : "bg-red-500"
+                  } ${isOpen ? "animate-pulse" : ""}`}
                 ></div>
                 {isOpen ? "Open" : "Closed"}
               </div>
@@ -640,8 +593,9 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               onClick={handleLike}
-              className={`bg-white w-9 h-9 rounded-full flex items-center justify-center shadow-md transition-colors ${liked ? "text-red-500" : "text-gray-500 hover:text-red-400"
-                } ${!userAuthenticated ? "cursor-not-allowed opacity-70" : ""}`}
+              className={`bg-white w-9 h-9 rounded-full flex items-center justify-center shadow-md transition-colors ${
+                liked ? "text-red-500" : "text-gray-500 hover:text-red-400"
+              } ${!userAuthenticated ? "cursor-not-allowed opacity-70" : ""}`}
               disabled={!userAuthenticated}
               title={
                 userAuthenticated
@@ -658,7 +612,7 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
 
         <div className="p-5 flex-grow flex flex-col">
           <h2
-            className={`text-xl font-bold ${textDark[themeColor]} mb-1 line-clamp-1`}
+            className="text-xl font-bold text-lavender-900 mb-1 line-clamp-1"
             title={resource.name || "No Name"}
           >
             {resource.name || "Unnamed Resource"}
@@ -696,7 +650,7 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
               <a
                 href={`tel:${resource.phone}`}
                 title={`Call ${resource.phone}`}
-                className={`flex items-center ${textTheme[themeColor]} transition-colors`}
+                className="flex items-center text-lavender-600 hover:text-lavender-800 transition-colors"
               >
                 <FiPhone className="w-4 h-4 mr-1" /> Phone
               </a>
@@ -711,7 +665,7 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
                 target="_blank"
                 rel="noopener noreferrer"
                 title="Visit website"
-                className={`flex items-center ${textTheme[themeColor]} transition-colors`}
+                className="flex items-center text-lavender-600 hover:text-lavender-800 transition-colors"
               >
                 <FiGlobe className="w-4 h-4 mr-1" /> Website
               </a>
@@ -723,7 +677,7 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
               <div className="flex space-x-1">
                 <button
                   onClick={() => setCommentDialogOpen(true)}
-                  className={`flex items-center text-xs ${textTheme[themeColor]} p-1.5 rounded-md hover:bg-gray-100 transition-colors`}
+                  className="flex items-center text-xs text-lavender-600 hover:text-lavender-800 p-1.5 rounded-md hover:bg-gray-100 transition-colors"
                   title={
                     userAuthenticated
                       ? "View/Add Comments"
@@ -737,15 +691,15 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
                 </button>
                 <button
                   onClick={() => setShowHours(true)}
-                  className={`flex items-center text-xs ${textTheme[themeColor]} p-1.5 rounded-md hover:bg-gray-100 transition-colors`}
+                  className="flex items-center text-xs text-lavender-600 hover:text-lavender-800 p-1.5 rounded-md hover:bg-gray-100 transition-colors"
                   title="Operating Hours"
-                  disabled={!resource.hours && !resource.time} // Disable if no hours
+                  disabled={!resource.hours && !resource.time}
                 >
                   <FiClock className="w-4 h-4" />
                 </button>
                 <button
                   onClick={handleShare}
-                  className={`flex items-center text-xs ${textTheme[themeColor]} p-1.5 rounded-md hover:bg-gray-100 transition-colors`}
+                  className="flex items-center text-xs text-lavender-600 hover:text-lavender-800 p-1.5 rounded-md hover:bg-gray-100 transition-colors"
                   title="Share"
                 >
                   <FiShare2 className="w-4 h-4" />
@@ -753,7 +707,7 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
               </div>
               <button
                 onClick={() => handleViewDetails(resource)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium text-white ${bgTheme[themeColor]} hover:shadow-md transition-all flex items-center`}
+                className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-lavender-600 hover:bg-lavender-700 hover:shadow-md transition-all flex items-center"
               >
                 <FiInfo className="w-4 h-4 mr-1.5" /> Details
               </button>
@@ -778,13 +732,9 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
               className="bg-white rounded-xl max-w-sm w-full shadow-xl overflow-hidden flex flex-col max-h-[60vh]"
             >
-              <div
-                className={`p-3 ${bgLight[themeColor]} border-b ${borderTheme[themeColor]} flex-shrink-0`}
-              >
+              <div className="p-3 bg-lavender-50 border-b border-lavender-200 flex-shrink-0">
                 <div className="flex justify-between items-center">
-                  <h2
-                    className={`text-base font-semibold ${textDark[themeColor]}`}
-                  >
+                  <h2 className="text-base font-semibold text-lavender-900">
                     Comments ({comments.length})
                   </h2>
                   <button
@@ -805,19 +755,17 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
                     {comments.map((comment) => (
                       <div
                         key={comment.id}
-                        className={`p-2 rounded-lg ${bgLight[themeColor]}`}
+                        className="p-2 rounded-lg bg-lavender-50"
                       >
                         <div className="flex justify-between items-start mb-1">
-                          <p
-                            className={`font-medium text-xs ${textDark[themeColor]}`}
-                          >
+                          <p className="font-medium text-xs text-lavender-900">
                             {comment.user || "Anonymous"}
                           </p>
                           {canEditComment(comment) && (
                             <div className="flex space-x-1 flex-shrink-0 ml-2">
                               <button
                                 onClick={() => handleEditComment(comment)}
-                                className={`text-${themeColor}-600 hover:text-${themeColor}-800 p-1 rounded hover:bg-${themeColor}-100`}
+                                className="text-lavender-600 hover:text-lavender-800 p-1 rounded hover:bg-lavender-100"
                                 title="Edit"
                                 aria-label="Edit comment"
                               >
@@ -834,9 +782,7 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
                             </div>
                           )}
                         </div>
-                        <p
-                          className={`text-xs ${textMedium[themeColor]} whitespace-pre-wrap break-words`}
-                        >
+                        <p className="text-xs text-lavender-800 whitespace-pre-wrap break-words">
                           {comment.text}
                         </p>
                         <p className="text-xs text-gray-400 mt-1">
@@ -859,7 +805,7 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
                 ) : (
                   <div className="flex flex-col space-y-2">
                     <textarea
-                      className={`w-full p-2 border ${borderTheme[themeColor]} rounded-lg focus:outline-none focus:ring-1 ${ringTheme[themeColor]} resize-none text-xs`}
+                      className="w-full p-2 border border-lavender-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-lavender-500 resize-none text-xs"
                       rows="2"
                       value={newComment}
                       onChange={(e) => setNewComment(e.target.value)}
@@ -885,10 +831,11 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
                       <button
                         onClick={handleCommentSubmit}
                         disabled={!newComment.trim()}
-                        className={`px-3 py-1 text-xs text-white rounded-lg transition-colors ${!newComment.trim()
+                        className={`px-3 py-1 text-xs text-white rounded-lg transition-colors ${
+                          !newComment.trim()
                             ? "bg-gray-300 cursor-not-allowed"
-                            : `${bgTheme[themeColor]}`
-                          }`}
+                            : `bg-lavender-600 hover:bg-lavender-700`
+                        }`}
                       >
                         {editComment ? "Update" : "Submit"}
                       </button>
@@ -919,13 +866,9 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
               className="bg-white rounded-xl max-w-md w-full shadow-xl overflow-hidden flex flex-col max-h-[70vh]"
               onClick={(e) => e.stopPropagation()}
             >
-              <div
-                className={`p-4 ${bgLight[themeColor]} border-b ${borderTheme[themeColor]} flex-shrink-0`}
-              >
+              <div className="p-4 bg-lavender-50 border-b border-lavender-200 flex-shrink-0">
                 <div className="flex justify-between items-center">
-                  <h2
-                    className={`text-lg font-semibold ${textDark[themeColor]} flex items-center`}
-                  >
+                  <h2 className="text-lg font-semibold text-lavender-900 flex items-center">
                     <FiClock className="mr-2" />
                     Operating Hours
                   </h2>
@@ -938,9 +881,7 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
                   </button>
                 </div>
               </div>
-              <div
-                className={`p-4 text-sm ${textMedium[themeColor]} flex-grow overflow-y-auto`}
-              >
+              <div className="p-4 text-sm text-lavender-800 flex-grow overflow-y-auto">
                 {resource.hours ? (
                   Array.isArray(resource.hours) ? (
                     resource.hours.map((t, i) => (
@@ -972,7 +913,7 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
               <div className="bg-gray-50 px-4 py-3 flex justify-end flex-shrink-0 border-t border-gray-200">
                 <button
                   onClick={() => setShowHours(false)}
-                  className={`px-4 py-2 text-sm text-white rounded-lg ${bgTheme[themeColor]}`}
+                  className="px-4 py-2 text-sm text-white rounded-lg bg-lavender-600 hover:bg-lavender-700"
                 >
                   Close
                 </button>
@@ -992,9 +933,7 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
           >
             {mapLoading && (
               <div className="absolute inset-0 bg-white/75 flex items-center justify-center z-10">
-                <div
-                  className={`animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-${themeColor}-600`}
-                ></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-lavender-600"></div>
               </div>
             )}
             <div className="h-64">

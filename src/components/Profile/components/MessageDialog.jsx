@@ -299,23 +299,6 @@ const MessageDialog = ({
             <Typography variant="h6" sx={{ fontWeight: "bold", mb: 0.5 }}>
               {user.displayName}
             </Typography>
-            {/* {senderPet && receiverPet && (
-              <Box sx={{ display: "flex", alignItems: "center" }}>
-                <Typography variant="h6" sx={{ fontWeight: "bold", mb: 0.5 }}>
-                  {user.displayName}
-                </Typography>
-
-                {location.pathname !== "/adopt-pets" && (
-                  <Chip
-                    icon={<FavoriteIcon fontSize="small" />}
-                    label="Mating Request"
-                    size="small"
-                    color="secondary"
-                    sx={{ height: 24 }}
-                  />
-                )}
-              </Box>
-            )} */}
           </Box>
         </Box>
         <IconButton

@@ -42,6 +42,7 @@ const VaccinationDialog = ({
   onSave,
   isEditMode,
   petType,
+  loading = false,
 }) => {
   const currentVaccination = vaccination;
   const setCurrentVaccination = setVaccination;
@@ -53,8 +54,6 @@ const VaccinationDialog = ({
 
   useEffect(() => {
     if (open) {
-      console.log("Dialog opened with vaccination:", currentVaccination);
-      console.log("Pet type:", petType);
       setSelectedVaccine(currentVaccination?.name || "");
       setCustomVaccine(
         currentVaccination?.name === "Other"
@@ -74,12 +73,11 @@ const VaccinationDialog = ({
 
   const filteredVaccinations = vaccineSearch.trim()
     ? getVaccinationList().filter((v) =>
-      v.toLowerCase().includes(vaccineSearch.toLowerCase())
-    )
+        v.toLowerCase().includes(vaccineSearch.toLowerCase())
+      )
     : getVaccinationList();
 
   const handleVaccinationSelect = (vaccination) => {
-    console.log("Selected vaccination:", vaccination);
     setSelectedVaccine(vaccination);
     setCurrentVaccination({
       ...currentVaccination,
@@ -137,6 +135,11 @@ const VaccinationDialog = ({
     });
   };
 
+  const handleSaveClick = async () => {
+    if (!currentVaccination?.name || !currentVaccination?.date) return;
+    await onSave();
+  };
+
   return (
     <AnimatePresence>
       {open && (
@@ -158,6 +161,7 @@ const VaccinationDialog = ({
               <button
                 onClick={onClose}
                 className="text-white/80 hover:text-white transition-colors p-1 rounded-full hover:bg-lavender-500"
+                disabled={loading}
               >
                 <FiX className="w-5 h-5" />
               </button>
@@ -171,21 +175,26 @@ const VaccinationDialog = ({
                   <button
                     type="button"
                     onClick={() => setVaccineDropdownOpen(!vaccineDropdownOpen)}
-                    className={`w-full px-4 py-2.5 rounded-lg border ${!petType || !["dog", "cat"].includes(petType)
-                      ? "border-gray-200 bg-gray-100 cursor-not-allowed"
-                      : "border-lavender-200 bg-white hover:border-lavender-400"
-                      } text-left flex items-center justify-between transition-colors`}
-                    disabled={!petType || !["dog", "cat"].includes(petType)}
+                    className={`w-full px-4 py-2.5 rounded-lg border ${
+                      !petType || !["dog", "cat"].includes(petType)
+                        ? "border-gray-200 bg-gray-100 cursor-not-allowed"
+                        : "border-lavender-200 bg-white hover:border-lavender-400"
+                    } text-left flex items-center justify-between transition-colors`}
+                    disabled={
+                      !petType || !["dog", "cat"].includes(petType) || loading
+                    }
                   >
                     <span
-                      className={`${selectedVaccine ? "text-gray-900" : "text-gray-500"
-                        }`}
+                      className={`${
+                        selectedVaccine ? "text-gray-900" : "text-gray-500"
+                      }`}
                     >
                       {selectedVaccine || "Select vaccination type"}
                     </span>
                     <FiChevronDown
-                      className={`text-gray-400 transition-transform ${vaccineDropdownOpen ? "rotate-180" : ""
-                        }`}
+                      className={`text-gray-400 transition-transform ${
+                        vaccineDropdownOpen ? "rotate-180" : ""
+                      }`}
                     />
                   </button>
                   <AnimatePresence>
@@ -216,10 +225,11 @@ const VaccinationDialog = ({
                                 key={vaccine}
                                 type="button"
                                 onClick={() => handleVaccinationSelect(vaccine)}
-                                className={`w-full text-left px-3 py-2 rounded-md text-sm hover:bg-lavender-50 transition-colors ${selectedVaccine === vaccine
-                                  ? "bg-lavender-100 text-lavender-900 font-medium"
-                                  : "text-gray-700"
-                                  }`}
+                                className={`w-full text-left px-3 py-2 rounded-md text-sm hover:bg-lavender-50 transition-colors ${
+                                  selectedVaccine === vaccine
+                                    ? "bg-lavender-100 text-lavender-900 font-medium"
+                                    : "text-gray-700"
+                                }`}
                               >
                                 <div className="flex items-center">
                                   {selectedVaccine === vaccine && (
@@ -237,10 +247,11 @@ const VaccinationDialog = ({
                           <button
                             type="button"
                             onClick={() => handleVaccinationSelect("Other")}
-                            className={`w-full text-left px-3 py-2 rounded-md text-sm mt-2 border-t border-lavender-100 pt-3 hover:bg-lavender-50 transition-colors ${selectedVaccine === "Other"
-                              ? "bg-lavender-100 text-lavender-900 font-medium"
-                              : "text-gray-700"
-                              }`}
+                            className={`w-full text-left px-3 py-2 rounded-md text-sm mt-2 border-t border-lavender-100 pt-3 hover:bg-lavender-50 transition-colors ${
+                              selectedVaccine === "Other"
+                                ? "bg-lavender-100 text-lavender-900 font-medium"
+                                : "text-gray-700"
+                            }`}
                           >
                             <div className="flex items-center">
                               {selectedVaccine === "Other" && (
@@ -269,6 +280,7 @@ const VaccinationDialog = ({
                         onChange={handleCustomVaccinationChange}
                         placeholder="Enter vaccination name"
                         className="w-full px-4 py-2 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent"
+                        disabled={loading}
                       />
                     </motion.div>
                   )}
@@ -284,6 +296,7 @@ const VaccinationDialog = ({
                     value={formatDateForInput(currentVaccination?.date)}
                     onChange={handleDateChange}
                     className="w-full px-4 py-2 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent pr-10"
+                    disabled={loading}
                   />
                   <FiCalendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 </div>
@@ -298,6 +311,7 @@ const VaccinationDialog = ({
                     value={formatDateForInput(currentVaccination?.nextDue)}
                     onChange={handleNextDueDateChange}
                     className="w-full px-4 py-2 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent pr-10"
+                    disabled={loading}
                   />
                   <FiCalendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 </div>
@@ -317,6 +331,7 @@ const VaccinationDialog = ({
                   placeholder="Additional information, reactions, etc."
                   className="w-full px-4 py-2 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent resize-none"
                   rows={3}
+                  disabled={loading}
                 ></textarea>
               </div>
               <div className="mb-6 p-3 bg-lavender-50 rounded-lg flex items-start">
@@ -333,21 +348,55 @@ const VaccinationDialog = ({
                 <button
                   onClick={onClose}
                   className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+                  disabled={loading}
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={onSave}
+                  onClick={handleSaveClick}
                   disabled={
-                    !currentVaccination?.name || !currentVaccination?.date
+                    !currentVaccination?.name ||
+                    !currentVaccination?.date ||
+                    loading
                   }
-                  className={`px-4 py-2 rounded-lg flex items-center ${!currentVaccination?.name || !currentVaccination?.date
-                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    : "bg-lavender-600 hover:bg-lavender-700 text-white"
-                    } transition-colors`}
+                  className={`px-4 py-2 rounded-lg flex items-center justify-center min-w-24 ${
+                    !currentVaccination?.name ||
+                    !currentVaccination?.date ||
+                    loading
+                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                      : "bg-lavender-600 hover:bg-lavender-700 text-white"
+                  } transition-colors`}
                 >
-                  <FiCheck className="mr-1" />
-                  {isEditMode ? "Update" : "Save"}
+                  {loading ? (
+                    <>
+                      <svg
+                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      {isEditMode ? "Updating..." : "Saving..."}
+                    </>
+                  ) : (
+                    <>
+                      <FiCheck className="mr-1" />
+                      {isEditMode ? "Update" : "Save"}
+                    </>
+                  )}
                 </button>
               </div>
             </div>

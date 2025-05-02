@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { FiSearch, FiX, FiPlus } from "react-icons/fi";
 
 const COMMON_ALLERGIES = [
@@ -27,7 +27,7 @@ const AllergiesSelect = ({
   onOtherChange,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [isFocused, setIsFocused] = useState(false);
+  const [showAddPanel, setShowAddPanel] = useState(false);
   const isOtherSelected = value.includes("Other");
 
   const filteredAllergies = searchQuery.trim()
@@ -36,29 +36,52 @@ const AllergiesSelect = ({
       )
     : COMMON_ALLERGIES;
 
-  const handleAllergyClick = (allergy) => {
-    const selectedValues = [...value];
-    const allergyIndex = selectedValues.indexOf(allergy);
-    if (allergyIndex === -1) {
-      selectedValues.push(allergy);
+  const handleAllergyToggle = (allergy) => {
+    const updatedAllergies = [...value];
+    const conditionIndex = updatedAllergies.indexOf(allergy);
+
+    if (conditionIndex === -1) {
+      updatedAllergies.push(allergy);
     } else {
-      selectedValues.splice(allergyIndex, 1);
+      updatedAllergies.splice(conditionIndex, 1);
     }
-    onChange(selectedValues);
+
+    onChange(updatedAllergies);
   };
 
-  const handleRemoveAllergy = (allergy, e) => {
+  const handleRemoveAllergy = (condition, e) => {
     e.stopPropagation();
-    const selectedValues = value.filter((item) => item !== allergy);
-    onChange(selectedValues);
+    onChange(value.filter((c) => c !== condition));
   };
 
   return (
     <div className="mb-6">
-      <label className="block text-sm font-medium text-lavender-800 mb-2">
-        Allergies
-      </label>
-      <div className="flex flex-wrap gap-2 mb-3 min-h-10">
+      <div className="flex justify-between items-center mb-2">
+        <label className="block text-sm font-medium text-lavender-800">
+          Allergies
+        </label>
+        <button
+          type="button"
+          onClick={() => setShowAddPanel(!showAddPanel)}
+          className={`text-sm flex items-center ${
+            showAddPanel
+              ? "text-lavender-800"
+              : "text-lavender-600 hover:text-lavender-800"
+          }`}
+        >
+          {showAddPanel ? (
+            <>
+              <FiX className="w-4 h-4 mr-1" /> Close
+            </>
+          ) : (
+            <>
+              <FiPlus className="w-4 h-4 mr-1" /> Add Allergies
+            </>
+          )}
+        </button>
+      </div>
+
+      <div className="flex flex-wrap gap-2 mb-3">
         {value.length > 0 ? (
           value.map((allergy) => (
             <motion.div
@@ -72,10 +95,9 @@ const AllergiesSelect = ({
               <button
                 type="button"
                 onClick={(e) => handleRemoveAllergy(allergy, e)}
-                className="ml-2 rounded-full p-0.5 hover:bg-lavender-200 transition-colors"
-                aria-label={`Remove ${allergy}`}
+                className="ml-2 text-lavender-500 hover:text-lavender-700 rounded-full focus:outline-none"
               >
-                <FiX className="h-4 w-4 text-lavender-600" />
+                <FiX className="w-4 h-4" />
               </button>
             </motion.div>
           ))
@@ -85,80 +107,79 @@ const AllergiesSelect = ({
           </div>
         )}
       </div>
-      <div
-        className={`relative mb-3 transition-all duration-300 rounded-lg ${
-          isFocused ? "ring-2 ring-lavender-500 ring-opacity-50" : ""
-        }`}
-      >
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          placeholder="Search or select allergies..."
-          className="w-full px-4 py-2.5 rounded-lg border border-lavender-200 focus:outline-none text-gray-700 pr-10"
-        />
-        <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-          <FiSearch className="h-5 w-5 text-gray-400" />
-        </div>
-      </div>
-      <div className="bg-white rounded-lg border border-lavender-200 p-3 max-h-52 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 gap-2">
-        {filteredAllergies.map((allergy) => (
-          <motion.button
-            key={allergy}
-            type="button"
-            onClick={() => handleAllergyClick(allergy)}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className={`p-2 rounded-lg text-sm text-left transition-colors flex items-center ${
-              value.includes(allergy)
-                ? "bg-lavender-500 text-white font-medium"
-                : "bg-lavender-50 text-lavender-800 hover:bg-lavender-100"
-            }`}
-            aria-label={`Select ${allergy}`}
+      <AnimatePresence>
+        {showAddPanel && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+            className="overflow-hidden"
           >
-            {!value.includes(allergy) && (
-              <FiPlus className="mr-1 flex-shrink-0" />
-            )}
-            {allergy}
-          </motion.button>
-        ))}
-        <motion.button
-          type="button"
-          onClick={() => handleAllergyClick("Other")}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className={`p-2 rounded-lg text-sm text-left transition-colors flex items-center ${
-            value.includes("Other")
-              ? "bg-lavender-500 text-white font-medium"
-              : "bg-lavender-50 text-lavender-800 hover:bg-lavender-100"
-          }`}
-          aria-label="Select other allergies"
-        >
-          {!value.includes("Other") && (
-            <FiPlus className="mr-1 flex-shrink-0" />
-          )}
-          Other
-        </motion.button>
-      </div>
-      {isOtherSelected && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: "auto" }}
-          exit={{ opacity: 0, height: 0 }}
-          transition={{ duration: 0.2 }}
-          className="mt-3"
-        >
-          <textarea
-            value={otherValue}
-            onChange={(e) => onOtherChange(e)}
-            placeholder="Enter other allergies here..."
-            className="w-full px-4 py-2.5 rounded-lg border border-lavender-200 focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:ring-opacity-50 focus:border-transparent text-gray-700 resize-none"
-            rows={3}
-          />
-        </motion.div>
-      )}
+            <div className="relative mb-3">
+              <FiSearch className="absolute left-3 top-2.5 text-gray-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search allergies..."
+                className="w-full pl-9 pr-4 py-2 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent text-gray-700"
+              />
+            </div>
+            <div className="bg-white rounded-lg border border-lavender-200 p-3 h-48 overflow-y-auto">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {filteredAllergies.map((allergy) => (
+                  <motion.button
+                    key={allergy}
+                    type="button"
+                    onClick={() => handleAllergyToggle(allergy)}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className={`p-2 rounded-lg text-sm text-left transition-colors ${
+                      value.includes(allergy)
+                        ? "bg-lavender-500 text-white font-medium"
+                        : "bg-lavender-50 text-lavender-800 hover:bg-lavender-100"
+                    }`}
+                  >
+                    {allergy}
+                  </motion.button>
+                ))}
+                <motion.button
+                  type="button"
+                  onClick={() => handleAllergyToggle("Other")}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className={`p-2 rounded-lg text-sm text-left transition-colors ${
+                    value.includes("Other")
+                      ? "bg-lavender-500 text-white font-medium"
+                      : "bg-lavender-50 text-lavender-800 hover:bg-lavender-100"
+                  }`}
+                >
+                  Other
+                </motion.button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {isOtherSelected && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mt-3"
+          >
+            <textarea
+              value={otherValue}
+              onChange={(e) => onOtherChange(e)}
+              placeholder="Enter other allergies here..."
+              className="w-full p-3 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent resize-none"
+              rows={3}
+            ></textarea>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
