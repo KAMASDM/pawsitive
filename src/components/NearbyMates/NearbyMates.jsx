@@ -308,7 +308,7 @@ const NearbyMates = () => {
   }
 
   return (
-    <div className="min-h-screen bg-lavender-50 pb-16">
+    <div className="min-h-screen bg-lavender-50">
       <div className="sticky top-16 z-40 bg-lavender-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="bg-lavender-100 rounded-2xl shadow-md p-4 sm:p-6 mb-6 border border-lavender-100 mt-6">

@@ -1,30 +1,8 @@
 import React, { useState, useEffect } from "react";
-import {
-  Box,
-  Typography,
-  Grid,
-  CircularProgress,
-  Tabs,
-  Tab,
-  Slider,
-  Alert,
-  Paper,
-  Button,
-  Card,
-  CardContent,
-  CardMedia,
-  IconButton,
-  Chip,
-  Container,
-} from "@mui/material";
 import { ref, get, set } from "firebase/database";
 import { database, auth } from "../../firebase";
 import { useNavigate } from "react-router-dom";
-import LocationOnIcon from "@mui/icons-material/LocationOn";
-import PetsIcon from "@mui/icons-material/Pets";
-import FavoriteIcon from "@mui/icons-material/Favorite";
-import InfoIcon from "@mui/icons-material/Info";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { FiArrowLeft, FiHeart, FiInfo, FiMapPin } from "react-icons/fi";
 import MessageDialogForAdoption from "./MessageDialogForAdoption";
 
 const AdoptPet = () => {
@@ -41,7 +19,6 @@ const AdoptPet = () => {
   const [maxDistance, setMaxDistance] = useState(25);
   const [locationError, setLocationError] = useState(null);
   const [tabValue, setTabValue] = useState(0);
-
   const [openMessageDialog, setOpenMessageDialog] = useState(false);
   const [currentMessage, setCurrentMessage] = useState({
     text: "",
@@ -203,12 +180,12 @@ const AdoptPet = () => {
     setFilteredPets(filtered);
   }, [selectedUserPetData, maxDistance, availablePets]);
 
-  const handleTabChange = (event, newValue) => {
+  const handleTabChange = (newValue) => {
     setTabValue(newValue);
   };
 
-  const handleDistanceChange = (event, newValue) => {
-    setMaxDistance(newValue);
+  const handleDistanceChange = (e) => {
+    setMaxDistance(e.target.value);
   };
 
   const handlePetDetail = (pet) => {
@@ -247,316 +224,217 @@ const AdoptPet = () => {
 
   if (loadingUserLocation) {
     return (
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-        }}
-      >
-        <CircularProgress />
-        <Typography variant="body1" sx={{ ml: 2 }}>
-          Getting your location...
-        </Typography>
-      </Box>
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-lavender-500"></div>
+        <p className="ml-4 text-lavender-700">Getting your location...</p>
+      </div>
     );
   }
 
   if (locationError) {
     return (
-      <Box
-        sx={{
-          padding: { xs: 2, sm: 4 },
-          minHeight: "100vh",
-          backgroundColor: "#f9f5ff",
-        }}
-      >
-        <Alert severity="error" sx={{ mb: 3 }}>
-          Error: {locationError}. We need your location to find nearby pets.
-        </Alert>
-        <Typography variant="body1">
+      <div className="p-4 sm:p-8 min-h-screen bg-lavender-50">
+        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6">
+          <p>
+            Error: {locationError}. We need your location to find nearby pets.
+          </p>
+        </div>
+        <p className="text-gray-700">
           Please enable location services in your browser and try again.
-        </Typography>
-      </Box>
+        </p>
+      </div>
     );
   }
 
   return (
-    <Container maxWidth="lg">
-      <Box sx={{ padding: { xs: 2, sm: 3 }, minHeight: "100vh", pb: 8 }}>
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            mb: 3,
-          }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <IconButton onClick={() => navigate(-1)}>
-              <ArrowBackIcon />
-            </IconButton>
-            <Typography
-              variant="h4"
-              sx={{
-                ml: 2,
-                fontWeight: "bold",
-                display: "flex",
-                alignItems: "center",
-              }}
+    <div className="min-h-screen bg-lavender-50 relative">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-2 rounded-full hover:bg-lavender-100 text-lavender-700"
             >
-              <FavoriteIcon sx={{ mr: 1, color: "#d81b60" }} />
+              <FiArrowLeft className="w-5 h-5" />
+            </button>
+            <h1 className="text-2xl md:text-3xl font-bold text-lavender-800 ml-4 flex items-center">
+              <FiHeart className="text-pink-500 mr-2" />
               Adopt a Pet
-            </Typography>
-          </Box>
-        </Box>
-        <Paper
-          elevation={2}
-          sx={{
-            p: 3,
-            mb: 4,
-            borderRadius: 2,
-            background: "linear-gradient(145deg, #f9f5ff 0%, #ffe6e6 100%)",
-          }}
-        >
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold" }}>
+            </h1>
+          </div>
+        </div>
+        <div className="bg-gradient-to-r from-lavender-50 to-lavender-50 rounded-xl shadow-md p-6 mb-8 border border-lavender-100">
+          <h2 className="text-xl font-bold text-lavender-900 mb-4">
             Find Matches For Your Pet
-          </Typography>
+          </h2>
           {userPets.length === 0 ? (
-            <Alert severity="info">
-              You don't have any pets in your profile yet. Please add a pet
-              first.
-            </Alert>
+            <div className="bg-lavender-100 border-l-4 border-lavender-500 text-lavender-700 p-4">
+              <p>
+                You don't have any pets in your profile yet. Please add a pet
+                first.
+              </p>
+            </div>
           ) : (
-            <Grid container spacing={3}>
-              <Grid item xs={12} sm={7}>
-                <Typography gutterBottom>
-                  Maximum Distance: <strong>{maxDistance} km</strong>
-                </Typography>
-                <Slider
+            <div className="grid grid-cols-1 gap-6">
+              <div className="col-span-1">
+                <p className="mb-2 text-gray-700">
+                  Maximum Distance:{" "}
+                  <span className="font-bold">{maxDistance} km</span>
+                </p>
+                <input
+                  type="range"
+                  min="1"
+                  max="50"
                   value={maxDistance}
                   onChange={handleDistanceChange}
-                  min={1}
-                  max={50}
-                  valueLabelDisplay="auto"
-                  aria-labelledby="distance-slider"
-                  marks={[
-                    { value: 5, label: "5km" },
-                    { value: 10, label: "10km" },
-                    { value: 25, label: "25km" },
-                    { value: 50, label: "50km" },
-                  ]}
+                  className="w-full h-2 bg-lavender-200 rounded-lg appearance-none cursor-pointer"
                 />
-              </Grid>
-            </Grid>
+                <div className="flex justify-between text-xs text-gray-600 mt-1">
+                  <span>1km</span>
+                  <span>10km</span>
+                  <span>25km</span>
+                  <span>50km</span>
+                </div>
+              </div>
+            </div>
           )}
-        </Paper>
+        </div>
+
         {userPets.length > 0 && (
           <>
-            <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 3 }}>
-              <Tabs
-                value={tabValue}
-                onChange={handleTabChange}
-                variant="scrollable"
-                scrollButtons="auto"
-                aria-label="pet matches tabs"
-              >
-                <Tab label="All Matches" />
-                <Tab label="Nearby (< 5km)" />
-                <Tab label="Same Breed" />
-              </Tabs>
-            </Box>
+            <div className="border-b border-gray-200 mb-6">
+              <nav className="flex space-x-4 overflow-x-auto">
+                <button
+                  onClick={() => handleTabChange(0)}
+                  className={`py-2 px-4 whitespace-nowrap ${
+                    tabValue === 0
+                      ? "border-b-2 border-lavender-500 text-lavender-600"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  All Matches
+                </button>
+                <button
+                  onClick={() => handleTabChange(1)}
+                  className={`py-2 px-4 whitespace-nowrap ${
+                    tabValue === 1
+                      ? "border-b-2 border-lavender-500 text-lavender-600"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  Nearby (&lt; 5km)
+                </button>
+                <button
+                  onClick={() => handleTabChange(2)}
+                  className={`py-2 px-4 whitespace-nowrap ${
+                    tabValue === 2
+                      ? "border-b-2 border-lavender-500 text-lavender-600"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  Same Breed
+                </button>
+              </nav>
+            </div>
             {loading ? (
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  height: 300,
-                }}
-              >
-                <CircularProgress />
-              </Box>
+              <div className="flex justify-center items-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-lavender-500"></div>
+              </div>
             ) : filteredPets.length > 0 ? (
-              <Grid container spacing={3}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredPets.map((pet) => (
-                  <Grid item xs={12} sm={6} md={4} key={pet.id}>
-                    <Card
-                      sx={{
-                        height: "100%",
-                        display: "flex",
-                        flexDirection: "column",
-                        borderRadius: 2,
-                        overflow: "hidden",
-                        boxShadow: 2,
-                        transition: "transform 0.3s, box-shadow 0.3s",
-                        "&:hover": {
-                          transform: "translateY(-8px)",
-                          boxShadow: 4,
-                        },
-                        position: "relative",
-                      }}
-                    >
-                      <Chip
-                        icon={<LocationOnIcon />}
-                        label={`${pet.distance} km`}
-                        color="primary"
-                        size="small"
-                        sx={{
-                          position: "absolute",
-                          top: 10,
-                          right: 10,
-                          zIndex: 1,
-                          backgroundColor: "rgba(0, 0, 0, 0.7)",
-                          color: "white",
-                        }}
-                      />
-
-                      <Chip
-                        label={pet.gender}
-                        color={pet.gender === "Female" ? "secondary" : "info"}
-                        size="small"
-                        sx={{
-                          position: "absolute",
-                          top: 10,
-                          left: 10,
-                          zIndex: 1,
-                        }}
-                      />
-                      <Box
-                        sx={{
-                          position: "relative",
-                          paddingTop: "56.25%",
-                          backgroundColor: "#f5f5f5",
-                        }}
-                      >
-                        {pet.image ? (
-                          <CardMedia
-                            component="img"
-                            image={pet.image}
-                            alt={pet.name}
-                            sx={{
-                              position: "absolute",
-                              top: 0,
-                              left: 0,
-                              width: "100%",
-                              height: "100%",
-                              objectFit: "cover",
-                            }}
-                          />
-                        ) : (
-                          <Box
-                            sx={{
-                              position: "absolute",
-                              top: 0,
-                              left: 0,
-                              width: "100%",
-                              height: "100%",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                            }}
-                          >
-                            <PetsIcon sx={{ fontSize: 60, color: "#bdbdbd" }} />
-                          </Box>
-                        )}
-                      </Box>
-                      <CardContent sx={{ flexGrow: 1 }}>
-                        <Typography variant="h6" gutterBottom>
-                          {pet.name}
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          color="textSecondary"
-                          gutterBottom
+                  <div
+                    key={pet.id}
+                    className="bg-white rounded-xl shadow-md overflow-hidden transition-transform duration-300 hover:shadow-lg hover:-translate-y-2"
+                  >
+                    <div className="relative">
+                      <div className="absolute top-3 right-3 z-10">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full bg-black bg-opacity-70 text-white text-sm">
+                          <FiMapPin className="mr-1" />
+                          {pet.distance} km
+                        </span>
+                      </div>
+                      <div className="absolute top-3 left-3 z-10">
+                        <span
+                          className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full shadow ${
+                            pet.gender === "Female" &&
+                            "bg-lavender-600 text-white"
+                          }`}
                         >
-                          <strong>Breed:</strong> {pet.breed || "Unknown breed"}
-                        </Typography>
-
-                        <Typography
-                          variant="body2"
-                          color="textSecondary"
-                          gutterBottom
-                        >
-                          <strong>Age:</strong> {pet.age || "Unknown age"}
-                        </Typography>
-                        {pet.description && (
-                          <Typography
-                            variant="body2"
-                            color="textSecondary"
-                            sx={{ mt: 1 }}
-                          >
-                            {pet.description.length > 100
-                              ? `${pet.description.substring(0, 100)}...`
-                              : pet.description}
-                          </Typography>
-                        )}
-                      </CardContent>
-                      <Box
-                        sx={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          p: 2,
-                          borderTop: "1px solid rgba(0, 0, 0, 0.12)",
-                        }}
-                      >
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          startIcon={<InfoIcon />}
+                          {pet.gender}
+                        </span>
+                      </div>
+                      {pet.image ? (
+                        <img
+                          src={pet.image}
+                          alt={pet.name}
+                          className="w-full h-48 object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-48 bg-gray-100 flex items-center justify-center">
+                          <FiHeart className="text-pink-400 text-5xl" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4">
+                      <h3 className="text-lg font-bold text-gray-900 mb-2">
+                        {pet.name}
+                      </h3>
+                      <p className="text-gray-600 mb-1">
+                        <span className="font-semibold">Breed:</span>{" "}
+                        {pet.breed || "Unknown breed"}
+                      </p>
+                      <p className="text-gray-600 mb-3">
+                        <span className="font-semibold">Age:</span>{" "}
+                        {pet.age || "Unknown age"}
+                      </p>
+                      {pet.description && (
+                        <p className="text-gray-600 text-sm mb-4">
+                          {pet.description.length > 100
+                            ? `${pet.description.substring(0, 100)}...`
+                            : pet.description}
+                        </p>
+                      )}
+                      <div className="flex justify-between">
+                        <button
                           onClick={() => handlePetDetail(pet)}
+                          className="flex items-center px-4 py-2 border border-lavender-600 text-lavender-600 rounded-lg hover:bg-lavender-50 transition-colors"
                         >
+                          <FiInfo className="mr-2" />
                           Details
-                        </Button>
-                        <Button
-                          variant="contained"
-                          color="secondary"
-                          size="small"
+                        </button>
+                        <button
                           onClick={() => handleOpenMessageDialog(pet)}
+                          className="flex items-center px-4 py-2 bg-lavender-600 text-white rounded-lg hover:bg-lavender-700 transition-colors"
                         >
                           Message Owner
-                        </Button>
-                      </Box>
-                    </Card>
-                  </Grid>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 ))}
-              </Grid>
+              </div>
             ) : (
-              <Paper
-                elevation={1}
-                sx={{
-                  p: 4,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  borderRadius: 2,
-                  backgroundColor: "#f5f5f5",
-                }}
-              >
-                <PetsIcon sx={{ fontSize: 64, color: "#bdbdbd", mb: 2 }} />
-                <Typography variant="h6" sx={{ mb: 1 }}>
+              <div className="bg-gray-50 rounded-xl p-8 flex flex-col items-center">
+                <div className="w-16 h-16 bg-pink-200 rounded-full flex items-center justify-center mb-4">
+                  <FiHeart className="text-pink-500 text-2xl" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-800 mb-2">
                   No Matching Pets Found
-                </Typography>
-                <Typography
-                  variant="body2"
-                  color="textSecondary"
-                  sx={{ mb: 3, textAlign: "center" }}
-                >
-                  There are no pets available for mating near you that match
+                </h3>
+                <p className="text-gray-600 text-center mb-6 max-w-md">
+                  There are no pets available for adoption near you that match
                   your pet's profile. Try increasing the distance or checking
                   back later.
-                </Typography>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  startIcon={<ArrowBackIcon />}
+                </p>
+                <button
                   onClick={() => navigate("/profile")}
-                  size="large"
+                  className="flex items-center px-6 py-3 bg-lavender-600 text-white rounded-lg hover:bg-lavender-700 transition-colors"
                 >
+                  <FiArrowLeft className="mr-2" />
                   Back to Profile
-                </Button>
-              </Paper>
+                </button>
+              </div>
             )}
           </>
         )}
@@ -570,8 +448,8 @@ const AdoptPet = () => {
           receiverPet={currentMessage.receiverPet}
           matingRequestId={currentMessage.matingRequestId}
         />
-      </Box>
-    </Container>
+      </div>
+    </div>
   );
 };
 
