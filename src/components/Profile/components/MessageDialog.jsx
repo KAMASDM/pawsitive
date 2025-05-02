@@ -24,7 +24,6 @@ import CloseIcon from "@mui/icons-material/Close";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
 import ImageIcon from "@mui/icons-material/Image";
-import { useLocation } from "react-router-dom";
 
 import EmojiEmotionsIcon from "@mui/icons-material/EmojiEmotions";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -41,8 +40,6 @@ const MessageDialog = ({
   receiverPet,
   matingRequestId,
 }) => {
-  const location = useLocation();
-
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -230,8 +227,6 @@ const MessageDialog = ({
     return groups;
   }, {});
 
-
-
   const getPetGradient = (type) => {
     if (!type) return "linear-gradient(145deg, #f5f7fa 0%, #e4e8eb 100%)";
 
@@ -304,7 +299,7 @@ const MessageDialog = ({
             <Typography variant="h6" sx={{ fontWeight: "bold", mb: 0.5 }}>
               {user.displayName}
             </Typography>
-            {senderPet && receiverPet && (
+            {/* {senderPet && receiverPet && (
               <Box sx={{ display: "flex", alignItems: "center" }}>
                 <Typography variant="h6" sx={{ fontWeight: "bold", mb: 0.5 }}>
                   {user.displayName}
@@ -320,7 +315,7 @@ const MessageDialog = ({
                   />
                 )}
               </Box>
-            )}
+            )} */}
           </Box>
         </Box>
         <IconButton

@@ -152,7 +152,7 @@ const Header = () => {
         <div className="container mx-auto px-4 py-3">
           <div className="flex justify-between items-center">
             <Link
-              to="/"
+              to="/dashboard"
               className="flex items-center hover:opacity-90 transition-opacity"
             >
               <img src={logo} alt="Pawppy" className="h-10 mr-3" />
@@ -215,7 +215,7 @@ const Header = () => {
         {isMenuOpen && (
           <div className="md:hidden bg-lavender-800 animate-fadeIn">
             <div className="container mx-auto px-4 py-2 space-y-1">
-              <MobileNavLink to="/" onClick={() => setIsMenuOpen(false)}>
+              <MobileNavLink to="/dashboard" onClick={() => setIsMenuOpen(false)}>
                 <FiHome className="mr-2" /> Home
               </MobileNavLink>
               <MobileNavLink
