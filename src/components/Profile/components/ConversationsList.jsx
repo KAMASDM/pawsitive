@@ -37,7 +37,7 @@ const ConversationsList = ({ onOpenConversation }) => {
 
             if (!otherParticipantId) continue;
 
-            let otherParticipantName = "Unknown User";
+            let otherParticipantName = "Pet's Owner";
             let senderPet = null;
             let receiverPet = null;
 
@@ -47,7 +47,7 @@ const ConversationsList = ({ onOpenConversation }) => {
 
               if (userSnapshot.exists()) {
                 const userData = userSnapshot.val();
-                otherParticipantName = userData.displayName || "Unknown User";
+                otherParticipantName = userData.displayName || "Pet's Owner";
               }
 
               if (conversation.matingRequestId) {
@@ -80,9 +80,9 @@ const ConversationsList = ({ onOpenConversation }) => {
                   receiverPet = otherPetSnapshot.exists()
                     ? { id: request.receiverPetId, ...otherPetSnapshot.val() }
                     : {
-                        name: request.receiverPetName,
-                        image: request.receiverPetImage,
-                      };
+                      name: request.receiverPetName,
+                      image: request.receiverPetImage,
+                    };
                 } else {
                   const receivedRef = ref(
                     database,
@@ -112,9 +112,9 @@ const ConversationsList = ({ onOpenConversation }) => {
                     senderPet = otherPetSnapshot.exists()
                       ? { id: request.senderPetId, ...otherPetSnapshot.val() }
                       : {
-                          name: request.senderPetName,
-                          image: request.senderPetImage,
-                        };
+                        name: request.senderPetName,
+                        image: request.senderPetImage,
+                      };
                   }
                 }
               }
@@ -162,7 +162,7 @@ const ConversationsList = ({ onOpenConversation }) => {
 
     const date = new Date(timestamp);
     const now = new Date();
-    const diff = (now - date) / 1000; // difference in seconds
+    const diff = (now - date) / 1000;
 
     if (diff < 60) return "Just now";
     if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
@@ -232,32 +232,29 @@ const ConversationsList = ({ onOpenConversation }) => {
       <div className="p-4 border-b border-lavender-100 flex items-center gap-2">
         <button
           onClick={() => setActiveFilter("all")}
-          className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
-            activeFilter === "all"
-              ? "bg-lavender-600 text-white"
-              : "bg-lavender-50 text-lavender-800 hover:bg-lavender-100"
-          }`}
+          className={`px-3 py-1.5 rounded-full text-sm transition-colors ${activeFilter === "all"
+            ? "bg-lavender-600 text-white"
+            : "bg-lavender-50 text-lavender-800 hover:bg-lavender-100"
+            }`}
         >
           All
         </button>
         <button
           onClick={() => setActiveFilter("mating")}
-          className={`px-3 py-1.5 rounded-full text-sm transition-colors flex items-center ${
-            activeFilter === "mating"
-              ? "bg-pink-500 text-white"
-              : "bg-pink-50 text-pink-800 hover:bg-pink-100"
-          }`}
+          className={`px-3 py-1.5 rounded-full text-sm transition-colors flex items-center ${activeFilter === "mating"
+            ? "bg-pink-500 text-white"
+            : "bg-pink-50 text-pink-800 hover:bg-pink-100"
+            }`}
         >
           <FiHeart className="mr-1 w-3.5 h-3.5" />
           Mating
         </button>
         <button
           onClick={() => setActiveFilter("adoption")}
-          className={`px-3 py-1.5 rounded-full text-sm transition-colors flex items-center ${
-            activeFilter === "adoption"
-              ? "bg-green-500 text-white"
-              : "bg-green-50 text-green-800 hover:bg-green-100"
-          }`}
+          className={`px-3 py-1.5 rounded-full text-sm transition-colors flex items-center ${activeFilter === "adoption"
+            ? "bg-green-500 text-white"
+            : "bg-green-50 text-green-800 hover:bg-green-100"
+            }`}
         >
           <FaPaw className="mr-1 w-3.5 h-3.5" />
           Adoption
@@ -335,11 +332,10 @@ const ConversationsList = ({ onOpenConversation }) => {
                       {conversation.receiverPet?.name}
                     </div>
                     <div
-                      className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${
-                        conversation.type === "mating"
-                          ? "bg-pink-100 text-pink-800"
-                          : "bg-green-100 text-green-800"
-                      }`}
+                      className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${conversation.type === "mating"
+                        ? "bg-pink-100 text-pink-800"
+                        : "bg-green-100 text-green-800"
+                        }`}
                     >
                       {conversation.type === "mating" ? "Mating" : "Adoption"}
                     </div>
@@ -359,8 +355,8 @@ const ConversationsList = ({ onOpenConversation }) => {
                 {activeFilter === "mating"
                   ? "mating"
                   : activeFilter === "adoption"
-                  ? "adoption"
-                  : ""}{" "}
+                    ? "adoption"
+                    : ""}{" "}
                 conversations found.
               </p>
             </motion.div>

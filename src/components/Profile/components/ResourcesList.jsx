@@ -118,11 +118,10 @@ const ResourcesList = ({ resources = [] }) => {
                 <button
                   key={category}
                   onClick={() => setActiveFilter(category)}
-                  className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-all ${
-                    activeFilter === category
+                  className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-all ${activeFilter === category
                       ? "bg-lavender-600 text-white font-medium shadow-sm"
                       : "text-lavender-700 hover:bg-lavender-100"
-                  }`}
+                    }`}
                 >
                   {category === "all"
                     ? "All Resources"
@@ -161,41 +160,37 @@ const ResourcesList = ({ resources = [] }) => {
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                     <button
                       onClick={() => setSortOrder("newest")}
-                      className={`px-4 py-2 rounded-lg text-sm flex justify-center items-center transition-colors ${
-                        sortOrder === "newest"
+                      className={`px-4 py-2 rounded-lg text-sm flex justify-center items-center transition-colors ${sortOrder === "newest"
                           ? "bg-lavender-600 text-white"
                           : "bg-lavender-50 text-lavender-800 hover:bg-lavender-100"
-                      }`}
+                        }`}
                     >
                       <FiCalendar className="mr-1" /> Newest First
                     </button>
                     <button
                       onClick={() => setSortOrder("oldest")}
-                      className={`px-4 py-2 rounded-lg text-sm flex justify-center items-center transition-colors ${
-                        sortOrder === "oldest"
+                      className={`px-4 py-2 rounded-lg text-sm flex justify-center items-center transition-colors ${sortOrder === "oldest"
                           ? "bg-lavender-600 text-white"
                           : "bg-lavender-50 text-lavender-800 hover:bg-lavender-100"
-                      }`}
+                        }`}
                     >
                       <FiCalendar className="mr-1" /> Oldest First
                     </button>
                     <button
                       onClick={() => setSortOrder("az")}
-                      className={`px-4 py-2 rounded-lg text-sm flex justify-center items-center transition-colors ${
-                        sortOrder === "az"
+                      className={`px-4 py-2 rounded-lg text-sm flex justify-center items-center transition-colors ${sortOrder === "az"
                           ? "bg-lavender-600 text-white"
                           : "bg-lavender-50 text-lavender-800 hover:bg-lavender-100"
-                      }`}
+                        }`}
                     >
                       A-Z
                     </button>
                     <button
                       onClick={() => setSortOrder("za")}
-                      className={`px-4 py-2 rounded-lg text-sm flex justify-center items-center transition-colors ${
-                        sortOrder === "za"
+                      className={`px-4 py-2 rounded-lg text-sm flex justify-center items-center transition-colors ${sortOrder === "za"
                           ? "bg-lavender-600 text-white"
                           : "bg-lavender-50 text-lavender-800 hover:bg-lavender-100"
-                      }`}
+                        }`}
                     >
                       Z-A
                     </button>
@@ -252,7 +247,7 @@ const ResourcesList = ({ resources = [] }) => {
                     setSearchQuery("");
                     setActiveFilter("all");
                   } else {
-                    navigate("/resources");
+                    navigate("/dashboard");
                   }
                 }}
                 className="px-6 py-3 bg-lavender-600 hover:bg-lavender-700 text-white rounded-full transition-colors duration-300"

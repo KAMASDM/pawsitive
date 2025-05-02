@@ -13,8 +13,7 @@ const Login = () => {
   const handleGoogleLogin = async () => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
-      console.log("User Info:", result.user);
-      navigate("/dashboard");
+      navigate("/dashboard", { user: result?.user });
     } catch (error) {
       console.error("Error during sign in:", error);
     }
