@@ -56,6 +56,10 @@ const PetDialog = ({
   const setCurrentPet = setPet;
   const handleTabChange = onTabChange;
 
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeletingVaccination, setIsDeletingVaccination] = useState(false);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [vaccinationToDelete, setVaccinationToDelete] = useState(null);
   const [otherBreed, setOtherBreed] = useState("");
   const [otherConditions, setOtherConditions] = useState("");
   const [otherAllergies, setOtherAllergies] = useState("");
@@ -93,6 +97,15 @@ const PetDialog = ({
       }
     }
   }, [currentPet, currentPet?.id, setCurrentPet]);
+
+  const handleSaveWithSpinner = async () => {
+    setIsSaving(true);
+    try {
+      await onSave();
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
@@ -197,10 +210,104 @@ const PetDialog = ({
     });
   };
 
+  const handleDeleteVaccinationClick = (index) => {
+    setVaccinationToDelete(index);
+    setShowDeleteConfirmation(true);
+  };
+
+  const confirmDeleteVaccination = async () => {
+    setIsDeletingVaccination(true);
+    try {
+      await onDeleteVaccination(vaccinationToDelete);
+    } finally {
+      setIsDeletingVaccination(false);
+      setShowDeleteConfirmation(false);
+      setVaccinationToDelete(null);
+    }
+  };
+
+  const cancelDeleteVaccination = () => {
+    setShowDeleteConfirmation(false);
+    setVaccinationToDelete(null);
+  };
+
   return (
     <AnimatePresence>
       {open && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-30 flex items-center justify-center p-4">
+          <AnimatePresence>
+            {showDeleteConfirmation && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-50 flex items-center justify-center p-4"
+              >
+                <div
+                  className="fixed inset-0 bg-black bg-opacity-50"
+                  onClick={cancelDeleteVaccination}
+                ></div>
+                <motion.div
+                  initial={{ scale: 0.95, y: 20 }}
+                  animate={{ scale: 1, y: 0 }}
+                  exit={{ scale: 0.95, y: 20 }}
+                  className="bg-white rounded-xl shadow-xl z-50 w-full max-w-md"
+                >
+                  <div className="p-6">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4">
+                      Delete Vaccination Record
+                    </h3>
+                    <p className="text-gray-600 mb-6">
+                      Are you sure you want to delete this vaccination record?
+                      This action cannot be undone.
+                    </p>
+                    <div className="flex justify-end space-x-3">
+                      <button
+                        onClick={cancelDeleteVaccination}
+                        disabled={isDeletingVaccination}
+                        className="px-4 py-2 border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 rounded-lg transition-colors disabled:opacity-50"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={confirmDeleteVaccination}
+                        disabled={isDeletingVaccination}
+                        className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg flex items-center justify-center min-w-24 transition-colors disabled:opacity-50"
+                      >
+                        {isDeletingVaccination ? (
+                          <>
+                            <svg
+                              className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                            >
+                              <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                              ></circle>
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                              ></path>
+                            </svg>
+                            Deleting...
+                          </>
+                        ) : (
+                          "Delete"
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -216,7 +323,8 @@ const PetDialog = ({
               </h2>
               <button
                 onClick={onClose}
-                className="text-white/80 hover:text-white p-2 rounded-full hover:bg-lavender-500/30 transition-colors"
+                disabled={isSaving}
+                className="text-white/80 hover:text-white p-2 rounded-full hover:bg-lavender-500/30 transition-colors disabled:opacity-50"
               >
                 <FiX className="w-5 h-5" />
               </button>
@@ -225,11 +333,12 @@ const PetDialog = ({
               <div className="flex">
                 <button
                   onClick={(e) => handleTabChange(e, 0)}
+                  disabled={isSaving}
                   className={`px-6 py-3 text-sm font-medium flex items-center transition-colors ${
                     tabValue === 0
                       ? "text-lavender-700 border-b-2 border-lavender-600"
                       : "text-gray-500 hover:text-lavender-600 hover:bg-lavender-50"
-                  }`}
+                  } disabled:opacity-50`}
                 >
                   <FaPaw
                     className={`${
@@ -240,11 +349,12 @@ const PetDialog = ({
                 </button>
                 <button
                   onClick={(e) => handleTabChange(e, 1)}
+                  disabled={isSaving}
                   className={`px-6 py-3 text-sm font-medium flex items-center transition-colors ${
                     tabValue === 1
                       ? "text-lavender-700 border-b-2 border-lavender-600"
                       : "text-gray-500 hover:text-lavender-600 hover:bg-lavender-50"
-                  }`}
+                  } disabled:opacity-50`}
                 >
                   <FaNotesMedical
                     className={`${
@@ -255,11 +365,12 @@ const PetDialog = ({
                 </button>
                 <button
                   onClick={(e) => handleTabChange(e, 2)}
+                  disabled={isSaving}
                   className={`px-6 py-3 text-sm font-medium flex items-center transition-colors ${
                     tabValue === 2
                       ? "text-lavender-700 border-b-2 border-lavender-600"
                       : "text-gray-500 hover:text-lavender-600 hover:bg-lavender-50"
-                  }`}
+                  } disabled:opacity-50`}
                 >
                   <FaSyringe
                     className={`${
@@ -293,6 +404,7 @@ const PetDialog = ({
                                 hidden
                                 accept="image/*"
                                 onChange={handleImageUpload}
+                                disabled={isSaving}
                               />
                             </div>
                           </label>
@@ -305,7 +417,7 @@ const PetDialog = ({
                           <p className="text-lavender-900 font-medium mb-4">
                             Upload a photo of your pet
                           </p>
-                          <label className="px-4 py-2 bg-lavender-600 hover:bg-lavender-700 text-white rounded-lg cursor-pointer inline-flex items-center transition-colors">
+                          <label className="px-4 py-2 bg-lavender-600 hover:bg-lavender-700 text-white rounded-lg cursor-pointer inline-flex items-center transition-colors disabled:opacity-50">
                             <FiUpload className="mr-2" />
                             <span>Upload Image</span>
                             <input
@@ -313,6 +425,7 @@ const PetDialog = ({
                               hidden
                               accept="image/*"
                               onChange={handleImageUpload}
+                              disabled={isSaving}
                             />
                           </label>
                         </div>
@@ -330,8 +443,9 @@ const PetDialog = ({
                         setCurrentPet({ ...currentPet, name: e.target.value })
                       }
                       placeholder="Enter pet name"
-                      className="w-full px-4 py-2.5 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent"
+                      className="w-full px-4 py-2.5 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent disabled:opacity-50"
                       required
+                      disabled={isSaving}
                     />
                   </div>
                   <div>
@@ -347,7 +461,8 @@ const PetDialog = ({
                           breed: "",
                         })
                       }
-                      className="w-full px-4 py-2.5 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent bg-white"
+                      className="w-full px-4 py-2.5 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent bg-white disabled:opacity-50"
+                      disabled={isSaving}
                     >
                       <option value="">Select pet type</option>
                       <option value="dog">Dog</option>
@@ -365,6 +480,7 @@ const PetDialog = ({
                       onChange={handleBreedChange}
                       otherValue={otherBreed}
                       onOtherChange={handleOtherBreedChange}
+                      disabled={isSaving}
                     />
                   </div>
                   <div>
@@ -376,7 +492,8 @@ const PetDialog = ({
                       onChange={(e) =>
                         setCurrentPet({ ...currentPet, gender: e.target.value })
                       }
-                      className="w-full px-4 py-2.5 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent bg-white"
+                      className="w-full px-4 py-2.5 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent bg-white disabled:opacity-50"
+                      disabled={isSaving}
                     >
                       <option value="">Select gender</option>
                       <option value="Male">Male</option>
@@ -395,7 +512,8 @@ const PetDialog = ({
                         setCurrentPet({ ...currentPet, age: e.target.value })
                       }
                       placeholder="e.g., 2 years"
-                      className="w-full px-4 py-2.5 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent"
+                      className="w-full px-4 py-2.5 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent disabled:opacity-50"
+                      disabled={isSaving}
                     />
                   </div>
                   <div>
@@ -409,7 +527,8 @@ const PetDialog = ({
                         setCurrentPet({ ...currentPet, weight: e.target.value })
                       }
                       placeholder="e.g., 15 kg"
-                      className="w-full px-4 py-2.5 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent"
+                      className="w-full px-4 py-2.5 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent disabled:opacity-50"
+                      disabled={isSaving}
                     />
                   </div>
                   <div>
@@ -423,12 +542,13 @@ const PetDialog = ({
                         setCurrentPet({ ...currentPet, color: e.target.value })
                       }
                       placeholder="e.g., Brown with white markings"
-                      className="w-full px-4 py-2.5 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent"
+                      className="w-full px-4 py-2.5 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent disabled:opacity-50"
+                      disabled={isSaving}
                     />
                   </div>
                   <div className="md:col-span-2 flex flex-wrap gap-6">
                     <div>
-                      <label className="inline-flex items-center cursor-pointer">
+                      <label className="inline-flex items-center cursor-pointer disabled:opacity-50">
                         <div className="relative">
                           <input
                             type="checkbox"
@@ -440,6 +560,7 @@ const PetDialog = ({
                                 availableForMating: e.target.checked,
                               })
                             }
+                            disabled={isSaving}
                           />
                           <div
                             className={`w-10 h-5 rounded-full transition-colors ${
@@ -462,7 +583,7 @@ const PetDialog = ({
                       </label>
                     </div>
                     <div>
-                      <label className="inline-flex items-center cursor-pointer">
+                      <label className="inline-flex items-center cursor-pointer disabled:opacity-50">
                         <div className="relative">
                           <input
                             type="checkbox"
@@ -474,6 +595,7 @@ const PetDialog = ({
                                 availableForAdoption: e.target.checked,
                               })
                             }
+                            disabled={isSaving}
                           />
                           <div
                             className={`w-10 h-5 rounded-full transition-colors ${
@@ -509,8 +631,9 @@ const PetDialog = ({
                         })
                       }
                       placeholder="Special traits, personality, etc."
-                      className="w-full px-4 py-2.5 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent resize-none"
+                      className="w-full px-4 py-2.5 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent resize-none disabled:opacity-50"
                       rows={4}
+                      disabled={isSaving}
                     ></textarea>
                   </div>
                 </div>
@@ -530,12 +653,14 @@ const PetDialog = ({
                   onChange={handleConditionsChange}
                   otherValue={otherConditions}
                   onOtherChange={handleOtherConditionsChange}
+                  disabled={isSaving}
                 />
                 <AllergiesSelect
                   value={currentPet?.medical?.allergies || []}
                   onChange={handleAllergiesChange}
                   otherValue={otherAllergies}
                   onOtherChange={handleOtherAllergiesChange}
+                  disabled={isSaving}
                 />
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -553,8 +678,9 @@ const PetDialog = ({
                       })
                     }
                     placeholder="Current medications and dosage"
-                    className="w-full px-4 py-2.5 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent resize-none"
+                    className="w-full px-4 py-2.5 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent resize-none disabled:opacity-50"
                     rows={3}
+                    disabled={isSaving}
                   ></textarea>
                 </div>
               </TabPanel>
@@ -571,7 +697,8 @@ const PetDialog = ({
                   </div>
                   <button
                     onClick={onAddVaccination}
-                    className="px-4 py-2 bg-lavender-600 hover:bg-lavender-700 text-white rounded-lg flex items-center transition-colors"
+                    disabled={isSaving}
+                    className="px-4 py-2 bg-lavender-600 hover:bg-lavender-700 text-white rounded-lg flex items-center transition-colors disabled:opacity-50"
                   >
                     <FiPlus className="mr-1" />
                     Add Vaccination
@@ -640,14 +767,18 @@ const PetDialog = ({
                                 onClick={() =>
                                   onEditVaccination(vaccine, index)
                                 }
-                                className="p-1.5 text-lavender-600 hover:bg-lavender-50 rounded-md flex items-center"
+                                disabled={isSaving}
+                                className="p-1.5 text-lavender-600 hover:bg-lavender-50 rounded-md flex items-center disabled:opacity-50"
                               >
                                 <FiEdit2 className="w-4 h-4 mr-1" />
                                 <span className="text-xs">Edit</span>
                               </button>
                               <button
-                                onClick={() => onDeleteVaccination(index)}
-                                className="p-1.5 text-red-600 hover:bg-red-50 rounded-md flex items-center"
+                                onClick={() =>
+                                  handleDeleteVaccinationClick(index)
+                                }
+                                disabled={isSaving}
+                                className="p-1.5 text-red-600 hover:bg-red-50 rounded-md flex items-center disabled:opacity-50"
                               >
                                 <FiTrash2 className="w-4 h-4 mr-1" />
                                 <span className="text-xs">Delete</span>
@@ -673,7 +804,8 @@ const PetDialog = ({
                     </p>
                     <button
                       onClick={onAddVaccination}
-                      className="px-4 py-2 bg-lavender-600 hover:bg-lavender-700 text-white rounded-lg inline-flex items-center transition-colors"
+                      disabled={isSaving}
+                      className="px-4 py-2 bg-lavender-600 hover:bg-lavender-700 text-white rounded-lg inline-flex items-center transition-colors disabled:opacity-50"
                     >
                       <FiPlus className="mr-1" />
                       Add First Vaccination
@@ -685,21 +817,50 @@ const PetDialog = ({
             <div className="border-t border-lavender-100 p-4 flex justify-end gap-3 bg-gray-50 rounded-b-2xl">
               <button
                 onClick={onClose}
-                className="px-4 py-2 border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 rounded-lg transition-colors"
+                disabled={isSaving}
+                className="px-4 py-2 border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 rounded-lg transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
-                onClick={onSave}
-                disabled={!currentPet?.name}
+                onClick={handleSaveWithSpinner}
+                disabled={!currentPet?.name || isSaving}
                 className={`px-4 py-2 rounded-lg flex items-center transition-colors ${
-                  !currentPet?.name
+                  !currentPet?.name || isSaving
                     ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                     : "bg-lavender-600 hover:bg-lavender-700 text-white"
                 }`}
               >
-                <FiCheck className="mr-1" />
-                {isEditMode ? "Update Pet" : "Save Pet"}
+                {isSaving ? (
+                  <>
+                    <svg
+                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    {isEditMode ? "Updating..." : "Saving..."}
+                  </>
+                ) : (
+                  <>
+                    <FiCheck className="mr-1" />
+                    {isEditMode ? "Update Pet" : "Save Pet"}
+                  </>
+                )}
               </button>
             </div>
           </motion.div>

@@ -16,6 +16,7 @@ const PetCard = ({ pet, onEdit, onDelete }) => {
   const [showVaccinations, setShowVaccinations] = useState(false);
   const [showMedical, setShowMedical] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
@@ -54,10 +55,15 @@ const PetCard = ({ pet, onEdit, onDelete }) => {
     }
   };
 
-  const handleDeleteClick = () => {
+  const handleDeleteClick = async () => {
     if (deleteConfirm) {
-      onDelete(pet.id);
-      setDeleteConfirm(false);
+      setIsDeleting(true);
+      try {
+        await onDelete(pet.id);
+      } finally {
+        setIsDeleting(false);
+        setDeleteConfirm(false);
+      }
     } else {
       setDeleteConfirm(true);
 
@@ -72,9 +78,70 @@ const PetCard = ({ pet, onEdit, onDelete }) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      // Use flex flex-col for proper height distribution with flex-grow and mt-auto
-      className="bg-white rounded-2xl shadow-md border border-lavender-100 overflow-hidden flex flex-col"
+      className="bg-white rounded-2xl shadow-md border border-lavender-100 overflow-hidden flex flex-col relative"
     >
+      <AnimatePresence>
+        {deleteConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-black bg-opacity-70 z-20 flex flex-col items-center justify-center p-6"
+          >
+            <div className="bg-white rounded-xl p-6 w-full max-w-xs">
+              <h3 className="text-lg font-bold text-gray-900 mb-2">
+                Delete {pet.name}?
+              </h3>
+              <p className="text-gray-600 mb-6">
+                Are you sure you want to delete this pet? This action cannot be
+                undone.
+              </p>
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setDeleteConfirm(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                  disabled={isDeleting}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteClick}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors flex items-center justify-center"
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? (
+                    <>
+                      <svg
+                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Deleting...
+                    </>
+                  ) : (
+                    "Delete"
+                  )}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <div className="relative">
         <div className={`h-48 sm:h-52 ${getPetTypeBackground()} w-full`}>
           {pet.image ? (
@@ -112,6 +179,7 @@ const PetCard = ({ pet, onEdit, onDelete }) => {
             whileTap={{ scale: 0.9 }}
             className="bg-white/90 hover:bg-white p-1.5 rounded-full shadow-sm text-lavender-700 hover:text-lavender-900 transition-colors"
             aria-label={`Edit ${pet.name}`}
+            disabled={isDeleting}
           >
             <FiEdit2 className="w-4 h-4" />
           </motion.button>
@@ -119,15 +187,17 @@ const PetCard = ({ pet, onEdit, onDelete }) => {
             onClick={handleDeleteClick}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
-            className={`p-1.5 rounded-full shadow-sm transition-colors ${deleteConfirm
+            className={`p-1.5 rounded-full shadow-sm transition-colors ${
+              deleteConfirm
                 ? "bg-red-500 hover:bg-red-600 text-white"
                 : "bg-white/90 hover:bg-white text-red-500 hover:text-red-700"
-              }`}
+            }`}
             aria-label={
               deleteConfirm
                 ? `Confirm delete ${pet.name}`
                 : `Delete ${pet.name}`
             }
+            disabled={isDeleting}
           >
             <FiTrash2 className="w-4 h-4" />
           </motion.button>

@@ -41,14 +41,14 @@ const NotFound = () => {
           <div className="flex justify-center gap-6">
             <button
               onClick={() => navigate("/dog-resources")}
-              className="flex flex-col items-center hover:text-blue-600 transition-colors"
+              className="flex flex-col items-center hover:text-lavender-600 transition-colors"
             >
               <span className="text-4xl mb-2">🐕</span>
               <span>Dog Resources</span>
             </button>
             <button
               onClick={() => navigate("/cat-resources")}
-              className="flex flex-col items-center hover:text-amber-600 transition-colors"
+              className="flex flex-col items-center hover:text-lavender-600 transition-colors"
             >
               <span className="text-4xl mb-2">🐈</span>
               <span>Cat Resources</span>

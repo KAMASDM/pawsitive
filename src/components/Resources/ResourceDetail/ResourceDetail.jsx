@@ -45,7 +45,6 @@ const ResourceDetail = () => {
       return;
     }
 
-    console.log("Fetching resource details from DB (fallback):", resourceId);
     setLoading(true);
     setError(null);
     try {

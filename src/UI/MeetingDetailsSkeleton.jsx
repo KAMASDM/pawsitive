@@ -1,406 +1,236 @@
-import React from "react";
-import {
-  Box,
-  Card,
-  CardContent,
-  Container,
-  Grid,
-  Paper,
-  Skeleton,
-} from "@mui/material";
-import { alpha, keyframes } from "@mui/system";
-import { useTheme } from "@mui/material/styles";
+import React, { useEffect } from "react";
 
-const shimmer = keyframes`
-  0% {
-    background-position: -200px 0;
-  }
-  100% {
-    background-position: calc(200px + 100%) 0;
+const shimmerKeyframes = `
+  @keyframes shimmer {
+    0% {
+      background-position: -200px 0;
+    }
+    100% {
+      background-position: calc(200px + 100%) 0;
+    }
   }
 `;
 
 const MeetingDetailsSkeleton = ({ activeTab = 0 }) => {
-  const theme = useTheme();
-  const shimmerOverlay = {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    animation: `${shimmer} 1.5s infinite linear`,
-    background: `linear-gradient(90deg, 
-      ${alpha(theme.palette.background.paper, 0)} 0%, 
-      ${alpha(theme.palette.background.paper, 0.6)} 50%, 
-      ${alpha(theme.palette.background.paper, 0)} 100%)`,
-    backgroundSize: "200px 100%",
-    zIndex: 1,
-  };
+  
+  useEffect(() => {
+    const styleElement = document.createElement("style");
+    styleElement.innerHTML = shimmerKeyframes;
+    document.head.appendChild(styleElement);
+    return () => document.head.removeChild(styleElement);
+  }, []);
+
+  const shimmerOverlay = (
+    <div
+      className="absolute inset-0 animate-shimmer bg-gradient-to-r from-transparent via-white/60 to-transparent bg-[length:200px_100%] z-10"
+      style={{ animation: "shimmer 1.5s infinite linear" }}
+    />
+  );
 
   const HeaderSkeleton = () => (
-    <Box sx={{ mb: 4 }}>
-      <Skeleton width={100} height={28} sx={{ mb: 2 }} />
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: { xs: "flex-start", sm: "center" },
-          flexDirection: { xs: "column", sm: "row" },
-          gap: { xs: 2, sm: 0 },
-        }}
-      >
-        <Box>
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <Skeleton variant="text" width={220} height={40} sx={{ mr: 1 }} />
-            <Skeleton variant="circular" width={32} height={32} />
-          </Box>
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 1 }}>
-            <Skeleton variant="rounded" width={120} height={24} />
-            <Skeleton variant="rounded" width={100} height={24} />
-            <Skeleton variant="rounded" width={150} height={24} />
-          </Box>
-        </Box>
-        <Box sx={{ display: "flex", gap: 1 }}>
-          <Skeleton variant="rounded" width={80} height={36} />
-          <Skeleton variant="rounded" width={80} height={36} />
-          <Skeleton variant="circular" width={36} height={36} />
-        </Box>
-      </Box>
-    </Box>
+    <div className="mb-8">
+      <div className="w-24 h-7 bg-gray-200 rounded mb-4" />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-0">
+        <div>
+          <div className="flex items-center">
+            <div className="w-48 h-10 bg-gray-200 rounded mr-2" />
+            <div className="w-8 h-8 bg-gray-200 rounded-full" />
+          </div>
+          <div className="flex flex-wrap gap-2 mt-2">
+            <div className="w-28 h-6 bg-gray-200 rounded-full" />
+            <div className="w-24 h-6 bg-gray-200 rounded-full" />
+            <div className="w-36 h-6 bg-gray-200 rounded-full" />
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <div className="w-20 h-9 bg-gray-200 rounded-md" />
+          <div className="w-20 h-9 bg-gray-200 rounded-md" />
+          <div className="w-9 h-9 bg-gray-200 rounded-full" />
+        </div>
+      </div>
+    </div>
   );
 
   const TabsSkeleton = () => (
-    <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 3 }}>
-      <Box sx={{ display: "flex" }}>
-        <Skeleton variant="rounded" width={120} height={48} sx={{ mr: 2 }} />
-        <Skeleton variant="rounded" width={120} height={48} sx={{ mr: 2 }} />
-        <Skeleton variant="rounded" width={120} height={48} sx={{ mr: 2 }} />
-        <Skeleton variant="rounded" width={120} height={48} />
-      </Box>
-    </Box>
+    <div className="border-b border-gray-200 mb-6">
+      <div className="flex">
+        <div className="w-28 h-12 bg-gray-200 rounded-md mr-4" />
+        <div className="w-28 h-12 bg-gray-200 rounded-md mr-4" />
+        <div className="w-28 h-12 bg-gray-200 rounded-md mr-4" />
+        <div className="w-28 h-12 bg-gray-200 rounded-md" />
+      </div>
+    </div>
   );
 
   const MinutesTabSkeleton = () => (
-    <Card
-      sx={{
-        borderRadius: 3,
-        boxShadow: "0 10px 40px rgba(0,0,0,0.05)",
-        position: "relative",
-        overflow: "hidden",
-      }}
-    >
-      <CardContent sx={{ p: 4 }}>
-        <Box sx={{ mb: 4 }}>
-          <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-            <Skeleton
-              variant="circular"
-              width={24}
-              height={24}
-              sx={{ mr: 2 }}
-            />
-            <Skeleton width={180} height={28} />
-          </Box>
-          <Box
-            sx={{
-              p: 3,
-              borderRadius: 3,
-              bgcolor: alpha(theme.palette.primary.main, 0.05),
-              border: "1px solid",
-              borderColor: alpha(theme.palette.primary.main, 0.1),
-              mb: 4,
-              position: "relative",
-            }}
-          >
-            <Grid container spacing={3}>
-              <Grid item xs={12} md={4}>
-                <Skeleton width={100} height={20} sx={{ mb: 1 }} />
-                <Skeleton width={150} height={24} />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <Skeleton width={100} height={20} sx={{ mb: 1 }} />
-                <Skeleton width={180} height={24} />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <Skeleton width={100} height={20} sx={{ mb: 1 }} />
-                <Skeleton width={160} height={24} />
-              </Grid>
-            </Grid>
-            <Box sx={shimmerOverlay} />
-          </Box>
-          <Box sx={{ mb: 4 }}>
-            <Skeleton width={100} height={28} sx={{ mb: 2 }} />
-            <Skeleton width="100%" height={20} sx={{ mb: 1 }} />
-            <Skeleton width="90%" height={20} sx={{ mb: 1 }} />
-            <Skeleton width="95%" height={20} sx={{ mb: 1 }} />
-          </Box>
-        </Box>
-        <Box sx={{ mb: 4 }}>
-          <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-            <Skeleton
-              variant="circular"
-              width={24}
-              height={24}
-              sx={{ mr: 2 }}
-            />
-            <Skeleton width={220} height={28} />
-          </Box>
-          <Skeleton width="100%" height={20} sx={{ mb: 1 }} />
-          <Skeleton width="95%" height={20} sx={{ mb: 1 }} />
-          <Skeleton width="90%" height={20} sx={{ mb: 1 }} />
-          <Skeleton width="97%" height={20} sx={{ mb: 1 }} />
-        </Box>
-        <Box sx={{ mb: 4 }}>
-          <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-            <Skeleton
-              variant="circular"
-              width={24}
-              height={24}
-              sx={{ mr: 2 }}
-            />
-            <Skeleton width={160} height={28} />
-          </Box>
-          <Box
-            sx={{
-              p: 3,
-              borderRadius: 3,
-              bgcolor: alpha(theme.palette.warning.main, 0.05),
-              border: "1px solid",
-              borderColor: alpha(theme.palette.warning.main, 0.1),
-              mb: 3,
-              position: "relative",
-            }}
-          >
+    <div className="rounded-2xl shadow-lg relative overflow-hidden bg-white">
+      <div className="p-6 relative">
+        <div className="mb-8">
+          <div className="flex items-center mb-4">
+            <div className="w-6 h-6 bg-gray-200 rounded-full mr-4" />
+            <div className="w-44 h-7 bg-gray-200 rounded" />
+          </div>
+          <div className="p-6 rounded-2xl bg-purple-50 border border-purple-100 mb-8 relative">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <div className="w-24 h-5 bg-gray-200 rounded mb-2" />
+                <div className="w-36 h-6 bg-gray-200 rounded" />
+              </div>
+              <div>
+                <div className="w-24 h-5 bg-gray-200 rounded mb-2" />
+                <div className="w-44 h-6 bg-gray-200 rounded" />
+              </div>
+              <div>
+                <div className="w-24 h-5 bg-gray-200 rounded mb-2" />
+                <div className="w-40 h-6 bg-gray-200 rounded" />
+              </div>
+            </div>
+            {shimmerOverlay}
+          </div>
+          <div className="mb-8">
+            <div className="w-24 h-7 bg-gray-200 rounded mb-4" />
+            <div className="w-full h-5 bg-gray-200 rounded mb-2" />
+            <div className="w-[90%] h-5 bg-gray-200 rounded mb-2" />
+            <div className="w-[95%] h-5 bg-gray-200 rounded mb-2" />
+          </div>
+        </div>
+        <div className="mb-8">
+          <div className="flex items-center mb-4">
+            <div className="w-6 h-6 bg-gray-200 rounded-full mr-4" />
+            <div className="w-52 h-7 bg-gray-200 rounded" />
+          </div>
+          <div className="w-full h-5 bg-gray-200 rounded mb-2" />
+          <div className="w-[95%] h-5 bg-gray-200 rounded mb-2" />
+          <div className="w-[90%] h-5 bg-gray-200 rounded mb-2" />
+          <div className="w-[97%] h-5 bg-gray-200 rounded mb-2" />
+        </div>
+        <div className="mb-8">
+          <div className="flex items-center mb-4">
+            <div className="w-6 h-6 bg-gray-200 rounded-full mr-4" />
+            <div className="w-40 h-7 bg-gray-200 rounded" />
+          </div>
+          <div className="p-6 rounded-2xl bg-gray-50 border border-gray-100 mb-6 relative">
             {[1, 2, 3].map((_, index) => (
-              <Box
-                key={index}
-                sx={{ display: "flex", mb: 2, "&:last-child": { mb: 0 } }}
-              >
-                <Skeleton
-                  variant="circular"
-                  width={24}
-                  height={24}
-                  sx={{ mr: 2, flexShrink: 0 }}
-                />
-                <Skeleton width="90%" height={20} />
-              </Box>
+              <div key={index} className="flex mb-4 last:mb-0">
+                <div className="w-6 h-6 bg-gray-200 rounded-full mr-4 flex-shrink-0" />
+                <div className="w-[90%] h-5 bg-gray-200 rounded" />
+              </div>
             ))}
-            <Box sx={shimmerOverlay} />
-          </Box>
-        </Box>
-        <Box>
-          <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-            <Skeleton
-              variant="circular"
-              width={24}
-              height={24}
-              sx={{ mr: 2 }}
-            />
-            <Skeleton width={140} height={28} />
-          </Box>
-          <Box
-            sx={{
-              borderRadius: 3,
-              border: "1px solid",
-              borderColor: theme.palette.divider,
-              overflow: "hidden",
-              mb: 3,
-              position: "relative",
-            }}
-          >
+            {shimmerOverlay}
+          </div>
+        </div>
+        <div>
+          <div className="flex items-center mb-4">
+            <div className="w-6 h-6 bg-gray-200 rounded-full mr-4" />
+            <div className="w-32 h-7 bg-gray-200 rounded" />
+          </div>
+          <div className="rounded-2xl border border-gray-200 overflow-hidden mb-6 relative">
             {[1, 2, 3].map((_, index) => (
-              <Box
+              <div
                 key={index}
-                sx={{
-                  p: 2,
-                  bgcolor: "background.paper",
-                  borderBottom: index < 2 ? "1px solid" : "none",
-                  borderColor: theme.palette.divider,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 2,
-                }}
+                className={`p-4 bg-white flex items-center gap-4 ${
+                  index < 2 ? "border-b border-gray-200" : ""
+                }`}
               >
-                <Skeleton variant="circular" width={32} height={32} />
-                <Box sx={{ flexGrow: 1 }}>
-                  <Skeleton width="80%" height={20} />
-                  <Box sx={{ display: "flex", alignItems: "center", mt: 0.5 }}>
-                    <Skeleton width={120} height={16} />
-                    <Box sx={{ mx: 1, height: 16, width: 1 }} />
-                    <Skeleton width={80} height={16} />
-                  </Box>
-                </Box>
-                <Skeleton variant="rounded" width={80} height={24} />
-              </Box>
+                <div className="w-8 h-8 bg-gray-200 rounded-full" />
+                <div className="flex-grow">
+                  <div className="w-[80%] h-5 bg-gray-200 rounded" />
+                  <div className="flex items-center mt-1">
+                    <div className="w-28 h-4 bg-gray-200 rounded" />
+                    <div className="mx-2 h-4 w-px bg-gray-200" />
+                    <div className="w-20 h-4 bg-gray-200 rounded" />
+                  </div>
+                </div>
+                <div className="w-20 h-6 bg-gray-200 rounded-md" />
+              </div>
             ))}
-            <Box sx={shimmerOverlay} />
-          </Box>
-        </Box>
-      </CardContent>
-      <Box sx={shimmerOverlay} />
-    </Card>
+            {shimmerOverlay}
+          </div>
+        </div>
+      </div>
+      {shimmerOverlay}
+    </div>
   );
 
   const TranscriptTabSkeleton = () => (
-    <Card
-      sx={{
-        borderRadius: 3,
-        boxShadow: "0 10px 40px rgba(0,0,0,0.05)",
-        position: "relative",
-        overflow: "hidden",
-      }}
-    >
-      <CardContent sx={{ p: 4 }}>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            mb: 4,
-          }}
-        >
-          <Skeleton width={150} height={32} />
-          <Skeleton variant="rounded" width={120} height={36} />
-        </Box>
-        <Box
-          sx={{
-            p: 3,
-            borderRadius: 3,
-            border: "1px solid",
-            borderColor: theme.palette.divider,
-            bgcolor: alpha(theme.palette.background.paper, 0.6),
-            height: "60vh",
-            position: "relative",
-          }}
-        >
+    <div className="rounded-2xl shadow-lg relative overflow-hidden bg-white">
+      <div className="p-6">
+        <div className="flex justify-between items-center mb-8">
+          <div className="w-36 h-8 bg-gray-200 rounded" />
+          <div className="w-28 h-9 bg-gray-200 rounded-md" />
+        </div>
+        <div className="p-6 rounded-2xl border border-gray-200 bg-white/60 h-[60vh] relative">
           {[...Array(15)].map((_, index) => (
             <React.Fragment key={index}>
-              <Skeleton width="100%" height={20} sx={{ mb: 1 }} />
-              <Skeleton width="95%" height={20} sx={{ mb: 1 }} />
-              <Skeleton width="90%" height={20} sx={{ mb: 2 }} />
+              <div className="w-full h-5 bg-gray-200 rounded mb-2" />
+              <div className="w-[95%] h-5 bg-gray-200 rounded mb-2" />
+              <div className="w-[90%] h-5 bg-gray-200 rounded mb-4" />
             </React.Fragment>
           ))}
-          <Box sx={shimmerOverlay} />
-        </Box>
-      </CardContent>
-      <Box sx={shimmerOverlay} />
-    </Card>
+          {shimmerOverlay}
+        </div>
+      </div>
+      {shimmerOverlay}
+    </div>
   );
 
   const ActionItemsTabSkeleton = () => (
-    <Card
-      sx={{
-        borderRadius: 3,
-        boxShadow: "0 10px 40px rgba(0,0,0,0.05)",
-        position: "relative",
-        overflow: "hidden",
-      }}
-    >
-      <CardContent sx={{ p: 4 }}>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            mb: 4,
-          }}
-        >
-          <Skeleton width={200} height={32} />
-          <Skeleton variant="rounded" width={120} height={36} />
-        </Box>
-        <Box sx={{ ml: 2 }}>
+    <div className="rounded-2xl shadow-lg relative overflow-hidden bg-white">
+      <div className="p-6">
+        <div className="flex justify-between items-center mb-8">
+          <div className="w-48 h-8 bg-gray-200 rounded" />
+          <div className="w-28 h-9 bg-gray-200 rounded-md" />
+        </div>
+        <div className="ml-4">
           {[...Array(4)].map((_, index) => (
-            <Box key={index} sx={{ display: "flex", mb: 4 }}>
-              <Box
-                sx={{
-                  mr: 2,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                }}
-              >
-                <Skeleton variant="circular" width={16} height={16} />
-                <Skeleton width={2} height={80} sx={{ my: 1 }} />
-              </Box>
-              <Box sx={{ width: "100%" }}>
-                <Skeleton width={80} height={20} sx={{ mb: 1 }} />
-                <Paper
-                  sx={{
-                    p: 2,
-                    borderRadius: 2,
-                    bgcolor: "background.paper",
-                    width: "100%",
-                    position: "relative",
-                    overflow: "hidden",
-                  }}
-                >
-                  <Skeleton width="90%" height={20} sx={{ mb: 1 }} />
-                  <Skeleton width="60%" height={16} />
-                  <Box sx={shimmerOverlay} />
-                </Paper>
-              </Box>
-            </Box>
+            <div key={index} className="flex mb-8">
+              <div className="mr-4 flex flex-col items-center">
+                <div className="w-4 h-4 bg-gray-200 rounded-full" />
+                <div className="w-px h-20 my-2 bg-gray-200" />
+              </div>
+              <div className="w-full">
+                <div className="w-20 h-5 bg-gray-200 rounded mb-2" />
+                <div className="p-4 rounded-xl bg-white border border-gray-200 w-full relative overflow-hidden">
+                  <div className="w-[90%] h-5 bg-gray-200 rounded mb-2" />
+                  <div className="w-[60%] h-4 bg-gray-200 rounded" />
+                  {shimmerOverlay}
+                </div>
+              </div>
+            </div>
           ))}
-        </Box>
-      </CardContent>
-      <Box sx={shimmerOverlay} />
-    </Card>
+        </div>
+      </div>
+      {shimmerOverlay}
+    </div>
   );
 
   const RecordingTabSkeleton = () => (
-    <Card
-      sx={{
-        borderRadius: 3,
-        boxShadow: "0 10px 40px rgba(0,0,0,0.05)",
-        position: "relative",
-        overflow: "hidden",
-      }}
-    >
-      <CardContent sx={{ p: 4 }}>
-        <Skeleton width={200} height={32} sx={{ mb: 4 }} />
-        <Box
-          sx={{
-            p: 3,
-            borderRadius: 3,
-            border: "1px solid",
-            borderColor: theme.palette.divider,
-            bgcolor: "background.paper",
-            position: "relative",
-          }}
-        >
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              mb: 2,
-            }}
-          >
-            <Box sx={{ display: "flex", alignItems: "center" }}>
-              <Skeleton
-                variant="circular"
-                width={40}
-                height={40}
-                sx={{ mr: 2 }}
-              />
-              <Skeleton width={100} height={20} />
-            </Box>
-            <Skeleton width={60} height={20} />
-          </Box>
-          <Skeleton variant="rounded" width="100%" height={40} sx={{ mb: 2 }} />
-          <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-            <Skeleton width={60} height={20} />
-            <Box sx={{ display: "flex", gap: 2 }}>
-              <Skeleton variant="circular" width={36} height={36} />
-              <Skeleton variant="circular" width={36} height={36} />
-              <Skeleton variant="circular" width={36} height={36} />
-            </Box>
-            <Skeleton width={60} height={20} />
-          </Box>
-          <Box sx={shimmerOverlay} />
-        </Box>
-      </CardContent>
-      <Box sx={shimmerOverlay} />
-    </Card>
+    <div className="rounded-2xl shadow-lg relative overflow-hidden bg-white">
+      <div className="p-6">
+        <div className="w-48 h-8 bg-gray-200 rounded mb-8" />
+        <div className="p-6 rounded-2xl border border-gray-200 bg-white relative">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center">
+              <div className="w-10 h-10 bg-gray-200 rounded-full mr-4" />
+              <div className="w-24 h-5 bg-gray-200 rounded" />
+            </div>
+            <div className="w-14 h-5 bg-gray-200 rounded" />
+          </div>
+          <div className="w-full h-10 bg-gray-200 rounded-md mb-4" />
+          <div className="flex justify-between">
+            <div className="w-14 h-5 bg-gray-200 rounded" />
+            <div className="flex gap-4">
+              <div className="w-9 h-9 bg-gray-200 rounded-full" />
+              <div className="w-9 h-9 bg-gray-200 rounded-full" />
+              <div className="w-9 h-9 bg-gray-200 rounded-full" />
+            </div>
+            <div className="w-14 h-5 bg-gray-200 rounded" />
+          </div>
+          {shimmerOverlay}
+        </div>
+      </div>
+      {shimmerOverlay}
+    </div>
   );
 
   const renderTabContent = () => {
@@ -419,11 +249,11 @@ const MeetingDetailsSkeleton = ({ activeTab = 0 }) => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ position: "relative", zIndex: 1, pt: 3 }}>
+    <div className="container max-w-6xl relative z-10 pt-6">
       <HeaderSkeleton />
       <TabsSkeleton />
       {renderTabContent()}
-    </Container>
+    </div>
   );
 };
 
