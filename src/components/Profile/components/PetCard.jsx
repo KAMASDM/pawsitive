@@ -72,10 +72,11 @@ const PetCard = ({ pet, onEdit, onDelete }) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="bg-white rounded-2xl shadow-md border border-lavender-100 overflow-hidden"
+      // Use flex flex-col for proper height distribution with flex-grow and mt-auto
+      className="bg-white rounded-2xl shadow-md border border-lavender-100 overflow-hidden flex flex-col"
     >
       <div className="relative">
-        <div className={`h-48 sm:h-52 ${getPetTypeBackground()}`}>
+        <div className={`h-48 sm:h-52 ${getPetTypeBackground()} w-full`}>
           {pet.image ? (
             <img
               src={pet.image}
@@ -83,33 +84,34 @@ const PetCard = ({ pet, onEdit, onDelete }) => {
               className="w-full h-full object-cover"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <div className="bg-white bg-opacity-50 rounded-full p-4">
+            <div className="w-full h-full flex items-center justify-center bg-gray-100">
+              <div className="bg-white bg-opacity-70 rounded-full p-4 shadow-inner">
                 <FaPaw className="w-12 h-12 text-lavender-400" />
               </div>
             </div>
           )}
         </div>
         {(pet.availableForMating || pet.availableForAdoption) && (
-          <div className="absolute top-3 left-3 flex flex-col gap-2">
+          <div className="absolute top-3 left-3 flex flex-col gap-2 z-10">
             {pet.availableForMating && (
-              <div className="px-3 py-1 bg-pink-500 text-white text-xs rounded-full font-medium shadow-sm flex items-center">
-                <FiHeart className="mr-1" /> Mating
+              <div className="px-3 py-1 bg-pink-500 text-white text-xs rounded-full font-medium shadow-sm flex items-center whitespace-nowrap">
+                <FiHeart className="mr-1 flex-shrink-0" /> Mating
               </div>
             )}
             {pet.availableForAdoption && (
-              <div className="px-3 py-1 bg-green-500 text-white text-xs rounded-full font-medium shadow-sm flex items-center">
-                <FaPaw className="mr-1" /> Adoption
+              <div className="px-3 py-1 bg-green-500 text-white text-xs rounded-full font-medium shadow-sm flex items-center whitespace-nowrap">
+                <FaPaw className="mr-1 flex-shrink-0" /> Adoption
               </div>
             )}
           </div>
         )}
-        <div className="absolute top-3 right-3 flex gap-2">
+        <div className="absolute top-3 right-3 flex gap-2 z-10">
           <motion.button
             onClick={() => onEdit(pet)}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             className="bg-white/90 hover:bg-white p-1.5 rounded-full shadow-sm text-lavender-700 hover:text-lavender-900 transition-colors"
+            aria-label={`Edit ${pet.name}`}
           >
             <FiEdit2 className="w-4 h-4" />
           </motion.button>
@@ -117,31 +119,39 @@ const PetCard = ({ pet, onEdit, onDelete }) => {
             onClick={handleDeleteClick}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
-            className={`p-1.5 rounded-full shadow-sm transition-colors ${
-              deleteConfirm
-                ? "bg-red-500 text-white"
+            className={`p-1.5 rounded-full shadow-sm transition-colors ${deleteConfirm
+                ? "bg-red-500 hover:bg-red-600 text-white"
                 : "bg-white/90 hover:bg-white text-red-500 hover:text-red-700"
-            }`}
+              }`}
+            aria-label={
+              deleteConfirm
+                ? `Confirm delete ${pet.name}`
+                : `Delete ${pet.name}`
+            }
           >
             <FiTrash2 className="w-4 h-4" />
           </motion.button>
         </div>
       </div>
-      <div className="px-5 pt-5 pb-2">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-xl font-bold text-lavender-900">{pet.name}</h3>
-          <div className="flex items-center text-xs rounded-full bg-lavender-100 px-2 py-0.5 text-lavender-800">
-            <FaPaw className="mr-1" />
+
+      <div className="px-5 pt-5 pb-2 flex-grow">
+        <div className="flex items-center justify-between mb-3 gap-2">
+          <h3 className="text-xl font-bold text-lavender-900 truncate">
+            {pet.name}
+          </h3>
+          <div className="flex-shrink-0 flex items-center text-xs rounded-full bg-lavender-100 px-2 py-0.5 text-lavender-800 whitespace-nowrap">
+            <FaPaw className="mr-1 flex-shrink-0" />
             {pet.type
               ? pet.type.charAt(0).toUpperCase() + pet.type.slice(1)
               : "Pet"}
           </div>
         </div>
+
         <div className="grid grid-cols-2 gap-x-4 gap-y-2 mb-4">
           {pet.breed && (
             <div>
               <div className="text-xs text-gray-500">Breed</div>
-              <div className="text-sm text-gray-800 font-medium">
+              <div className="text-sm text-gray-800 font-medium truncate">
                 {pet.breed}
               </div>
             </div>
@@ -169,212 +179,232 @@ const PetCard = ({ pet, onEdit, onDelete }) => {
             </div>
           )}
         </div>
+
         {pet.description && (
           <div className="mb-4">
             <div className="text-xs text-gray-500 mb-1">Description</div>
-            <p className="text-sm text-gray-800">{pet.description}</p>
+            <p className="text-sm text-gray-800 line-clamp-3">
+              {pet.description}
+            </p>
           </div>
         )}
       </div>
-      <div className="px-5 py-2">
-        <button
-          className="w-full flex items-center justify-between py-2 text-left text-lavender-900 hover:text-lavender-700 transition-colors focus:outline-none"
-          onClick={() => setShowMedical(!showMedical)}
-        >
-          <div className="flex items-center">
-            <FaMedkit className="w-4 h-4 mr-2 text-lavender-600" />
-            <span className="font-medium">Medical Information</span>
-          </div>
-          <motion.div
-            animate={{ rotate: showMedical ? 180 : 0 }}
-            transition={{ duration: 0.3 }}
+
+      <div className="mt-auto">
+        <div className="px-5 py-2 border-t border-lavender-100">
+          <button
+            className="w-full flex items-center justify-between py-2 text-left text-lavender-900 hover:text-lavender-700 transition-colors focus:outline-none"
+            onClick={() => setShowMedical(!showMedical)}
+            aria-expanded={showMedical}
           >
-            <FiChevronDown />
-          </motion.div>
-        </button>
-        <AnimatePresence>
-          {showMedical && (
+            <div className="flex items-center">
+              <FaMedkit className="w-4 h-4 mr-2 text-lavender-600 flex-shrink-0" />
+              <span className="font-medium">Medical Information</span>
+            </div>
             <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
+              animate={{ rotate: showMedical ? 180 : 0 }}
               transition={{ duration: 0.3 }}
-              className="overflow-hidden"
             >
-              <div className="pt-2 pb-4">
-                <div className="bg-lavender-50 rounded-lg p-4 text-sm text-gray-700">
-                  {pet.medical?.conditions?.length > 0 ||
-                  pet.medical?.allergies?.length > 0 ||
-                  pet.medical?.medications ? (
-                    <>
-                      {pet.medical?.conditions?.length > 0 && (
-                        <div className="mb-3">
-                          <div className="font-medium text-lavender-900 mb-1">
-                            Conditions
+              <FiChevronDown />
+            </motion.div>
+          </button>
+          <AnimatePresence>
+            {showMedical && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="overflow-hidden"
+              >
+                <div className="pt-2 pb-4">
+                  <div className="bg-lavender-50 rounded-lg p-4 text-sm text-gray-700">
+                    {pet.medical?.conditions?.length > 0 ||
+                      pet.medical?.allergies?.length > 0 ||
+                      pet.medical?.medications ? (
+                      <>
+                        {pet.medical?.conditions?.length > 0 && (
+                          <div className="mb-3 last:mb-0">
+                            <div className="font-medium text-lavender-900 mb-1">
+                              Conditions
+                            </div>
+                            <div className="flex flex-wrap gap-1">
+                              {pet.medical.conditions.map((condition) => (
+                                <span
+                                  key={condition}
+                                  className="bg-white px-2 py-0.5 rounded text-xs border border-lavender-200"
+                                >
+                                  {condition}
+                                </span>
+                              ))}
+                            </div>
                           </div>
-                          <div className="flex flex-wrap gap-1">
-                            {pet.medical.conditions.map((condition) => (
-                              <span
-                                key={condition}
-                                className="bg-white px-2 py-0.5 rounded text-xs"
-                              >
-                                {condition}
-                              </span>
-                            ))}
+                        )}
+                        {pet.medical?.allergies?.length > 0 && (
+                          <div className="mb-3 last:mb-0">
+                            <div className="font-medium text-lavender-900 mb-1">
+                              Allergies
+                            </div>
+                            <div className="flex flex-wrap gap-1">
+                              {pet.medical.allergies.map((allergy) => (
+                                <span
+                                  key={allergy}
+                                  className="bg-white px-2 py-0.5 rounded text-xs border border-lavender-200"
+                                >
+                                  {allergy}
+                                </span>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      )}
-                      {pet.medical?.allergies?.length > 0 && (
-                        <div className="mb-3">
-                          <div className="font-medium text-lavender-900 mb-1">
-                            Allergies
+                        )}
+                        {pet.medical?.medications && (
+                          <div className="last:mb-0">
+                            <div className="font-medium text-lavender-900 mb-1">
+                              Medications
+                            </div>
+                            <p className="break-words">
+                              {pet.medical.medications}
+                            </p>
                           </div>
-                          <div className="flex flex-wrap gap-1">
-                            {pet.medical.allergies.map((allergy) => (
-                              <span
-                                key={allergy}
-                                className="bg-white px-2 py-0.5 rounded text-xs"
-                              >
-                                {allergy}
-                              </span>
-                            ))}
+                        )}
+                      </>
+                    ) : (
+                      <div className="text-center py-2 text-gray-500 italic">
+                        No medical information provided
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        <div className="px-5 py-2 border-t border-lavender-100">
+          <button
+            className="w-full flex items-center justify-between py-2 text-left text-lavender-900 hover:text-lavender-700 transition-colors focus:outline-none"
+            onClick={() => setShowVaccinations(!showVaccinations)}
+            aria-expanded={showVaccinations}
+          >
+            <div className="flex items-center">
+              <FaSyringe className="w-4 h-4 mr-2 text-lavender-600 flex-shrink-0" />
+              <span className="font-medium">Vaccination Records</span>
+              {pet.vaccinations && pet.vaccinations.length > 0 && (
+                <span className="ml-2 bg-lavender-100 text-lavender-800 text-xs px-2 py-0.5 rounded-full flex-shrink-0">
+                  {pet.vaccinations.length}
+                </span>
+              )}
+            </div>
+            <motion.div
+              animate={{ rotate: showVaccinations ? 180 : 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <FiChevronDown />
+            </motion.div>
+          </button>
+          <AnimatePresence>
+            {showVaccinations && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="overflow-hidden"
+              >
+                <div className="pt-2 pb-4">
+                  {pet.vaccinations && pet.vaccinations.length > 0 ? (
+                    <div className="space-y-3">
+                      {pet.vaccinations.map((vaccination, index) => {
+                        const status = getVaccinationStatus(
+                          vaccination.nextDue
+                        );
+                        return (
+                          <div
+                            key={index}
+                            className="bg-white border border-lavender-100 rounded-lg p-3 shadow-sm"
+                          >
+                            <div className="flex justify-between items-start mb-2 gap-2">
+                              <h4 className="font-medium text-lavender-900 flex-grow break-words">
+                                {vaccination.name}
+                              </h4>
+                              {status !== "unknown" && (
+                                <div
+                                  className={`flex-shrink-0 text-xs px-2 py-0.5 rounded-full flex items-center whitespace-nowrap ${status === "overdue"
+                                      ? "bg-red-100 text-red-800"
+                                      : status === "due-soon"
+                                        ? "bg-yellow-100 text-yellow-800"
+                                        : "bg-green-100 text-green-800"
+                                    }`}
+                                >
+                                  {status === "overdue" ? (
+                                    <>
+                                      <FiAlertCircle className="mr-1 flex-shrink-0" />{" "}
+                                      Overdue
+                                    </>
+                                  ) : status === "due-soon" ? (
+                                    <>
+                                      <FiCalendar className="mr-1 flex-shrink-0" />{" "}
+                                      Due Soon
+                                    </>
+                                  ) : (
+                                    <>
+                                      <FiCheck className="mr-1 flex-shrink-0" />{" "}
+                                      Up to Date
+                                    </>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                              <div>
+                                <div className="text-xs text-gray-500">
+                                  Date
+                                </div>
+                                <div className="text-gray-800">
+                                  {formatDate(vaccination.date)}
+                                </div>
+                              </div>
+                              {vaccination.nextDue && (
+                                <div>
+                                  <div className="text-xs text-gray-500">
+                                    Next Due
+                                  </div>
+                                  <div className="text-gray-800">
+                                    {formatDate(vaccination.nextDue)}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                            {vaccination.notes && (
+                              <div className="mt-2 text-xs text-gray-600 border-t border-lavender-100 pt-2 break-words">
+                                {vaccination.notes}
+                              </div>
+                            )}
                           </div>
-                        </div>
-                      )}
-                      {pet.medical?.medications && (
-                        <div>
-                          <div className="font-medium text-lavender-900 mb-1">
-                            Medications
-                          </div>
-                          <p>{pet.medical.medications}</p>
-                        </div>
-                      )}
-                    </>
+                        );
+                      })}
+                    </div>
                   ) : (
-                    <div className="text-center py-2 text-gray-500 italic">
-                      No medical information provided
+                    <div className="bg-lavender-50 rounded-lg p-4 text-center">
+                      <p className="text-sm text-gray-600 mb-3">
+                        No vaccination records available
+                      </p>
+                      <button
+                        onClick={() => onEdit(pet, "vaccinations")}
+                        className="text-xs bg-lavender-600 hover:bg-lavender-700 text-white px-3 py-1.5 rounded-full inline-flex items-center transition-colors"
+                      >
+                        <FiPlus className="mr-1" /> Add Vaccination
+                      </button>
                     </div>
                   )}
                 </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-      <div className="px-5 py-2">
-        <button
-          className="w-full flex items-center justify-between py-2 text-left text-lavender-900 hover:text-lavender-700 transition-colors focus:outline-none"
-          onClick={() => setShowVaccinations(!showVaccinations)}
-        >
-          <div className="flex items-center">
-            <FaSyringe className="w-4 h-4 mr-2 text-lavender-600" />
-            <span className="font-medium">Vaccination Records</span>
-
-            {pet.vaccinations && pet.vaccinations.length > 0 && (
-              <span className="ml-2 bg-lavender-100 text-lavender-800 text-xs px-2 py-0.5 rounded-full">
-                {pet.vaccinations.length}
-              </span>
+              </motion.div>
             )}
-          </div>
-          <motion.div
-            animate={{ rotate: showVaccinations ? 180 : 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <FiChevronDown />
-          </motion.div>
-        </button>
-        <AnimatePresence>
-          {showVaccinations && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="overflow-hidden"
-            >
-              <div className="pt-2 pb-4">
-                {pet.vaccinations && pet.vaccinations.length > 0 ? (
-                  <div className="space-y-3">
-                    {pet.vaccinations.map((vaccination, index) => {
-                      const status = getVaccinationStatus(vaccination.nextDue);
-                      return (
-                        <div
-                          key={index}
-                          className="bg-white border border-lavender-100 rounded-lg p-3 shadow-sm"
-                        >
-                          <div className="flex justify-between items-start mb-2">
-                            <h4 className="font-medium text-lavender-900">
-                              {vaccination.name}
-                            </h4>
-
-                            {status !== "unknown" && (
-                              <div
-                                className={`text-xs px-2 py-0.5 rounded-full flex items-center ${
-                                  status === "overdue"
-                                    ? "bg-red-100 text-red-800"
-                                    : status === "due-soon"
-                                    ? "bg-yellow-100 text-yellow-800"
-                                    : "bg-green-100 text-green-800"
-                                }`}
-                              >
-                                {status === "overdue" ? (
-                                  <>
-                                    <FiAlertCircle className="mr-1" /> Overdue
-                                  </>
-                                ) : status === "due-soon" ? (
-                                  <>
-                                    <FiCalendar className="mr-1" /> Due Soon
-                                  </>
-                                ) : (
-                                  <>
-                                    <FiCheck className="mr-1" /> Up to Date
-                                  </>
-                                )}
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-2 text-sm">
-                            <div>
-                              <div className="text-xs text-gray-500">Date</div>
-                              <div>{formatDate(vaccination.date)}</div>
-                            </div>
-                            {vaccination.nextDue && (
-                              <div>
-                                <div className="text-xs text-gray-500">
-                                  Next Due
-                                </div>
-                                <div>{formatDate(vaccination.nextDue)}</div>
-                              </div>
-                            )}
-                          </div>
-                          {vaccination.notes && (
-                            <div className="mt-2 text-xs text-gray-600 border-t border-lavender-50 pt-2">
-                              {vaccination.notes}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="bg-lavender-50 rounded-lg p-4 text-center">
-                    <p className="text-sm text-gray-600 mb-3">
-                      No vaccination records available
-                    </p>
-                    <button
-                      onClick={() => onEdit(pet, "vaccinations")}
-                      className="text-xs bg-lavender-600 text-white px-3 py-1.5 rounded-full inline-flex items-center"
-                    >
-                      <FiPlus className="mr-1" /> Add Vaccination
-                    </button>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+          </AnimatePresence>
+        </div>
       </div>
+
       <div className="px-5 py-4 border-t border-lavender-100 flex justify-between items-center bg-gradient-to-r from-lavender-50 to-white">
         <div className="flex items-center">
           <label className="inline-flex items-center cursor-pointer">
@@ -382,21 +412,23 @@ const PetCard = ({ pet, onEdit, onDelete }) => {
             <div className="relative">
               <input
                 type="checkbox"
-                className="sr-only"
+                className="sr-only peer"
                 checked={pet.availableForMating || false}
                 onChange={(e) =>
                   onEdit({ ...pet, availableForMating: e.target.checked })
                 }
               />
               <div
-                className={`w-10 h-5 rounded-full transition-colors ${
-                  pet.availableForMating ? "bg-pink-500" : "bg-gray-300"
-                }`}
+                className={`w-10 h-5 rounded-full transition-colors ${pet.availableForMating
+                    ? "bg-pink-500 peer-checked:bg-pink-500"
+                    : "bg-gray-300"
+                  } peer-focus:ring-2 peer-focus:ring-pink-300`}
               ></div>
               <div
-                className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform ${
-                  pet.availableForMating ? "translate-x-5" : ""
-                }`}
+                className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform transform ${pet.availableForMating
+                    ? "translate-x-5 peer-checked:translate-x-5"
+                    : "translate-x-0"
+                  }`}
               ></div>
             </div>
           </label>

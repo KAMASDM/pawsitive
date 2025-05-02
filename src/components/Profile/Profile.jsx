@@ -1,4 +1,4 @@
-import React, { useEffect, useState,useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { auth, db, database } from "../../firebase";
@@ -183,7 +183,7 @@ const Profile = () => {
     } catch (error) {
       console.error("Error fetching liked resources:", error);
     }
-  },[user]);
+  }, [user]);
 
   const fetchUserComments = useCallback(async () => {
     if (!user) return;
@@ -249,7 +249,7 @@ const Profile = () => {
     } catch (error) {
       console.error("Error fetching user comments:", error);
     }
-  },[user]);
+  }, [user]);
 
   const fetchUserPets = useCallback(async () => {
     if (!user) return;
@@ -279,7 +279,7 @@ const Profile = () => {
     } catch (error) {
       console.error("Error fetching user pets:", error);
     }
-  },[user]);
+  }, [user]);
 
   const fetchMatingRequests = useCallback(async () => {
     if (!user) return;
@@ -306,7 +306,7 @@ const Profile = () => {
           const senderSnapshot = await get(senderUserRef);
           const senderData = senderSnapshot.exists()
             ? senderSnapshot.val()
-            : { displayName: "Unknown User" };
+            : { displayName: "Pet's Owner" };
 
           const senderPetRef = ref(
             database,
@@ -350,7 +350,7 @@ const Profile = () => {
           const receiverSnapshot = await get(receiverUserRef);
           const receiverData = receiverSnapshot.exists()
             ? receiverSnapshot.val()
-            : { displayName: "Unknown User" };
+            : { displayName: "Pet's Owner" };
 
           const senderPetRef = ref(
             database,
@@ -396,7 +396,8 @@ const Profile = () => {
     } finally {
       setIsLoading(false);
     }
-  },[user]);
+  }, [user]);
+
 
   const handleProfileTabChange = (newValue) => {
     setProfileTabValue(newValue);
@@ -868,23 +869,27 @@ const Profile = () => {
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-center">
-                      <div className="w-12 h-12 rounded-full bg-lavender-100 overflow-hidden flex-shrink-0">
+                      <div className="w-12 h-12 rounded-full bg-lavender-100 overflow-hidden flex-shrink-0 flex items-center justify-center text-white text-sm font-medium">
                         {request.direction === "incoming" ? (
-                          <img
-                            src={
-                              request.senderPetImage || "/placeholder-pet.png"
-                            }
-                            alt={request.senderPetName}
-                            className="w-full h-full object-cover"
-                          />
+                          request.senderPetImage ? (
+                            <img
+                              src={request.senderPetImage}
+                              alt={request.senderPetName}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span>{request.senderPetName?.[0] || "P"}</span>
+                          )
                         ) : (
-                          <img
-                            src={
-                              request.receiverPetImage || "/placeholder-pet.png"
-                            }
-                            alt={request.receiverPetName}
-                            className="w-full h-full object-cover"
-                          />
+                          request.receiverPetImage ? (
+                            <img
+                              src={request.receiverPetImage}
+                              alt={request.receiverPetName}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span>{request.receiverPetName?.[0] || "P"}</span>
+                          )
                         )}
                       </div>
                       <div className="ml-3">
@@ -991,7 +996,7 @@ const Profile = () => {
                 to others, they will appear here.
               </p>
               <button
-                onClick={() => navigate("/find-matches")}
+                onClick={() => navigate("/dashboard")}
                 className="px-4 py-2 bg-lavender-600 hover:bg-lavender-700 text-white rounded-lg inline-flex items-center"
               >
                 <FiHeart className="mr-2" />
@@ -1044,10 +1049,13 @@ const Profile = () => {
         <MessageDialog
           open={openMessageDialog}
           onClose={() => setOpenMessageDialog(false)}
-          message={currentMessage}
-          setMessage={setCurrentMessage}
-          user={user}
-          isMobile={isMobile}
+          conversationId={currentMessage.conversationId}
+          recipientId={currentMessage.recipientId}
+          recipientName={currentMessage.recipientName}
+          senderPet={currentMessage.senderPet}
+          receiverPet={currentMessage.receiverPet}
+          matingRequestId={currentMessage.matingRequestId}
+          tabValue={tabValue}
         />
       )}
     </div>

@@ -19,10 +19,10 @@ const BottomNavigation = () => {
     <div className="fixed bottom-0 left-0 right-0 bg-lavender-900 shadow-lg z-50 md:hidden">
       <div className="grid grid-cols-5 h-16">
         <Link
-          to="/"
+          to="/dashboard"
           className={`flex flex-col items-center justify-center transition-colors ${isActive("/")
-              ? "text-white bg-lavender-700"
-              : "text-lavender-200 hover:text-white hover:bg-lavender-800"
+            ? "text-white bg-lavender-700"
+            : "text-lavender-200 hover:text-white hover:bg-lavender-800"
             }`}
           aria-label="Home"
         >
@@ -32,8 +32,8 @@ const BottomNavigation = () => {
         <Link
           to="/dog-resources"
           className={`flex flex-col items-center justify-center transition-colors ${isActive("/dog-resources")
-              ? "text-white bg-lavender-700"
-              : "text-lavender-200 hover:text-white hover:bg-lavender-800"
+            ? "text-white bg-lavender-700"
+            : "text-lavender-200 hover:text-white hover:bg-lavender-800"
             }`}
           aria-label="Dog Resources"
         >
@@ -43,8 +43,8 @@ const BottomNavigation = () => {
         <Link
           to="/cat-resources"
           className={`flex flex-col items-center justify-center transition-colors ${isActive("/cat-resources")
-              ? "text-white bg-lavender-700"
-              : "text-lavender-200 hover:text-white hover:bg-lavender-800"
+            ? "text-white bg-lavender-700"
+            : "text-lavender-200 hover:text-white hover:bg-lavender-800"
             }`}
           aria-label="Cat Resources"
         >
@@ -54,8 +54,8 @@ const BottomNavigation = () => {
         <Link
           to="/profile"
           className={`flex flex-col items-center justify-center transition-colors ${isActive("/profile")
-              ? "text-white bg-lavender-700"
-              : "text-lavender-200 hover:text-white hover:bg-lavender-800"
+            ? "text-white bg-lavender-700"
+            : "text-lavender-200 hover:text-white hover:bg-lavender-800"
             }`}
           aria-label="Profile"
         >

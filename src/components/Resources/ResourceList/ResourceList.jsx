@@ -205,54 +205,56 @@ const ResourceList = () => {
   };
 
   return (
-    <div className="min-h-screen bg-lavender-50">
-      <div className="sticky top-0 z-30 max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="sticky top-0 z-30 bg-lavender-100 rounded-2xl shadow-md p-4 sm:p-6 mb-6 border border-lavender-100 mt-6">
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center">
-                <button
-                  onClick={() =>
-                    navigate(
-                      isDogCategory
-                        ? "/dog-resources"
-                        : isCatCategory
-                          ? "/cat-resources"
-                          : "/dashboard"
-                    )
-                  }
-                  className="mr-3 p-2 hover:bg-lavender-200 rounded-full transition-colors text-lavender-700 hover:text-lavender-900"
-                >
-                  <FiArrowLeft className="w-5 h-5" />
-                </button>
-                <h2 className="text-lg font-bold text-lavender-900 flex items-center">
-                  {getCategoryName()} Resources
-                </h2>
-              </div>
-            </div>
-            <div className="mb-4">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search resources..."
-                  value={searchTerm}
-                  onChange={handleSearchChange}
-                  className="w-full py-2 pl-10 pr-10 rounded-full border border-lavender-300 bg-lavender-50 text-lavender-900 focus:ring-2 focus:ring-lavender-500 focus:border-transparent focus:outline-none"
-                />
-                <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                {searchTerm && (
+    <div className="min-h-screen bg-lavender-50 relative pb-16">
+      <header className="sticky top-16 z-40 bg-lavender-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="bg-lavender-100 rounded-2xl shadow-md p-4 sm:p-6 mb-6 border border-lavender-100 mt-6">
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center">
                   <button
-                    onClick={() => setSearchTerm("")}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    onClick={() =>
+                      navigate(
+                        isDogCategory
+                          ? "/dog-resources"
+                          : isCatCategory
+                            ? "/cat-resources"
+                            : "/dashboard"
+                      )
+                    }
+                    className="mr-3 p-2 hover:bg-lavender-200 rounded-full transition-colors text-lavender-700 hover:text-lavender-900"
                   >
-                    <FiX className="w-5 h-5" />
+                    <FiArrowLeft className="w-5 h-5" />
                   </button>
-                )}
+                  <h2 className="text-lg font-bold text-lavender-900 flex items-center">
+                    {getCategoryName()} Resources
+                  </h2>
+                </div>
+              </div>
+              <div className="mb-4">
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search resources..."
+                    value={searchTerm}
+                    onChange={handleSearchChange}
+                    className="w-full py-2 pl-10 pr-10 rounded-full border border-lavender-300 bg-lavender-50 text-lavender-900 focus:ring-2 focus:ring-lavender-500 focus:border-transparent focus:outline-none"
+                  />
+                  <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  {searchTerm && (
+                    <button
+                      onClick={() => setSearchTerm("")}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      <FiX className="w-5 h-5" />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </header>
       <div className="max-w-7xl mx-auto px-4 pb-16 sm:px-6 pt-0">
         <div className="hidden">
           <Googlemap
@@ -322,8 +324,8 @@ const ResourceList = () => {
             {displayedResources.length > 0 && totalPages > 1 && (
               <div
                 className={`mt-8 ${isMobile
-                    ? "fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-md z-20"
-                    : ""
+                  ? "fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-md z-20"
+                  : ""
                   }`}
               >
                 <PaginationControls />
@@ -332,7 +334,7 @@ const ResourceList = () => {
           </div>
         )}
       </div>
-    </div>
+    </div >
   );
 };
 
