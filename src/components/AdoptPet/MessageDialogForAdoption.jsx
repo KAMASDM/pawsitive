@@ -293,7 +293,7 @@ const MessageDialogForAdoption = ({
         <div className="flex-1 p-6 overflow-y-auto bg-gray-50">
           {loading ? (
             <div className="h-full flex flex-col items-center justify-center">
-              <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-lavender-500 mb-4"></div>
+              <div className="w-12 h-12 border-4 border-lavender-200 border-t-lavender-600 rounded-full animate-spin"></div>
               <p className="text-gray-500">Loading messages...</p>
             </div>
           ) : messages.length === 0 ? (

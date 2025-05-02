@@ -102,9 +102,9 @@ const NearbyMates = () => {
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c; // Distance in km
   };
@@ -355,35 +355,39 @@ const NearbyMates = () => {
               <div className="grid grid-cols-3 gap-2 sm:flex sm:items-center sm:space-x-3">
                 <button
                   onClick={() => setActiveCategory("all")}
-                  className={`px-3 py-2 sm:px-4 rounded-full text-sm whitespace-nowrap transition-all ${activeCategory === "all"
+                  className={`px-3 py-2 sm:px-4 rounded-full text-sm whitespace-nowrap transition-all ${
+                    activeCategory === "all"
                       ? "bg-lavender-600 text-white font-medium shadow-sm"
                       : "text-lavender-700 hover:bg-lavender-100"
-                    }`}
+                  }`}
                 >
                   All Matches
                 </button>
                 <button
                   onClick={() => setActiveCategory("nearby")}
-                  className={`px-3 py-2 sm:px-4 rounded-full text-sm whitespace-nowrap transition-all flex items-center justify-center ${activeCategory === "nearby"
+                  className={`px-3 py-2 sm:px-4 rounded-full text-sm whitespace-nowrap transition-all flex items-center justify-center ${
+                    activeCategory === "nearby"
                       ? "bg-lavender-600 text-white font-medium shadow-sm"
                       : "text-lavender-700 hover:bg-lavender-100"
-                    }`}
+                  }`}
                 >
                   <FiMapPin
-                    className={`mr-1 ${activeCategory === "nearby"
+                    className={`mr-1 ${
+                      activeCategory === "nearby"
                         ? "text-white"
                         : "text-lavender-600"
-                      }`}
+                    }`}
                   />
                   <span className="hidden sm:inline">Nearby</span>
                   <span className="sm:hidden">{"<"}5km</span>
                 </button>
                 <button
                   onClick={() => setActiveCategory("breed")}
-                  className={`px-3 py-2 sm:px-4 rounded-full text-sm whitespace-nowrap transition-all ${activeCategory === "breed"
+                  className={`px-3 py-2 sm:px-4 rounded-full text-sm whitespace-nowrap transition-all ${
+                    activeCategory === "breed"
                       ? "bg-lavender-600 text-white font-medium shadow-sm"
                       : "text-lavender-700 hover:bg-lavender-100"
-                    }`}
+                  }`}
                 >
                   Same Breed
                 </button>
@@ -475,10 +479,11 @@ const NearbyMates = () => {
                         <button
                           key={pet.id}
                           onClick={() => setSelectedUserPet(pet)}
-                          className={`flex flex-col items-center p-3 rounded-lg border transition-all ${selectedUserPet?.id === pet.id
+                          className={`flex flex-col items-center p-3 rounded-lg border transition-all ${
+                            selectedUserPet?.id === pet.id
                               ? "border-lavender-600 bg-lavender-50 shadow-sm"
                               : "border-gray-200 hover:border-lavender-300"
-                            }`}
+                          }`}
                         >
                           <div className="h-12 w-12 rounded-full overflow-hidden bg-lavender-100 flex items-center justify-center mb-2">
                             {pet.image ? (
