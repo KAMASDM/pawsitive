@@ -1,41 +1,16 @@
-// components/Profile/components/MessageDialog.jsx
 import React, { useState, useEffect, useRef } from "react";
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Box,
-  Typography,
-  Avatar,
-  Paper,
-  IconButton,
-  InputAdornment,
-  Divider,
-  CircularProgress,
-  Chip,
-  Tooltip,
-  Button,
-} from "@mui/material";
-import SendIcon from "@mui/icons-material/Send";
-import CloseIcon from "@mui/icons-material/Close";
-import AttachFileIcon from "@mui/icons-material/AttachFile";
-import ImageIcon from "@mui/icons-material/Image";
-import EmojiEmotionsIcon from "@mui/icons-material/EmojiEmotions";
-import PetsIcon from "@mui/icons-material/Pets";
 import { ref, get, onValue, off, push, set, update } from "firebase/database";
 import { database, auth } from "../../firebase";
-import { InfoIcon } from "lucide-react";
+import { Info } from "lucide-react";
+import EmojiPicker from "emoji-picker-react";
+import { Send, X, Smile, PawPrint } from "lucide-react";
 
 const MessageDialogForAdoption = ({
   open,
   onClose,
   conversationId,
   recipientId,
-  recipientName,
   senderPet,
-  receiverPet,
   matingRequestId,
 }) => {
   const [messages, setMessages] = useState([]);
@@ -43,8 +18,10 @@ const MessageDialogForAdoption = ({
   const [loading, setLoading] = useState(true);
   const [matingRequest, setMatingRequest] = useState(null);
   const [typingTimeout, setTypingTimeout] = useState(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const user = auth.currentUser;
   const messagesEndRef = useRef(null);
+  const emojiPickerRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -55,6 +32,22 @@ const MessageDialogForAdoption = ({
       scrollToBottom();
     }
   }, [messages]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        emojiPickerRef.current &&
+        !emojiPickerRef.current.contains(event.target)
+      ) {
+        setShowEmojiPicker(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   useEffect(() => {
     if (!open || !matingRequestId) return;
@@ -183,6 +176,7 @@ const MessageDialogForAdoption = ({
 
       setNewMessage("");
       scrollToBottom();
+      setShowEmojiPicker(false);
     } catch (error) {
       console.error("Error sending message:", error);
     }
@@ -226,432 +220,234 @@ const MessageDialogForAdoption = ({
   }, {});
 
   const getPetGradient = (type) => {
-    if (!type) return "linear-gradient(145deg, #f5f7fa 0%, #e4e8eb 100%)";
+    if (!type) return "bg-gradient-to-br from-gray-50 to-gray-100";
 
     switch (type.toLowerCase()) {
       case "dog":
-        return "linear-gradient(145deg, #e3f2fd 0%, #bbdefb 100%)";
+        return "bg-gradient-to-br from-blue-50 to-blue-100";
       case "cat":
-        return "linear-gradient(145deg, #fff8e1 0%, #ffecb3 100%)";
+        return "bg-gradient-to-br from-yellow-50 to-yellow-100";
       default:
-        return "linear-gradient(145deg, #f5f7fa 0%, #e4e8eb 100%)";
+        return "bg-gradient-to-br from-gray-50 to-gray-100";
     }
   };
 
+  const onEmojiClick = (emojiData) => {
+    setNewMessage((prev) => prev + emojiData.emoji);
+  };
+
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="md"
-      fullWidth
-      PaperProps={{
-        sx: {
-          minHeight: "80vh",
-          display: "flex",
-          flexDirection: "column",
-          borderRadius: 2,
-          overflow: "hidden",
-        },
-      }}
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center ${
+        open ? "" : "hidden"
+      }`}
     >
-      <DialogTitle
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          borderBottom: "1px solid rgba(0, 0, 0, 0.12)",
-          p: 2,
-          background: "linear-gradient(145deg, #f9f5ff 0%, #e6f7ff 100%)",
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "center" }}>
-          <Avatar
-            src={senderPet?.image}
-            alt={senderPet?.name}
-            sx={{
-              width: 48,
-              height: 48,
-              border: "3px solid #fff",
-              boxShadow: 2,
-              background: getPetGradient(senderPet?.type),
-              mr: 2,
-            }}
-          >
-            {!senderPet?.image && <PetsIcon />}
-          </Avatar>
-          <Box>
-            <Typography variant="h6" sx={{ fontWeight: "bold", mb: 0.5 }}>
-              Adoption Inquiry
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              About {senderPet?.name}
-            </Typography>
-          </Box>
-        </Box>
-        <IconButton onClick={onClose}>
-          <CloseIcon />
-        </IconButton>
-      </DialogTitle>
-
-      {matingRequest && (
-        <Box
-          sx={{
-            p: 2,
-            backgroundColor: "rgba(225, 245, 254, 0.5)",
-            borderBottom: "1px solid rgba(0,0,0,0.08)",
-          }}
+      <div
+        className="fixed inset-0 bg-black bg-opacity-50"
+        onClick={onClose}
+      ></div>
+      <div className="relative w-full max-w-4xl h-[80vh] bg-white rounded-lg shadow-xl flex flex-col overflow-hidden">
+        <div
+          className={`flex justify-between items-center p-4 border-b border-gray-200 ${getPetGradient(
+            senderPet?.type
+          )}`}
         >
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <InfoIcon color="primary" sx={{ mr: 1.5 }} />
-            <Typography variant="subtitle2">
-              You're inquiring about adopting {senderPet?.name}
-            </Typography>
-          </Box>
-        </Box>
-      )}
-
-      <DialogContent
-        sx={{
-          flex: 1,
-          p: 3,
-          overflowY: "auto",
-          display: "flex",
-          flexDirection: "column",
-          backgroundColor: "#f9fafb",
-        }}
-      >
-        {loading ? (
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              height: "100%",
-            }}
-          >
-            <CircularProgress size={40} sx={{ mb: 2 }} />
-            <Typography variant="body2" color="textSecondary">
-              Loading messages...
-            </Typography>
-          </Box>
-        ) : messages.length === 0 ? (
-          <Box
-            sx={{
-              flex: 1,
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              alignItems: "center",
-              pb: 4,
-            }}
-          >
-            <Typography variant="h6" align="center" gutterBottom>
-              Start Your Adoption Inquiry
-            </Typography>
-            <Typography
-              variant="body2"
-              color="textSecondary"
-              align="center"
-              sx={{ maxWidth: 400 }}
+          <div className="flex items-center">
+            <div
+              className={`w-12 h-12 rounded-full border-2 border-white shadow-md flex items-center justify-center ${
+                senderPet?.image ? "" : getPetGradient(senderPet?.type)
+              } mr-3`}
             >
-              This is the beginning of your conversation about adopting{" "}
-              {senderPet?.name}.
-            </Typography>
-            <Box
-              sx={{
-                mt: 4,
-                p: 2,
-                borderRadius: 2,
-                backgroundColor: "rgba(0,0,0,0.03)",
-              }}
-            >
-              <Typography
-                variant="body2"
-                color="textSecondary"
-                sx={{ textAlign: "center" }}
-              >
-                "Hello! I'm interested in adopting {senderPet?.name}. Could you
-                tell me more about them?"
-              </Typography>
-              <Button
-                variant="outlined"
-                color="primary"
-                size="small"
-                sx={{ mt: 2, display: "block", mx: "auto" }}
-                onClick={() => {
-                  setNewMessage(
-                    `Hello! I'm interested in adopting ${senderPet?.name}. Could you tell me more about them?`
-                  );
-                }}
-              >
-                Use Suggestion
-              </Button>
-            </Box>
-          </Box>
-        ) : (
-          <>
-            {Object.keys(groupedMessages).map((date) => (
-              <Box key={date}>
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    my: 2,
+              {senderPet?.image ? (
+                <img
+                  src={senderPet.image}
+                  alt={senderPet.name}
+                  className="w-full h-full rounded-full object-cover"
+                />
+              ) : (
+                <PawPrint className="text-gray-500" size={24} />
+              )}
+            </div>
+            <div>
+              <h3 className="font-bold text-lg">Adoption Inquiry</h3>
+              <p className="text-sm text-gray-600">About {senderPet?.name}</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            <X size={24} />
+          </button>
+        </div>
+        {matingRequest && (
+          <div className="p-4 bg-lavender-50 border-b border-gray-100">
+            <div className="flex items-center">
+              <Info className="text-lavender-500 mr-2" size={18} />
+              <p className="text-sm font-medium">
+                You're inquiring about adopting {senderPet?.name}
+              </p>
+            </div>
+          </div>
+        )}
+        <div className="flex-1 p-6 overflow-y-auto bg-gray-50">
+          {loading ? (
+            <div className="h-full flex flex-col items-center justify-center">
+              <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-lavender-500 mb-4"></div>
+              <p className="text-gray-500">Loading messages...</p>
+            </div>
+          ) : messages.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center pb-8">
+              <h4 className="text-lg font-semibold mb-2 text-center">
+                Start Your Adoption Inquiry
+              </h4>
+              <p className="text-gray-500 text-center max-w-md mb-6">
+                This is the beginning of your conversation about adopting{" "}
+                {senderPet?.name}.
+              </p>
+              <div className="mt-4 p-4 rounded-lg bg-gray-50">
+                <p className="text-gray-500 text-center">
+                  "Hello! I'm interested in adopting {senderPet?.name}. Could
+                  you tell me more about them?"
+                </p>
+                <button
+                  className="mt-3 mx-auto block px-4 py-1.5 border border-lavender-500 text-lavender-500 rounded-full text-sm hover:bg-blue-50 transition"
+                  onClick={() => {
+                    setNewMessage(
+                      `Hello! I'm interested in adopting ${senderPet?.name}. Could you tell me more about them?`
+                    );
                   }}
                 >
-                  <Divider sx={{ flex: 1 }} />
-                  <Chip
-                    label={new Date(date).toLocaleDateString([], {
-                      weekday: "long",
-                      month: "short",
-                      day: "numeric",
-                    })}
-                    variant="outlined"
-                    size="small"
-                    sx={{ mx: 2 }}
-                  />
-                  <Divider sx={{ flex: 1 }} />
-                </Box>
-
-                {groupedMessages[date].map((message, idx) => {
-                  const isSender = message.senderId === user?.uid;
-                  const showAvatar =
-                    idx === 0 ||
-                    groupedMessages[date][idx - 1].senderId !==
-                      message.senderId;
-
-                  return (
-                    <Box
-                      key={message.id}
-                      sx={{
-                        display: "flex",
-                        justifyContent: isSender ? "flex-end" : "flex-start",
-                        mb: 1.5,
-                      }}
-                    >
-                      {!isSender && showAvatar && (
-                        <Avatar
-                          sx={{
-                            mr: 1,
-                            mt: 0.5,
-                            width: 36,
-                            height: 36,
-                            bgcolor: "#9c27b0",
-                          }}
-                        >
-                          {message.senderName?.charAt(0) || "?"}
-                        </Avatar>
-                      )}
-
-                      {!isSender && !showAvatar && (
-                        <Box sx={{ width: 36, mr: 1 }} />
-                      )}
-
-                      <Box
-                        sx={{
-                          maxWidth: "70%",
-                          position: "relative",
-                        }}
+                  Use Suggestion
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              {Object.keys(groupedMessages).map((date) => (
+                <div key={date}>
+                  <div className="flex items-center my-4">
+                    <div className="flex-1 border-t border-gray-200"></div>
+                    <span className="mx-3 text-xs text-gray-500 px-2 py-1 border border-gray-200 rounded-full">
+                      {new Date(date).toLocaleDateString([], {
+                        weekday: "long",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </span>
+                    <div className="flex-1 border-t border-gray-200"></div>
+                  </div>
+                  {groupedMessages[date].map((message, idx) => {
+                    const isSender = message.senderId === user?.uid;
+                    const showAvatar =
+                      idx === 0 ||
+                      groupedMessages[date][idx - 1].senderId !==
+                        message.senderId;
+                    return (
+                      <div
+                        key={message.id}
+                        className={`flex mb-3 ${
+                          isSender ? "justify-end" : "justify-start"
+                        }`}
                       >
                         {!isSender && showAvatar && (
-                          <Typography
-                            variant="caption"
-                            color="textSecondary"
-                            sx={{ ml: 1, mb: 0.5, display: "block" }}
-                          >
-                            {message.senderName}
-                          </Typography>
+                          <div className="mr-2 mt-1 w-9 h-9 rounded-full bg-purple-500 flex items-center justify-center text-white">
+                            {message.senderName?.charAt(0) || "?"}
+                          </div>
                         )}
-
-                        <Paper
-                          elevation={0}
-                          sx={{
-                            p: 1.5,
-                            backgroundColor: isSender ? "#1976d2" : "#ffffff",
-                            color: isSender ? "#ffffff" : "inherit",
-                            borderRadius: isSender
-                              ? "18px 18px 4px 18px"
-                              : "18px 18px 18px 4px",
-                            boxShadow: "0 1px 2px rgba(0,0,0,0.1)",
-                            border: isSender
-                              ? "none"
-                              : "1px solid rgba(0,0,0,0.05)",
-                          }}
-                        >
-                          <Typography variant="body1">
-                            {message.text}
-                          </Typography>
-                        </Paper>
-
-                        <Typography
-                          variant="caption"
-                          color={
-                            isSender ? "rgba(255,255,255,0.7)" : "textSecondary"
-                          }
-                          sx={{
-                            display: "block",
-                            mt: 0.5,
-                            mb: 0.5,
-                            textAlign: isSender ? "right" : "left",
-                            fontSize: "0.7rem",
-                          }}
-                        >
-                          {formatMessageTime(message.timestamp)}
-                        </Typography>
-                      </Box>
-
-                      {isSender && showAvatar && (
-                        <Avatar
-                          sx={{
-                            ml: 1,
-                            mt: 0.5,
-                            width: 36,
-                            height: 36,
-                            bgcolor: "#2196f3",
-                          }}
-                        >
-                          {user?.displayName?.charAt(0) || "Y"}
-                        </Avatar>
-                      )}
-
-                      {isSender && !showAvatar && (
-                        <Box sx={{ width: 36, ml: 1 }} />
-                      )}
-                    </Box>
-                  );
-                })}
-              </Box>
-            ))}
-            <div ref={messagesEndRef} />
-          </>
-        )}
-      </DialogContent>
-
-      <DialogActions
-        sx={{
-          p: 2,
-          borderTop: "1px solid rgba(0, 0, 0, 0.08)",
-          display: "flex",
-          backgroundColor: "#ffffff",
-        }}
-      >
-        <Box sx={{ display: "flex", width: "100%", alignItems: "center" }}>
-          <Box sx={{ display: "flex", mr: 1 }}>
-            <Tooltip title="Add attachment">
-              <IconButton
-                color="default"
-                size="small"
-                sx={{
-                  mr: 0.5,
-                  color: "text.secondary",
-                  "&:hover": {
-                    color: "primary.main",
-                    backgroundColor: "rgba(0,0,0,0.04)",
-                  },
-                }}
+                        {!isSender && !showAvatar && (
+                          <div className="w-9 mr-2"></div>
+                        )}
+                        <div className={`max-w-[70%] relative`}>
+                          {!isSender && showAvatar && (
+                            <p className="text-xs text-gray-500 ml-2 mb-1">
+                              {message.senderName}
+                            </p>
+                          )}
+                          <div
+                            className={`p-3 rounded-xl ${
+                              isSender
+                                ? "bg-lavender-600 text-white rounded-br-none"
+                                : "bg-white border border-gray-100 rounded-bl-none"
+                            } shadow-sm`}
+                          >
+                            <p>{message.text}</p>
+                          </div>
+                          <p
+                            className={`text-xs mt-1 ${
+                              isSender
+                                ? "text-gray-500 text-right"
+                                : "text-gray-500 text-left"
+                            }`}
+                          >
+                            {formatMessageTime(message.timestamp)}
+                          </p>
+                        </div>
+                        {isSender && showAvatar && (
+                          <div className="ml-2 mt-1 w-9 h-9 rounded-full bg-lavender-500 flex items-center justify-center text-white">
+                            {user?.displayName?.charAt(0) || "Y"}
+                          </div>
+                        )}
+                        {isSender && !showAvatar && (
+                          <div className="w-9 ml-2"></div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+              <div ref={messagesEndRef} />
+            </>
+          )}
+        </div>
+        <div className="p-4 border-t border-gray-200 bg-white relative">
+          <div className="flex items-center w-full">
+            <button
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+              className="p-2 text-gray-500 hover:text-lavender-500 rounded-full hover:bg-gray-100 mr-1"
+            >
+              <Smile size={20} />
+            </button>
+            {showEmojiPicker && (
+              <div
+                ref={emojiPickerRef}
+                className="absolute bottom-16 left-4 z-10"
               >
-                <AttachFileIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Add image">
-              <IconButton
-                color="default"
-                size="small"
-                sx={{
-                  mr: 0.5,
-                  color: "text.secondary",
-                  "&:hover": {
-                    color: "primary.main",
-                    backgroundColor: "rgba(0,0,0,0.04)",
-                  },
-                }}
-              >
-                <ImageIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Add emoji">
-              <IconButton
-                color="default"
-                size="small"
-                sx={{
-                  color: "text.secondary",
-                  "&:hover": {
-                    color: "primary.main",
-                    backgroundColor: "rgba(0,0,0,0.04)",
-                  },
-                }}
-              >
-                <EmojiEmotionsIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          </Box>
-
-          <TextField
-            fullWidth
-            placeholder="Type a message..."
-            value={newMessage}
-            onChange={(e) => {
-              setNewMessage(e.target.value);
-              handleTyping();
-            }}
-            onKeyPress={(e) =>
-              e.key === "Enter" && !e.shiftKey && handleSendMessage()
-            }
-            variant="outlined"
-            size="small"
-            InputProps={{
-              sx: {
-                borderRadius: 4,
-                backgroundColor: "#f5f5f5",
-                "&:hover": { backgroundColor: "#f0f0f0" },
-                "& .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "transparent",
-                },
-                "&:hover .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "transparent",
-                },
-                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "primary.main",
-                  borderWidth: 1,
-                },
-              },
-              endAdornment: (
-                <InputAdornment position="end">
-                  <Tooltip title="Send message">
-                    <span>
-                      <IconButton
-                        color="primary"
-                        edge="end"
-                        onClick={handleSendMessage}
-                        disabled={!newMessage.trim()}
-                        sx={{
-                          bgcolor: newMessage.trim()
-                            ? "primary.main"
-                            : "rgba(0,0,0,0.08)",
-                          color: newMessage.trim() ? "white" : "text.disabled",
-                          "&:hover": {
-                            bgcolor: newMessage.trim()
-                              ? "primary.dark"
-                              : "rgba(0,0,0,0.08)",
-                          },
-                          transition: "all 0.2s ease",
-                          width: 32,
-                          height: 32,
-                        }}
-                      >
-                        <SendIcon fontSize="small" />
-                      </IconButton>
-                    </span>
-                  </Tooltip>
-                </InputAdornment>
-              ),
-            }}
-          />
-        </Box>
-      </DialogActions>
-    </Dialog>
+                <EmojiPicker
+                  onEmojiClick={onEmojiClick}
+                  width={300}
+                  height={350}
+                />
+              </div>
+            )}
+            <input
+              type="text"
+              placeholder="Type a message..."
+              value={newMessage}
+              onChange={(e) => {
+                setNewMessage(e.target.value);
+                handleTyping();
+              }}
+              onKeyPress={(e) =>
+                e.key === "Enter" && !e.shiftKey && handleSendMessage()
+              }
+              className="flex-1 py-2 px-4 bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:bg-white"
+            />
+            <button
+              onClick={handleSendMessage}
+              disabled={!newMessage.trim()}
+              className={`ml-2 p-2 rounded-full ${
+                newMessage.trim()
+                  ? "bg-lavender-500 text-white hover:bg-lavender-600"
+                  : "bg-gray-200 text-gray-400"
+              }`}
+            >
+              <Send size={20} />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

@@ -729,7 +729,7 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-lavender-50 pb-16">
+    <div className="min-h-screen bg-lavender-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
         {pendingRequestsCount > 0 && (
           <button

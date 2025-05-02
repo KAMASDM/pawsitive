@@ -19,7 +19,7 @@ function App() {
   return (
     <div>
       <ScrollToTop />
-      <div className="min-h-screen bg-lavender-50">
+      <div className="min-h-screen bg-lavender-50 pb-16">
         <Header />
         <main>
           <Routes>

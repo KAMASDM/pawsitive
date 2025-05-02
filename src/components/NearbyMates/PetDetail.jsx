@@ -1,35 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import {
-  Box,
-  Typography,
-  Paper,
-  Grid,
-  Chip,
-  Divider,
-  Button,
-  Avatar,
-  CircularProgress,
-  Container,
-  Card,
-  CardMedia,
-  IconButton,
-  Alert,
-  useTheme,
-} from "@mui/material";
 import { ref, get, set } from "firebase/database";
 import { database, auth } from "../../firebase";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import LocationOnIcon from "@mui/icons-material/LocationOn";
-import PetsIcon from "@mui/icons-material/Pets";
-import FavoriteIcon from "@mui/icons-material/Favorite";
-import MedicalInformationIcon from "@mui/icons-material/MedicalInformation";
-import FemaleIcon from "@mui/icons-material/Female";
-import MaleIcon from "@mui/icons-material/Male";
-import ScaleIcon from "@mui/icons-material/Scale";
-import CakeIcon from "@mui/icons-material/Cake";
-import InfoIcon from "@mui/icons-material/Info";
-import ColorLensIcon from "@mui/icons-material/ColorLens";
+import {
+  ArrowLeft,
+  Heart,
+  Info,
+  Cake,
+  MapPin,
+  Palette,
+  Scale,
+  Command,
+  PawPrint,
+} from "lucide-react";
 import MatingRequestDialog from "../Profile/components/MatingRequestDialog";
 import defaultDogImage from ".././../images/Dog.jpg";
 import defaultCatImage from "../../images/Cat.jpg";
@@ -39,7 +22,6 @@ import defaultSmallPetImage from "../../images/Pet.jpg";
 const PetDetail = () => {
   const { petId } = useParams();
   const navigate = useNavigate();
-  const theme = useTheme();
   const user = auth.currentUser;
 
   const [pet, setPet] = useState(null);
@@ -192,251 +174,169 @@ const PetDetail = () => {
 
   if (loading) {
     return (
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-        }}
-      >
-        <CircularProgress sx={{ color: "rgb(139 121 195)" }} />
-      </Box>
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-lavender-500"></div>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Container maxWidth="md" sx={{ py: 4 }}>
-        <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
-          <Box display="flex" alignItems="center" mb={2}>
-            <IconButton onClick={handleGoBack} sx={{ mr: 1 }}>
-              <ArrowBackIcon />
-            </IconButton>
-            <Typography variant="h5">Error</Typography>
-          </Box>
-          <Alert severity="error">{error}</Alert>
-        </Paper>
-      </Container>
+      <div className="container mx-auto py-4 px-4 max-w-4xl">
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="flex items-center mb-4">
+            <button
+              onClick={handleGoBack}
+              className="mr-2 p-1 rounded-full hover:bg-gray-100"
+            >
+              <ArrowLeft className="text-gray-700" />
+            </button>
+            <h2 className="text-xl font-semibold">Error</h2>
+          </div>
+          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4">
+            <p>{error}</p>
+          </div>
+        </div>
+      </div>
     );
   }
 
   if (!pet) {
     return (
-      <Container maxWidth="md" sx={{ py: 4 }}>
-        <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
-          <Box display="flex" alignItems="center" mb={2}>
-            <IconButton onClick={handleGoBack} sx={{ mr: 1 }}>
-              <ArrowBackIcon />
-            </IconButton>
-            <Typography variant="h5">Pet Not Found</Typography>
-          </Box>
-          <Alert severity="warning">
-            The pet you're looking for doesn't exist or has been removed.
-          </Alert>
-        </Paper>
-      </Container>
+      <div className="container mx-auto py-4 px-4 max-w-4xl">
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="flex items-center mb-4">
+            <button
+              onClick={handleGoBack}
+              className="mr-2 p-1 rounded-full hover:bg-gray-100"
+            >
+              <ArrowLeft className="text-gray-700" />
+            </button>
+            <h2 className="text-xl font-semibold">Pet Not Found</h2>
+          </div>
+          <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4">
+            <p>The pet you're looking for doesn't exist or has been removed.</p>
+          </div>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 4 } }}>
-      <Paper
-        elevation={3}
-        sx={{
-          borderRadius: 3,
-          overflow: "hidden",
-          background: theme.palette.primary.light,
-        }}
-      >
-        <Box
-          sx={{
-            p: { xs: 2, sm: 3 },
-            background: "rgb(139 121 195)",
-            color: "white",
-            display: "flex",
-            alignItems: "center",
-          }}
-        >
-          <IconButton onClick={handleGoBack} sx={{ color: "white", mr: 1 }}>
-            <ArrowBackIcon />
-          </IconButton>
-          <Typography variant="h5" fontWeight="bold">
-            Pet Details
-          </Typography>
-        </Box>
-        <Grid container spacing={0}>
-          <Grid item xs={12} md={5}>
-            <Card
-              elevation={0}
-              sx={{
-                height: "100%",
-                background: "transparent",
-                borderRadius: 0,
-              }}
-            >
-              <CardMedia
-                component="img"
-                image={pet.image || getDefaultPetImage(pet.type)}
-                alt={pet.name}
-                sx={{
-                  height: { xs: 250, sm: 300, md: "100%" },
-                  objectFit: "cover",
-                }}
-              />
-            </Card>
-          </Grid>
-          <Grid item xs={12} md={7}>
-            <Box
-              sx={{
-                p: { xs: 2, sm: 4 },
-                height: "100%",
-                background: "#fff",
-                display: "flex",
-                flexDirection: "column",
-              }}
-            >
-              <Box
-                display="flex"
-                alignItems="center"
-                justifyContent="space-between"
-                mb={2}
-              >
-                <Typography
-                  variant="h4"
-                  fontWeight="bold"
-                  color="rgb(139 121 195)"
-                >
-                  {pet.name}
-                </Typography>
-                {pet.availableForMating && (
-                  <Chip
-                    icon={<FavoriteIcon />}
-                    label="Available for Mating"
-                    color="rgb(139 121 195)"
-                    sx={{ fontWeight: "bold" }}
-                  />
-                )}
-              </Box>
-              <Box display="flex" alignItems="center" gap={1} mb={2}>
-                <PetsIcon color="rgb(139 121 195)" />
-                <Typography variant="h6">
-                  {pet.breed || "Unknown breed"}{" "}
-                  {pet.type ? `(${pet.type})` : ""}
-                </Typography>
-              </Box>
-              <Divider sx={{ my: 2 }} />
-              <Grid container spacing={2} sx={{ mb: 3 }}>
-                <Grid item xs={6} sm={4}>
-                  <Box display="flex" alignItems="center">
-                    {pet.gender === "Male" ? (
-                      <MaleIcon sx={{ color: "rgb(139 121 195)", mr: 1 }} />
-                    ) : (
-                      <FemaleIcon sx={{ color: "rgb(139 121 195)", mr: 1 }} />
-                    )}
-                    <Typography>{pet.gender || "Unknown"}</Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={6} sm={4}>
-                  <Box display="flex" alignItems="center">
-                    <CakeIcon sx={{ color: "rgb(139 121 195)", mr: 1 }} />
-                    <Typography>
-                      {pet.age ? `${pet.age} years` : "Unknown age"}
-                    </Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={6} sm={4}>
-                  <Box display="flex" alignItems="center">
-                    <ScaleIcon sx={{ color: "rgb(139 121 195)", mr: 1 }} />
-                    <Typography>
-                      {pet.weight ? `${pet.weight} kg` : "Unknown weight"}
-                    </Typography>
-                  </Box>
-                </Grid>
-                {pet.color && (
-                  <Grid item xs={6} sm={4}>
-                    <Box display="flex" alignItems="center">
-                      <ColorLensIcon
-                        sx={{ color: "rgb(139 121 195)", mr: 1 }}
-                      />
-                      <Typography>{pet.color}</Typography>
-                    </Box>
-                  </Grid>
-                )}
-                {pet.distance && (
-                  <Grid item xs={6} sm={4}>
-                    <Box display="flex" alignItems="center">
-                      <LocationOnIcon
-                        sx={{ color: "rgb(139 121 195)", mr: 1 }}
-                      />
-                      <Typography>{pet.distance} km away</Typography>
-                    </Box>
-                  </Grid>
-                )}
-              </Grid>
-              {pet.description && (
-                <Box mb={3}>
-                  <Box display="flex" alignItems="center" mb={1}>
-                    <InfoIcon sx={{ color: "rgb(139 121 195)", mr: 1 }} />
-                    <Typography variant="h6">About</Typography>
-                  </Box>
-                  <Typography variant="body1" sx={{ pl: 3 }}>
-                    {pet.description}
-                  </Typography>
-                </Box>
+    <div className="container mx-auto py-4 px-4 lg:py-8 max-w-7xl">
+      <div className="bg-gradient-to-r from-lavender-600 to-lavender-800 rounded-xl shadow-xl overflow-hidden">
+        <div className="p-4 sm:p-6 bg-lavender-700 text-white flex items-center">
+          <button
+            onClick={handleGoBack}
+            className="mr-3 p-1 rounded-full hover:bg-lavender-600"
+          >
+            <ArrowLeft className="text-white" />
+          </button>
+          <h1 className="text-xl sm:text-2xl font-bold">Pet Details</h1>
+        </div>
+        <div className="flex flex-col lg:flex-row">
+          <div className="w-full lg:w-5/12">
+            <img
+              src={pet.image || getDefaultPetImage(pet.type)}
+              alt={pet.name}
+              className="w-full h-64 sm:h-80 md:h-96 lg:h-full object-cover"
+            />
+          </div>
+          <div className="w-full lg:w-7/12 bg-white p-4 sm:p-6 md:p-8 flex flex-col">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl sm:text-3xl font-bold text-lavender-700">
+                {pet.name}
+              </h2>
+              {pet.availableForMating && (
+                <div className="flex items-center bg-lavender-100 text-lavender-700 px-3 py-1 rounded-full text-sm font-medium">
+                  <Heart className="w-4 h-4 mr-1" />
+                  <span>Available for Mating</span>
+                </div>
               )}
-              {pet.medical && pet.medical.medications && (
-                <Box mb={3}>
-                  <Box display="flex" alignItems="center" mb={1}>
-                    <MedicalInformationIcon
-                      sx={{ color: "rgb(139 121 195)", mr: 1 }}
-                    />
-                    <Typography variant="h6">Medical Information</Typography>
-                  </Box>
-                  <Typography variant="body1" sx={{ pl: 3 }}>
-                    Medications: {pet.medical.medications || "None"}
-                  </Typography>
-                </Box>
-              )}
-              <Box sx={{ mt: "auto", pt: 2 }}>
-                <Divider sx={{ mb: 2 }} />
-                <Box
-                  display="flex"
-                  justifyContent="space-between"
-                  alignItems="center"
-                >
-                  <Box display="flex" alignItems="center">
-                    <Avatar sx={{ bgcolor: "rgb(139 121 195)", mr: 1 }}>
-                      {petOwner?.displayName?.charAt(0) || "P"}
-                    </Avatar>
-                    <Typography>
-                      Owner: {petOwner?.displayName || "Pet Owner"}
-                    </Typography>
-                  </Box>
+            </div>
+            <div className="flex items-center mb-4">
+              <PawPrint className="text-lavender-600 mr-2" />
+              <span className="text-lg">
+                {pet.breed || "Unknown breed"} {pet.type ? `(${pet.type})` : ""}
+              </span>
+            </div>
 
-                  {user &&
-                    pet.userId !== user.uid &&
-                    pet.availableForMating && (
-                      <Button
-                        variant="contained"
-                        startIcon={<FavoriteIcon />}
-                        onClick={handleRequestMating}
-                        sx={{
-                          backgroundColor: "rgb(139 121 195)",
-                          "&:hover": {
-                            backgroundColor: "rgb(139 121 195)",
-                          },
-                        }}
-                      >
-                        Request Mating
-                      </Button>
-                    )}
-                </Box>
-              </Box>
-            </Box>
-          </Grid>
-        </Grid>
-      </Paper>
+            <div className="border-t border-gray-200 my-4"></div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
+              <div className="flex items-center">
+                {pet.gender === "Male" ? (
+                  <Command className="text-lavender-600 mr-2" />
+                ) : (
+                  <Command className="text-lavender-600 mr-2" />
+                )}
+                <span>{pet.gender || "Unknown"}</span>
+              </div>
+              <div className="flex items-center">
+                <Cake className="text-lavender-600 mr-2" />
+                <span>{pet.age ? `${pet.age} years` : "Unknown age"}</span>
+              </div>
+              <div className="flex items-center">
+                <Scale className="text-lavender-600 mr-2" />
+                <span>
+                  {pet.weight ? `${pet.weight} kg` : "Unknown weight"}
+                </span>
+              </div>
+              {pet.color && (
+                <div className="flex items-center">
+                  <Palette className="text-lavender-600 mr-2" />
+                  <span>{pet.color}</span>
+                </div>
+              )}
+              {pet.distance && (
+                <div className="flex items-center">
+                  <MapPin className="text-lavender-600 mr-2" />
+                  <span>{pet.distance} km away</span>
+                </div>
+              )}
+            </div>
+            {pet.description && (
+              <div className="mb-6">
+                <div className="flex items-center mb-2">
+                  <Info className="text-lavender-600 mr-2" />
+                  <h3 className="text-lg font-semibold">About</h3>
+                </div>
+                <p className="pl-6 text-gray-700">{pet.description}</p>
+              </div>
+            )}
+            {pet.medical && pet.medical.medications && (
+              <div className="mb-6">
+                <div className="flex items-center mb-2">
+                  <Info className="text-lavender-600 mr-2" />
+                  <h3 className="text-lg font-semibold">Medical Information</h3>
+                </div>
+                <p className="pl-6 text-gray-700">
+                  Medications: {pet.medical.medications || "None"}
+                </p>
+              </div>
+            )}
+            <div className="mt-auto pt-4">
+              <div className="border-t border-gray-200 mb-4"></div>
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div className="flex items-center">
+                  <div className="w-10 h-10 rounded-full bg-lavender-600 flex items-center justify-center text-white mr-3">
+                    {petOwner?.displayName?.charAt(0) || "P"}
+                  </div>
+                  <span>Owner: {petOwner?.displayName || "Pet Owner"}</span>
+                </div>
+                {user && pet.userId !== user.uid && pet.availableForMating && (
+                  <button
+                    onClick={handleRequestMating}
+                    className="flex items-center bg-lavender-600 hover:bg-lavender-700 text-white px-4 py-2 rounded-lg transition-colors"
+                  >
+                    <Heart className="w-5 h-5 mr-2" />
+                    <span>Request Mating</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       {openMatingRequestDialog && (
         <MatingRequestDialog
           open={openMatingRequestDialog}
@@ -448,7 +348,7 @@ const PetDetail = () => {
           onPetSelect={(pet) => setSelectedUserPet(pet)}
         />
       )}
-    </Container>
+    </div>
   );
 };
 
