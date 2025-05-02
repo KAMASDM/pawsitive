@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ref, get, set, onValue } from "firebase/database";
+import { ref, get, set } from "firebase/database";
 import { database, auth } from "../../firebase";
 import {
   ArrowLeft,
@@ -12,7 +12,6 @@ import {
   Scale,
   Command,
   PawPrint,
-  CheckCircle,
 } from "lucide-react";
 import MatingRequestDialog from "../Profile/components/MatingRequestDialog";
 import defaultDogImage from ".././../images/Dog.jpg";
@@ -32,7 +31,6 @@ const PetDetail = () => {
   const [userPets, setUserPets] = useState([]);
   const [selectedUserPet, setSelectedUserPet] = useState(null);
   const [openMatingRequestDialog, setOpenMatingRequestDialog] = useState(false);
-  const [requestStatus, setRequestStatus] = useState(null);
 
   useEffect(() => {
     const fetchPetDetails = async () => {
@@ -84,8 +82,6 @@ const PetDetail = () => {
                   setSelectedUserPet(compatiblePets[0]);
                 }
               }
-              // Check initial request status
-              checkRequestStatus(user.uid, foundPet.userId, foundPet.id);
             }
           } else {
             setError("Pet not found");
@@ -102,55 +98,7 @@ const PetDetail = () => {
     };
 
     fetchPetDetails();
-
-    // Listen for real-time changes to received requests to update status
-    if (user && pet?.userId) {
-      const receivedRequestsRef = ref(
-        database,
-        `matingRequests/received/${user.uid}`
-      );
-      const onValueChange = (snapshot) => {
-        if (snapshot.exists()) {
-          const requests = snapshot.val();
-          const matchingRequest = Object.values(requests).find(
-            (req) => req.senderPetId === pet.id && req.receiverId === user.uid
-          );
-          if (matchingRequest && matchingRequest.status === 'accepted') {
-            setRequestStatus('accepted');
-          } else if (!requestStatus || requestStatus === 'accepted') {
-            // Reset status if no matching accepted request is found (or was accepted)
-            checkRequestStatus(user.uid, pet.userId, pet.id);
-          }
-        } else if (requestStatus === 'accepted') {
-          setRequestStatus(null); // Reset if all received requests are gone
-        }
-      };
-      const unsubscribeReceived = onValue(receivedRequestsRef, onValueChange);
-      return () => unsubscribeReceived();
-    }
   }, [petId, user]);
-
-  const checkRequestStatus = async (currentUserId, receiverId, receiverPetId) => {
-    if (!currentUserId || !receiverId || !receiverPetId) return;
-    const sentRequestsRef = ref(
-      database,
-      `matingRequests/sent/${currentUserId}`
-    );
-    const snapshot = await get(sentRequestsRef);
-    if (snapshot.exists()) {
-      const requests = snapshot.val();
-      const matchingRequest = Object.values(requests).find(
-        (req) => req.receiverPetId === receiverPetId && req.receiverId === receiverId
-      );
-      if (matchingRequest) {
-        setRequestStatus(matchingRequest.status);
-      } else {
-        setRequestStatus(null);
-      }
-    } else {
-      setRequestStatus(null);
-    }
-  };
 
   const getDefaultPetImage = (petType) => {
     switch (petType?.toLowerCase()) {
@@ -169,14 +117,12 @@ const PetDetail = () => {
     navigate(-1);
   };
 
-  const handleRequestMatingClick = () => {
+  const handleRequestMating = () => {
     if (!user) {
       navigate("/", { state: { from: `/pet-detail/${petId}` } });
       return;
     }
-    if (requestStatus === null) {
-      setOpenMatingRequestDialog(true);
-    }
+    setOpenMatingRequestDialog(true);
   };
 
   const handleSendMatingRequest = async (requestData) => {
@@ -220,7 +166,6 @@ const PetDetail = () => {
         createdAt: Date.now(),
         direction: "outgoing",
       });
-      setRequestStatus("pending");
       setOpenMatingRequestDialog(false);
     } catch (error) {
       console.error("Error sending mating request:", error);
@@ -229,8 +174,9 @@ const PetDetail = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-lavender-500"></div>
+      <div className="flex flex-col items-center justify-center h-screen">
+        <div className="w-12 h-12 border-4 border-lavender-200 border-t-lavender-600 rounded-full animate-spin"></div>
+        <p className="mt-4 text-lavender-900 font-medium">Loading...</p>
       </div>
     );
   }
@@ -380,33 +326,11 @@ const PetDetail = () => {
                 </div>
                 {user && pet.userId !== user.uid && pet.availableForMating && (
                   <button
-                    onClick={handleRequestMatingClick}
-                    disabled={requestStatus !== null && requestStatus !== 'accepted'}
-                    className={`flex items-center px-4 py-2 rounded-lg transition-colors text-sm font-medium
-                                            ${requestStatus === 'pending'
-                        ? 'bg-yellow-500 text-white hover:bg-yellow-600'
-                        : requestStatus === 'accepted'
-                          ? 'bg-green-500 text-white hover:bg-green-600'
-                          : 'bg-lavender-600 hover:bg-lavender-700 text-white'
-                      }
-                                        `}
+                    onClick={handleRequestMating}
+                    className="flex items-center bg-lavender-600 hover:bg-lavender-700 text-white px-4 py-2 rounded-lg transition-colors"
                   >
-                    {requestStatus === 'pending' ? (
-                      <>
-                        <Heart className="w-5 h-5 mr-2 animate-pulse" />
-                        <span>Request Sent</span>
-                      </>
-                    ) : requestStatus === 'accepted' ? (
-                      <>
-                        <CheckCircle className="w-5 h-5 mr-2" />
-                        <span>Accepted</span>
-                      </>
-                    ) : (
-                      <>
-                        <Heart className="w-5 h-5 mr-2" />
-                        <span>Request Mating</span>
-                      </>
-                    )}
+                    <Heart className="w-5 h-5 mr-2" />
+                    <span>Request Mating</span>
                   </button>
                 )}
               </div>
@@ -430,4 +354,3 @@ const PetDetail = () => {
 };
 
 export default PetDetail;
-

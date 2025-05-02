@@ -148,12 +148,6 @@ const ResourceList = () => {
   const isDogCategory = isPetType("dog_");
   const isCatCategory = isPetType("cat_");
 
-  const themeColor = isDogCategory
-    ? "lavender"
-    : isCatCategory
-      ? "lavender"
-      : "lavender";
-
   const getCategoryName = () => {
     let name = category?.replace(/^(dog_|cat_)/, "").replace(/_/g, " ");
     if (name) {
@@ -218,8 +212,8 @@ const ResourceList = () => {
                         isDogCategory
                           ? "/dog-resources"
                           : isCatCategory
-                            ? "/cat-resources"
-                            : "/dashboard"
+                          ? "/cat-resources"
+                          : "/dashboard"
                       )
                     }
                     className="mr-3 p-2 hover:bg-lavender-200 rounded-full transition-colors text-lavender-700 hover:text-lavender-900"
@@ -283,7 +277,6 @@ const ResourceList = () => {
                     key={index}
                     resource={resource}
                     onResourceUpdated={handleResourceUpdated}
-                    themeColor={themeColor}
                   />
                 ))
               ) : (
@@ -323,10 +316,11 @@ const ResourceList = () => {
             </motion.div>
             {displayedResources.length > 0 && totalPages > 1 && (
               <div
-                className={`mt-8 ${isMobile
-                  ? "fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-md z-20"
-                  : ""
-                  }`}
+                className={`mt-8 ${
+                  isMobile
+                    ? "fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-md z-20"
+                    : ""
+                }`}
               >
                 <PaginationControls />
               </div>
@@ -334,7 +328,7 @@ const ResourceList = () => {
           </div>
         )}
       </div>
-    </div >
+    </div>
   );
 };
 
