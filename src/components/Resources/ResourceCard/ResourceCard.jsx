@@ -6,11 +6,13 @@ import {
   getDocs,
   doc,
   updateDoc,
-  deleteDoc,
   getDoc,
   setDoc,
+  query,
+  where,
+  writeBatch,
 } from "firebase/firestore";
-import { ref, get, push, update, remove, set } from "firebase/database";
+import { ref, get, push, update } from "firebase/database";
 import { db, auth, database } from "../../../firebase";
 import Googlemap from "../../GoogleMap/GoogleMap";
 import { motion, AnimatePresence } from "framer-motion";
@@ -104,32 +106,36 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
 
   const checkIfLiked = useCallback(async () => {
     if (!resource.id || !auth.currentUser) return;
+    const userUid = auth.currentUser.uid;
     try {
-      const userLikesRef = ref(
-        database,
-        `userLikes/${auth.currentUser.uid}/${resource.id}`
-      );
+      const userLikesRef = ref(database, `userLikes/${userUid}/${resource.id}`);
       const snapshot = await get(userLikesRef);
       if (snapshot.exists()) {
         setLiked(true);
-        return;
+      } else {
+        setLiked(false);
+        try {
+          const likeDoc = await getDoc(
+            doc(db, "resources", resource.id, "likes", userUid)
+          );
+          setLiked(likeDoc.exists());
+        } catch (firestoreErr) { }
       }
+    } catch (error) {
       try {
         const likeDoc = await getDoc(
-          doc(db, "resources", resource.id, "likes", auth.currentUser.uid)
+          doc(db, "resources", resource.id, "likes", userUid)
         );
         setLiked(likeDoc.exists());
       } catch (firestoreErr) {
-        console.log("Firestore check failed");
+        console.log("Failed to check if resource is liked in both DBs");
       }
-    } catch (error) {
-      console.log("Failed to check if resource is liked");
     }
   }, [resource.id]);
 
   const fetchComments = useCallback(async () => {
     if (!resource.id) {
-      console.warn("Resource ID is missing for comments:", resource);
+      setComments([]);
       return;
     }
     try {
@@ -141,9 +147,35 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
           id: key,
           ...commentsData[key],
         }));
-        setComments(commentsList);
-        return;
+        setComments(
+          commentsList.sort(
+            (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+          )
+        );
+      } else {
+        try {
+          const commentsSnapshot = await getDocs(
+            collection(db, `resources/${resource.id}/comments`)
+          );
+          const commentsList = commentsSnapshot.docs.map((doc) => ({
+            ...doc.data(),
+            id: doc.id,
+          }));
+          setComments(
+            commentsList.sort(
+              (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+            )
+          );
+        } catch (firestoreErr) {
+          console.log("Firestore comments fetch failed");
+          setComments([]);
+        }
       }
+    } catch (error) {
+      console.error(
+        "Error fetching comments from RTDB, trying Firestore:",
+        error
+      );
       try {
         const commentsSnapshot = await getDocs(
           collection(db, `resources/${resource.id}/comments`)
@@ -152,22 +184,28 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
           ...doc.data(),
           id: doc.id,
         }));
-        setComments(commentsList);
+        setComments(
+          commentsList.sort(
+            (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+          )
+        );
       } catch (firestoreErr) {
-        console.log("Firestore comments fetch failed");
+        console.error(
+          "Error fetching comments from Firestore as well:",
+          firestoreErr
+        );
         setComments([]);
       }
-    } catch (error) {
-      console.error("Error fetching comments:", error);
-      setComments([]);
     }
-  }, [resource]);
+  }, [resource.id]);
 
   useEffect(() => {
     if (resource.id) {
       fetchComments();
       if (userAuthenticated) {
         checkIfLiked();
+      } else {
+        setLiked(false);
       }
     }
   }, [fetchComments, resource.id, checkIfLiked, userAuthenticated]);
@@ -177,45 +215,76 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
       alert("Please sign in to like resources");
       return;
     }
-    if (!resource.id) {
-      console.warn("Cannot like resource without ID");
+    if (!resource.id || !auth.currentUser) {
+      console.warn("Cannot like resource without ID or user");
       return;
     }
-    const newLikesCount = liked ? (likes > 0 ? likes - 1 : 0) : likes + 1;
     const userUid = auth.currentUser.uid;
+    const newLikedState = !liked;
+    const currentLikes = likes;
+    const newLikesCount = newLikedState
+      ? currentLikes + 1
+      : currentLikes > 0
+        ? currentLikes - 1
+        : 0;
+
+    setLiked(newLikedState);
+    setLikes(newLikesCount);
+    if (onResourceUpdated) onResourceUpdated(resource.id, newLikesCount);
 
     try {
-      const resourceLikesRef = ref(database, `resources/${resource.id}/likes`);
-      await set(resourceLikesRef, newLikesCount);
-
-      const userLikesRef = ref(database, `userLikes/${userUid}/${resource.id}`);
-      if (liked) {
-        await remove(userLikesRef);
+      const updates = {};
+      updates[`resources/${resource.id}/likes`] = newLikesCount;
+      if (newLikedState) {
+        updates[`userLikes/${userUid}/${resource.id}`] = true;
       } else {
-        await set(userLikesRef, true);
+        updates[`userLikes/${userUid}/${resource.id}`] = null;
       }
+      await update(ref(database), updates);
 
-      setLikes(newLikesCount);
-      setLiked(!liked);
-      if (onResourceUpdated) onResourceUpdated(resource.id, newLikesCount);
-      return;
-    } catch (rtdbError) {
-      console.warn("RTDB like update failed, trying Firestore:", rtdbError);
       try {
         const resourceDocRef = doc(db, "resources", resource.id);
-        await updateDoc(resourceDocRef, { likes: newLikesCount });
-
         const userLikeRef = doc(db, "resources", resource.id, "likes", userUid);
-        if (liked) {
-          await deleteDoc(userLikeRef);
+        const batch = writeBatch(db);
+        batch.update(resourceDocRef, { likes: newLikesCount });
+        if (newLikedState) {
+          batch.set(userLikeRef, { userId: userUid, timestamp: new Date() });
         } else {
-          await setDoc(userLikeRef, { userId: userUid, timestamp: new Date() });
+          batch.delete(userLikeRef);
         }
+        await batch.commit();
+      } catch (firestoreError) {
+        console.warn(
+          "Firestore like sync failed (RTDB succeeded):",
+          firestoreError
+        );
+      }
+    } catch (rtdbError) {
+      console.warn(
+        "RTDB like update failed, attempting Firestore directly:",
+        rtdbError
+      );
+      setLiked(!newLikedState);
+      setLikes(currentLikes);
+      if (onResourceUpdated) onResourceUpdated(resource.id, currentLikes);
+
+      try {
+        const resourceDocRef = doc(db, "resources", resource.id);
+        const userLikeRef = doc(db, "resources", resource.id, "likes", userUid);
+        const batch = writeBatch(db);
+        batch.update(resourceDocRef, { likes: newLikesCount });
+        if (newLikedState) {
+          batch.set(userLikeRef, { userId: userUid, timestamp: new Date() });
+        } else {
+          batch.delete(userLikeRef);
+        }
+        await batch.commit();
+
+        setLiked(newLikedState);
         setLikes(newLikesCount);
-        setLiked(!liked);
         if (onResourceUpdated) onResourceUpdated(resource.id, newLikesCount);
       } catch (firestoreError) {
-        console.error("Firestore like update failed:", firestoreError);
+        console.error("Firestore like update also failed:", firestoreError);
         alert("Failed to update like. Please try again.");
       }
     }
@@ -226,7 +295,7 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
       }`;
     const shareData = {
       title: resource.name,
-      text: `Check out this pet resource: ${resource.name} at ${resource.address || resource.vicinity
+      text: `Check out this pet resource: ${resource.name} at ${resource.address || resource.vicinity || "N/A"
         }.`,
       url: detailUrl,
     };
@@ -248,87 +317,115 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
       alert("Please sign in to comment");
       return;
     }
+    if (!auth.currentUser || newComment.trim() === "" || !resource.id) return;
 
-    if (newComment.trim() === "" || !resource.id) return;
+    const userUid = auth.currentUser.uid;
+    const displayName = auth.currentUser?.displayName || "Anonymous";
+
+    const commentData = {
+      text: newComment,
+      user: displayName,
+      userId: userUid,
+      createdAt: new Date().toISOString(),
+    };
 
     try {
-      const commentData = {
-        text: newComment,
-        user: auth.currentUser?.displayName || "Anonymous",
-        userId: auth.currentUser.uid,
-        createdAt: new Date().toISOString(),
-      };
+      if (editComment) {
+        const commentId = editComment.id;
+        const updates = {};
+        updates[`resources/${resource.id}/comments/${commentId}/text`] =
+          newComment;
+        updates[`userComments/${userUid}/${resource.id}/${commentId}/text`] =
+          newComment;
+        await update(ref(database), updates);
 
-      try {
-        if (editComment) {
-          const commentRef = ref(
-            database,
-            `resources/${resource.id}/comments/${editComment.id}`
+        try {
+          const commentDocRef = doc(
+            db,
+            `resources/${resource.id}/comments`,
+            commentId
           );
-          await update(commentRef, { text: newComment });
+          await updateDoc(commentDocRef, { text: newComment });
+        } catch (fsError) {
+          console.warn(
+            "Firestore comment update sync failed (RTDB succeeded):",
+            fsError
+          );
+        }
+      } else {
+        const commentsRef = ref(database, `resources/${resource.id}/comments`);
+        const newCommentRef = push(commentsRef);
+        const commentId = newCommentRef.key;
 
-          const userCommentRef = ref(
-            database,
-            `userComments/${auth.currentUser.uid}/${resource.id}/${editComment.id}`
-          );
-          await update(userCommentRef, { text: newComment });
-        } else {
-          const commentsRef = ref(
-            database,
+        const updates = {};
+        updates[`resources/${resource.id}/comments/${commentId}`] = commentData;
+        updates[`userComments/${userUid}/${resource.id}/${commentId}`] = {
+          ...commentData,
+          resourceName: resource.name,
+        };
+        await update(ref(database), updates);
+
+        try {
+          const resourceCommentsColRef = collection(
+            db,
             `resources/${resource.id}/comments`
           );
-          const newCommentRef = push(commentsRef);
-          await update(newCommentRef, commentData);
+          const commentDocRef = doc(resourceCommentsColRef, commentId);
+          await setDoc(commentDocRef, commentData);
 
-          const commentId = newCommentRef.key;
-          const userCommentRef = ref(
-            database,
-            `userComments/${auth.currentUser.uid}/${resource.id}/${commentId}`
+          const userCommentsColRef = collection(
+            db,
+            `users/${userUid}/comments`
           );
-          await update(userCommentRef, {
+          await addDoc(userCommentsColRef, {
             ...commentData,
+            resourceId: resource.id,
             resourceName: resource.name,
+            commentId: commentId,
           });
+        } catch (fsError) {
+          console.warn(
+            "Firestore comment add sync failed (RTDB succeeded):",
+            fsError
+          );
         }
-
-        setNewComment("");
-        setEditComment(null);
-        fetchComments();
-        setCommentDialogOpen(false);
-        return;
-      } catch (rtdbError) {
-        console.warn(
-          "Realtime DB comment update failed, trying Firestore:",
-          rtdbError
-        );
-      }
-
-      if (editComment) {
-        await updateDoc(
-          doc(db, `resources/${resource.id}/comments`, editComment.id),
-          { text: newComment }
-        );
-      } else {
-        const docRef = await addDoc(
-          collection(db, `resources/${resource.id}/comments`),
-          commentData
-        );
-
-        await addDoc(collection(db, `users/${auth.currentUser.uid}/comments`), {
-          ...commentData,
-          resourceId: resource.id,
-          resourceName: resource.name,
-          commentId: docRef.id,
-        });
       }
 
       setNewComment("");
       setEditComment(null);
       fetchComments();
       setCommentDialogOpen(false);
-    } catch (error) {
-      console.error("Error submitting comment:", error);
-      alert("Failed to submit comment. Please try again.");
+    } catch (rtdbError) {
+      console.error("RTDB comment submission/update failed:", rtdbError);
+      try {
+        if (editComment) {
+          await updateDoc(
+            doc(db, `resources/${resource.id}/comments`, editComment.id),
+            { text: newComment }
+          );
+        } else {
+          const docRef = await addDoc(
+            collection(db, `resources/${resource.id}/comments`),
+            commentData
+          );
+          await addDoc(collection(db, `users/${userUid}/comments`), {
+            ...commentData,
+            resourceId: resource.id,
+            resourceName: resource.name,
+            commentId: docRef.id,
+          });
+        }
+        setNewComment("");
+        setEditComment(null);
+        fetchComments();
+        setCommentDialogOpen(false);
+      } catch (firestoreError) {
+        console.error(
+          "Firestore comment submission/update also failed:",
+          firestoreError
+        );
+        alert("Failed to submit comment. Please try again.");
+      }
     }
   };
 
@@ -339,12 +436,84 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
   };
 
   const handleDeleteComment = async (commentId) => {
-    if (!userAuthenticated) {
+    if (!userAuthenticated || !auth.currentUser) {
+      alert("Please sign in to delete comments.");
+      return;
     }
-    if (!resource.id || !commentId) return;
-    if (!window.confirm("Delete comment?")) return;
+    if (!resource.id || !commentId) {
+      console.warn("Missing resource ID or comment ID for deletion.");
+      return;
+    }
+    if (!window.confirm("Are you sure you want to delete this comment?"))
+      return;
+
+    const userUid = auth.currentUser.uid;
+
     try {
-    } catch (rtdbError) { }
+      const updates = {};
+      updates[`resources/${resource.id}/comments/${commentId}`] = null;
+      updates[`userComments/${userUid}/${resource.id}/${commentId}`] = null;
+      await update(ref(database), updates);
+
+      try {
+        const batch = writeBatch(db);
+        const commentDocRef = doc(
+          db,
+          `resources/${resource.id}/comments`,
+          commentId
+        );
+        batch.delete(commentDocRef);
+
+        const userCommentsQuery = query(
+          collection(db, `users/${userUid}/comments`),
+          where("resourceId", "==", resource.id),
+          where("commentId", "==", commentId)
+        );
+        const querySnapshot = await getDocs(userCommentsQuery);
+        querySnapshot.forEach((doc) => {
+          batch.delete(doc.ref);
+        });
+
+        await batch.commit();
+      } catch (fsError) {
+        console.warn(
+          "Firestore comment delete sync failed (RTDB succeeded):",
+          fsError
+        );
+      }
+
+      fetchComments();
+    } catch (rtdbError) {
+      console.warn(
+        "RTDB comment delete failed, attempting Firestore directly:",
+        rtdbError
+      );
+      try {
+        const batch = writeBatch(db);
+        const commentDocRef = doc(
+          db,
+          `resources/${resource.id}/comments`,
+          commentId
+        );
+        batch.delete(commentDocRef);
+
+        const userCommentsQuery = query(
+          collection(db, `users/${userUid}/comments`),
+          where("resourceId", "==", resource.id),
+          where("commentId", "==", commentId)
+        );
+        const querySnapshot = await getDocs(userCommentsQuery);
+        querySnapshot.forEach((doc) => {
+          batch.delete(doc.ref);
+        });
+
+        await batch.commit();
+        fetchComments();
+      } catch (firestoreError) {
+        console.error("Firestore comment delete also failed:", firestoreError);
+        alert("Failed to delete comment. Please try again.");
+      }
+    }
   };
 
   const handleViewDetails = (resource) => {
@@ -354,11 +523,12 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
         state: { resourceData: resource },
       });
     } else {
-      console.log("No detail ID found");
+      console.error("Cannot view details: No resource ID or place_id found.");
     }
   };
 
   const handleMapLoaded = () => setMapLoading(false);
+
   const canEditComment = (comment) => {
     return (
       userAuthenticated &&
@@ -370,10 +540,11 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
   const isDogResource = resource.category?.startsWith("dog_");
   const isCatResource = resource.category?.startsWith("cat_");
   const themeColor = isDogResource
-    ? "lavender"
+    ? "blue"
     : isCatResource
-      ? "lavender"
+      ? "amber"
       : "lavender";
+
   const bgTheme = {
     lavender: "bg-lavender-600 hover:bg-lavender-700",
     blue: "bg-blue-600 hover:bg-blue-700",
@@ -409,282 +580,321 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
     blue: "border-blue-200",
     amber: "border-amber-200",
   };
+  const tagBgTheme = {
+    lavender: "bg-lavender-600",
+    blue: "bg-blue-600",
+    amber: "bg-amber-600",
+  };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-200 h-full flex flex-col transition-shadow hover:shadow-xl"
-    >
-      <div className="relative group">
-        <div className="h-52 w-full overflow-hidden bg-gray-200">
-          <img
-            src={
-              resource.photoUrl ||
-              "https://via.placeholder.com/400x300.png?text=No+Image"
-            }
-            alt={resource.name}
-            className="w-full h-full object-cover transition-transform duration-500 ease-in-out group-hover:scale-105"
-          />
-        </div>
-        <div className="absolute top-0 left-0 w-full p-3 flex justify-between items-start">
-          <div
-            className={`bg-${themeColor}-600 text-white px-3 py-1 text-xs font-semibold rounded-full shadow`}
-          >
-            {resource.type ||
-              resource.category
-                ?.replace(/^(dog_|cat_)/, "")
-                .replace(/_/g, " ")
-                .split(" ")
-                .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                .join(" ") ||
-              "Resource"}
-          </div>
-          {checkedOpenStatus && (
-            <div
-              className={`px-3 py-1 text-xs font-semibold rounded-full shadow flex items-center ${isOpen
-                ? "bg-green-100 text-green-800"
-                : "bg-red-100 text-red-800"
-                }`}
-            >
-              <div
-                className={`w-2 h-2 rounded-full mr-1.5 ${isOpen ? "bg-green-500" : "bg-red-500"
-                  } animate-pulse`}
-              ></div>
-              {isOpen ? "Open" : "Closed"}
-            </div>
-          )}
-        </div>
-        <div className="absolute top-14 right-3">
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={handleLike}
-            className={`bg-white w-9 h-9 rounded-full flex items-center justify-center shadow-md transition-colors ${liked ? "text-red-500" : "text-gray-500 hover:text-red-400"
-              }`}
-            disabled={!userAuthenticated}
-            title={
-              userAuthenticated
-                ? liked
-                  ? "Unlike"
-                  : "Like"
-                : "Sign in to like"
-            }
-          >
-            <FiHeart className={`${liked ? "fill-current" : ""} w-5 h-5`} />
-          </motion.button>
-        </div>
-      </div>
-
-      <div className="p-5 flex-grow flex flex-col">
-        <h2
-          className={`text-xl font-bold ${textDark[themeColor]} mb-1 line-clamp-1`}
-        >
-          {resource.name}
-        </h2>
-        <p className="text-sm text-gray-500 mb-3 flex items-start">
-          <FiMapPin className="w-4 h-4 mr-1.5 mt-0.5 flex-shrink-0 text-gray-400" />
-          <span className="line-clamp-1">
-            {resource.address || resource.vicinity || "Address not available"}
-          </span>
-        </p>
-
-        {resource.rating > 0 && (
-          <div className="flex items-center mb-4">
-            <div className="flex items-center">
-              {[...Array(5)].map((_, i) =>
-                i < Math.round(resource.rating) ? (
-                  <FaStar key={i} className="text-yellow-400 w-4 h-4" />
-                ) : (
-                  <FaRegStar key={i} className="text-gray-300 w-4 h-4" />
-                )
-              )}
-            </div>
-            <span className="ml-2 text-xs text-gray-500">
-              {resource.rating.toFixed(1)} ({resource.userRatingsTotal || 0}{" "}
-              reviews)
-            </span>
-          </div>
-        )}
-
-        <div className="flex items-center space-x-4 text-gray-500 mb-4 text-sm">
-          {resource.phone && resource.phone !== "N/A" && (
-            <a
-              href={`tel:${resource.phone}`}
-              title={`Call ${resource.phone}`}
-              className={`flex items-center hover:${textTheme[themeColor]}`}
-            >
-              <FiPhone className="w-4 h-4 mr-1" /> Phone
-            </a>
-          )}
-          {resource.website && resource.website !== "N/A" && (
-            <a
-              href={
-                resource.website.startsWith("http")
-                  ? resource.website
-                  : `http://${resource.website}`
+    <>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-200 h-full flex flex-col transition-shadow hover:shadow-xl z-0"
+      >
+        <div className="relative group">
+          <div className="h-52 w-full overflow-hidden bg-gray-200">
+            <img
+              src={
+                resource.photoUrl ||
+                "https://via.placeholder.com/400x300.png?text=No+Image"
               }
-              target="_blank"
-              rel="noopener noreferrer"
-              title="Visit website"
-              className={`flex items-center hover:${textTheme[themeColor]}`}
+              alt={resource.name || "Resource Image"}
+              className="w-full h-full object-cover transition-transform duration-500 ease-in-out group-hover:scale-105"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src =
+                  "https://via.placeholder.com/400x300.png?text=No+Image";
+              }}
+            />
+          </div>
+          <div className="absolute top-0 left-0 w-full p-3 flex justify-between items-start">
+            <div
+              className={`${tagBgTheme[themeColor]} text-white px-3 py-1 text-xs font-semibold rounded-full shadow capitalize`}
             >
-              <FiGlobe className="w-4 h-4 mr-1" /> Website
-            </a>
-          )}
-        </div>
-
-        <div className="mt-auto pt-4 border-t border-gray-100">
-          <div className="flex justify-between items-center">
-            <div className="flex space-x-1">
-              <button
-                onClick={() => setCommentDialogOpen(true)}
-                className={`flex items-center text-xs ${textTheme[themeColor]} p-1.5 rounded-md hover:bg-gray-100`}
-                title={
-                  userAuthenticated ? "View/Add Comments" : "Sign in to comment"
-                }
-              >
-                <FiMessageSquare className="w-4 h-4" />
-                {comments.length > 0 && (
-                  <span className="ml-1">{comments.length}</span>
-                )}
-              </button>
-              <button
-                onClick={() => setShowHours(true)}
-                className={`flex items-center text-xs ${textTheme[themeColor]} p-1.5 rounded-md hover:bg-gray-100`}
-                title="Operating Hours"
-              >
-                <FiClock className="w-4 h-4" />
-              </button>
-              <button
-                onClick={handleShare}
-                className={`flex items-center text-xs ${textTheme[themeColor]} p-1.5 rounded-md hover:bg-gray-100`}
-                title="Share"
-              >
-                <FiShare2 className="w-4 h-4" />
-              </button>
+              {resource.type ||
+                resource.category
+                  ?.replace(/^(dog_|cat_)/, "")
+                  .replace(/_/g, " ") ||
+                "Resource"}
             </div>
-            <button
-              onClick={() => handleViewDetails(resource)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium text-white ${bgTheme[themeColor]} hover:shadow-md transition-all flex items-center`}
+            {checkedOpenStatus && (
+              <div
+                className={`px-3 py-1 text-xs font-semibold rounded-full shadow flex items-center ${isOpen
+                    ? "bg-green-100 text-green-800"
+                    : "bg-red-100 text-red-800"
+                  }`}
+              >
+                <div
+                  className={`w-2 h-2 rounded-full mr-1.5 ${isOpen ? "bg-green-500" : "bg-red-500"
+                    } ${isOpen ? "animate-pulse" : ""}`}
+                ></div>
+                {isOpen ? "Open" : "Closed"}
+              </div>
+            )}
+          </div>
+          <div className="absolute top-14 right-3">
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={handleLike}
+              className={`bg-white w-9 h-9 rounded-full flex items-center justify-center shadow-md transition-colors ${liked ? "text-red-500" : "text-gray-500 hover:text-red-400"
+                } ${!userAuthenticated ? "cursor-not-allowed opacity-70" : ""}`}
+              disabled={!userAuthenticated}
+              title={
+                userAuthenticated
+                  ? liked
+                    ? "Unlike"
+                    : "Like"
+                  : "Sign in to like"
+              }
             >
-              <FiInfo className="w-4 h-4 mr-1.5" /> Details
-            </button>
+              <FiHeart className={`${liked ? "fill-current" : ""} w-5 h-5`} />
+            </motion.button>
           </div>
         </div>
-      </div>
+
+        <div className="p-5 flex-grow flex flex-col">
+          <h2
+            className={`text-xl font-bold ${textDark[themeColor]} mb-1 line-clamp-1`}
+            title={resource.name || "No Name"}
+          >
+            {resource.name || "Unnamed Resource"}
+          </h2>
+          <p
+            className="text-sm text-gray-500 mb-3 flex items-start"
+            title={resource.address || resource.vicinity || ""}
+          >
+            <FiMapPin className="w-4 h-4 mr-1.5 mt-0.5 flex-shrink-0 text-gray-400" />
+            <span className="line-clamp-1">
+              {resource.address || resource.vicinity || "Address not available"}
+            </span>
+          </p>
+
+          {resource.rating > 0 && (
+            <div className="flex items-center mb-4">
+              <div className="flex items-center">
+                {[...Array(5)].map((_, i) =>
+                  i < Math.round(resource.rating) ? (
+                    <FaStar key={i} className="text-yellow-400 w-4 h-4" />
+                  ) : (
+                    <FaRegStar key={i} className="text-gray-300 w-4 h-4" />
+                  )
+                )}
+              </div>
+              <span className="ml-2 text-xs text-gray-500">
+                {resource.rating.toFixed(1)} ({resource.userRatingsTotal || 0}{" "}
+                reviews)
+              </span>
+            </div>
+          )}
+
+          <div className="flex items-center space-x-4 text-gray-500 mb-4 text-sm">
+            {resource.phone && resource.phone !== "N/A" && (
+              <a
+                href={`tel:${resource.phone}`}
+                title={`Call ${resource.phone}`}
+                className={`flex items-center ${textTheme[themeColor]} transition-colors`}
+              >
+                <FiPhone className="w-4 h-4 mr-1" /> Phone
+              </a>
+            )}
+            {resource.website && resource.website !== "N/A" && (
+              <a
+                href={
+                  resource.website.startsWith("http")
+                    ? resource.website
+                    : `http://${resource.website}`
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Visit website"
+                className={`flex items-center ${textTheme[themeColor]} transition-colors`}
+              >
+                <FiGlobe className="w-4 h-4 mr-1" /> Website
+              </a>
+            )}
+          </div>
+
+          <div className="mt-auto pt-4 border-t border-gray-100">
+            <div className="flex justify-between items-center">
+              <div className="flex space-x-1">
+                <button
+                  onClick={() => setCommentDialogOpen(true)}
+                  className={`flex items-center text-xs ${textTheme[themeColor]} p-1.5 rounded-md hover:bg-gray-100 transition-colors`}
+                  title={
+                    userAuthenticated
+                      ? "View/Add Comments"
+                      : "Sign in to comment"
+                  }
+                >
+                  <FiMessageSquare className="w-4 h-4" />
+                  {comments.length > 0 && (
+                    <span className="ml-1">{comments.length}</span>
+                  )}
+                </button>
+                <button
+                  onClick={() => setShowHours(true)}
+                  className={`flex items-center text-xs ${textTheme[themeColor]} p-1.5 rounded-md hover:bg-gray-100 transition-colors`}
+                  title="Operating Hours"
+                  disabled={!resource.hours && !resource.time} // Disable if no hours
+                >
+                  <FiClock className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={handleShare}
+                  className={`flex items-center text-xs ${textTheme[themeColor]} p-1.5 rounded-md hover:bg-gray-100 transition-colors`}
+                  title="Share"
+                >
+                  <FiShare2 className="w-4 h-4" />
+                </button>
+              </div>
+              <button
+                onClick={() => handleViewDetails(resource)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium text-white ${bgTheme[themeColor]} hover:shadow-md transition-all flex items-center`}
+              >
+                <FiInfo className="w-4 h-4 mr-1.5" /> Details
+              </button>
+            </div>
+          </div>
+        </div>
+      </motion.div>
 
       <AnimatePresence>
         {commentDialogOpen && (
           <motion.div
+            key="hours-modal"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) setCommentDialogOpen(false);
-            }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-xl max-w-lg w-full shadow-xl overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="bg-white rounded-xl max-w-sm w-full shadow-xl overflow-hidden flex flex-col max-h-[60vh]"
             >
               <div
-                className={`p-4 ${bgLight[themeColor]} border-b ${borderTheme[themeColor]}`}
+                className={`p-3 ${bgLight[themeColor]} border-b ${borderTheme[themeColor]} flex-shrink-0`}
               >
                 <div className="flex justify-between items-center">
                   <h2
-                    className={`text-lg font-semibold ${textDark[themeColor]}`}
+                    className={`text-base font-semibold ${textDark[themeColor]}`}
                   >
-                    Comments
+                    Comments ({comments.length})
                   </h2>
                   <button
                     onClick={() => setCommentDialogOpen(false)}
                     className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100"
+                    aria-label="Close comments"
                   >
                     <FiX />
                   </button>
                 </div>
               </div>
-              <div className="p-4 max-h-[60vh] overflow-y-auto">
+              <div
+                className="p-3 flex-grow overflow-y-auto"
+                style={{ maxHeight: comments.length > 2 ? "160px" : "auto" }}
+              >
                 {comments.length > 0 ? (
-                  <div className="space-y-3 mb-4">
+                  <div className="space-y-2 mb-2">
                     {comments.map((comment) => (
                       <div
                         key={comment.id}
-                        className={`p-3 rounded-lg ${bgLight[themeColor]}`}
+                        className={`p-2 rounded-lg ${bgLight[themeColor]}`}
                       >
                         <div className="flex justify-between items-start mb-1">
                           <p
-                            className={`font-medium text-sm ${textDark[themeColor]}`}
+                            className={`font-medium text-xs ${textDark[themeColor]}`}
                           >
-                            {comment.user}
+                            {comment.user || "Anonymous"}
                           </p>
                           {canEditComment(comment) && (
-                            <div className="flex space-x-1 flex-shrink-0">
+                            <div className="flex space-x-1 flex-shrink-0 ml-2">
                               <button
                                 onClick={() => handleEditComment(comment)}
                                 className={`text-${themeColor}-600 hover:text-${themeColor}-800 p-1 rounded hover:bg-${themeColor}-100`}
                                 title="Edit"
+                                aria-label="Edit comment"
                               >
-                                <FiEdit2 className="w-4 h-4" />
+                                <FiEdit2 className="w-3 h-3" />
                               </button>
                               <button
                                 onClick={() => handleDeleteComment(comment.id)}
                                 className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50"
                                 title="Delete"
+                                aria-label="Delete comment"
                               >
-                                <FiTrash2 className="w-4 h-4" />
+                                <FiTrash2 className="w-3 h-3" />
                               </button>
                             </div>
                           )}
                         </div>
-                        <p className={`text-sm ${textMedium[themeColor]}`}>
+                        <p
+                          className={`text-xs ${textMedium[themeColor]} whitespace-pre-wrap break-words`}
+                        >
                           {comment.text}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {new Date(comment.createdAt).toLocaleString()}
                         </p>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-center text-sm text-gray-500 italic my-4">
+                  <p className="text-center text-xs text-gray-500 italic my-4">
                     No comments yet.
                   </p>
                 )}
+              </div>
+              <div className="p-3 bg-gray-50 border-t border-gray-200 flex-shrink-0">
                 {!userAuthenticated ? (
-                  <div className="text-center text-sm text-gray-500 p-4 bg-gray-50 rounded-lg">
-                    Please sign in to comment.
+                  <div className="text-center text-xs text-gray-500 p-2 bg-gray-100 rounded-lg">
+                    Please sign in to add or manage comments.
                   </div>
                 ) : (
-                  <textarea
-                    className={`w-full p-3 border ${borderTheme[themeColor]} rounded-lg focus:outline-none focus:ring-2 ${ringTheme[themeColor]} resize-none`}
-                    rows="3"
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    placeholder="Write a comment..."
-                  />
+                  <div className="flex flex-col space-y-2">
+                    <textarea
+                      className={`w-full p-2 border ${borderTheme[themeColor]} rounded-lg focus:outline-none focus:ring-1 ${ringTheme[themeColor]} resize-none text-xs`}
+                      rows="2"
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      placeholder={
+                        editComment
+                          ? "Update your comment..."
+                          : "Write a comment..."
+                      }
+                      aria-label="New comment input"
+                    />
+                    <div className="flex justify-end gap-2">
+                      {editComment && (
+                        <button
+                          onClick={() => {
+                            setEditComment(null);
+                            setNewComment("");
+                          }}
+                          className="px-3 py-1 text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg"
+                        >
+                          Cancel
+                        </button>
+                      )}
+                      <button
+                        onClick={handleCommentSubmit}
+                        disabled={!newComment.trim()}
+                        className={`px-3 py-1 text-xs text-white rounded-lg transition-colors ${!newComment.trim()
+                            ? "bg-gray-300 cursor-not-allowed"
+                            : `${bgTheme[themeColor]}`
+                          }`}
+                      >
+                        {editComment ? "Update" : "Submit"}
+                      </button>
+                    </div>
+                  </div>
                 )}
-              </div>
-              <div className="bg-gray-50 px-4 py-3 flex justify-end gap-2">
-                <button
-                  onClick={() => setCommentDialogOpen(false)}
-                  className="px-4 py-2 text-sm bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleCommentSubmit}
-                  disabled={!userAuthenticated || !newComment.trim()}
-                  className={`px-4 py-2 text-sm text-white rounded-lg ${!userAuthenticated || !newComment.trim()
-                    ? "bg-gray-300 cursor-not-allowed"
-                    : `${bgTheme[themeColor]}`
-                    }`}
-                >
-                  {editComment ? "Update" : "Submit"}
-                </button>
               </div>
             </motion.div>
           </motion.div>
@@ -694,23 +904,23 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
       <AnimatePresence>
         {showHours && (
           <motion.div
+            key="hours-modal"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) setShowHours(false);
-            }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+            onClick={() => setShowHours(false)}
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-xl max-w-md w-full shadow-xl overflow-hidden"
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="bg-white rounded-xl max-w-md w-full shadow-xl overflow-hidden flex flex-col max-h-[70vh]"
               onClick={(e) => e.stopPropagation()}
             >
               <div
-                className={`p-4 ${bgLight[themeColor]} border-b ${borderTheme[themeColor]}`}
+                className={`p-4 ${bgLight[themeColor]} border-b ${borderTheme[themeColor]} flex-shrink-0`}
               >
                 <div className="flex justify-between items-center">
                   <h2
@@ -722,13 +932,14 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
                   <button
                     onClick={() => setShowHours(false)}
                     className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100"
+                    aria-label="Close operating hours"
                   >
                     <FiX />
                   </button>
                 </div>
               </div>
               <div
-                className={`p-4 text-sm ${textMedium[themeColor]} max-h-[50vh] overflow-y-auto`}
+                className={`p-4 text-sm ${textMedium[themeColor]} flex-grow overflow-y-auto`}
               >
                 {resource.hours ? (
                   Array.isArray(resource.hours) ? (
@@ -737,8 +948,16 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
                         {t}
                       </p>
                     ))
+                  ) : typeof resource.hours === "string" ? (
+                    resource.hours.split("\n").map((line, i) => (
+                      <p key={i} className="mb-1">
+                        {line}
+                      </p>
+                    ))
                   ) : (
-                    <p>{resource.hours}</p>
+                    <p className="italic text-gray-500">
+                      Hours format unclear.
+                    </p>
                   )
                 ) : resource.time ? (
                   resource.time.split(", ").map((t, i) => (
@@ -750,7 +969,7 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
                   <p className="italic text-gray-500">Hours not available.</p>
                 )}
               </div>
-              <div className="bg-gray-50 px-4 py-3 flex justify-end">
+              <div className="bg-gray-50 px-4 py-3 flex justify-end flex-shrink-0 border-t border-gray-200">
                 <button
                   onClick={() => setShowHours(false)}
                   className={`px-4 py-2 text-sm text-white rounded-lg ${bgTheme[themeColor]}`}
@@ -773,10 +992,9 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
           >
             {mapLoading && (
               <div className="absolute inset-0 bg-white/75 flex items-center justify-center z-10">
-                {" "}
                 <div
                   className={`animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-${themeColor}-600`}
-                ></div>{" "}
+                ></div>
               </div>
             )}
             <div className="h-64">
@@ -790,14 +1008,14 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
               ) : (
                 <div className="h-full flex items-center justify-center bg-gray-100 text-gray-500 text-sm">
                   <FiMapPin className="mr-1.5" />
-                  Location not available
+                  Map location not available
                 </div>
               )}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </>
   );
 };
 

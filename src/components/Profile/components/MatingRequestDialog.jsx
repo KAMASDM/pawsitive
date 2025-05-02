@@ -6,7 +6,7 @@ import { FaPaw } from "react-icons/fa";
 const MatingRequestDialog = ({
   open,
   onClose,
-  onSend,
+  onSubmit,
   senderPet,
   receiverPet,
   receiverOwner,
@@ -23,35 +23,16 @@ const MatingRequestDialog = ({
     }
   }, [open]);
 
-  const handleSend = async () => {
-    if (step === 1) {
-      setStep(2);
-      return;
-    }
-
-    if (step === 2) {
-      setSending(true);
-      try {
-        await onSend({
-          senderPetId: senderPet.id,
-          receiverPetId: receiverPet.id,
-          receiverId: receiverOwner?.id,
-          message:
-            message || `Hello! I'd like to arrange mating between our pets.`,
-          createdAt: Date.now(),
-          status: "pending",
-        });
-        setStep(3);
-      } catch (error) {
-        console.error("Error sending request:", error);
-        alert("Failed to send request. Please try again.");
-      } finally {
-        setSending(false);
-      }
-    }
-    if (step === 3) {
-      onClose();
-    }
+  const handleSend = () => {
+    onSubmit({
+      senderPetId: senderPet?.id,
+      receiverPetId: receiverPet?.id,
+      receiverId: receiverOwner?.id,
+      message: message,
+      createdAt: Date.now(),
+      status: "pending",
+    });
+    setMessage("");
   };
 
   const getPetDetails = (pet) => {
@@ -259,13 +240,10 @@ const MatingRequestDialog = ({
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
                         className="w-full rounded-lg border border-lavender-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent resize-none"
-                        placeholder={`Hello! I'd like to arrange a mating between my pet ${
-                          senderPet?.name
-                        } and your pet ${receiverPet?.name}. My pet is a ${
-                          senderPet?.breed || ""
-                        } ${senderPet?.gender || ""}, ${
-                          senderPet?.age || ""
-                        }. Please let me know if you're interested.`}
+                        placeholder={`Hello! I'd like to arrange a mating between my pet ${senderPet?.name
+                          } and your pet ${receiverPet?.name}. My pet is a ${senderPet?.breed || ""
+                          } ${senderPet?.gender || ""}, ${senderPet?.age || ""
+                          }. Please let me know if you're interested.`}
                         rows={6}
                       ></textarea>
                     </div>
