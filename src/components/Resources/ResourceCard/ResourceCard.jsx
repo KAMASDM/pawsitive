@@ -12,7 +12,7 @@ import {
   where,
   writeBatch,
 } from "firebase/firestore";
-import { ref, get, push, update } from "firebase/database";
+import { ref, get, push, update, remove } from "firebase/database";
 import { db, auth, database } from "../../../firebase";
 import Googlemap from "../../GoogleMap/GoogleMap";
 import { motion, AnimatePresence } from "framer-motion";
@@ -44,7 +44,11 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [checkedOpenStatus, setCheckedOpenStatus] = useState(false);
   const [userAuthenticated, setUserAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [commentToDeleteId, setCommentToDeleteId] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) =>
@@ -119,7 +123,7 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
             doc(db, "resources", resource.id, "likes", userUid)
           );
           setLiked(likeDoc.exists());
-        } catch (firestoreErr) {}
+        } catch (firestoreErr) { }
       }
     } catch (error) {
       try {
@@ -225,8 +229,8 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
     const newLikesCount = newLikedState
       ? currentLikes + 1
       : currentLikes > 0
-      ? currentLikes - 1
-      : 0;
+        ? currentLikes - 1
+        : 0;
 
     setLiked(newLikedState);
     setLikes(newLikesCount);
@@ -291,14 +295,12 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
   };
 
   const handleShare = () => {
-    const detailUrl = `${window.location.origin}/resource-details/${
-      resource.id || resource.place_id
-    }`;
+    const detailUrl = `${window.location.origin}/resource-details/${resource.id || resource.place_id
+      }`;
     const shareData = {
       title: resource.name,
-      text: `Check out this pet resource: ${resource.name} at ${
-        resource.address || resource.vicinity || "N/A"
-      }.`,
+      text: `Check out this pet resource: ${resource.name} at ${resource.address || resource.vicinity || "N/A"
+        }.`,
       url: detailUrl,
     };
     if (navigator.share) {
@@ -315,6 +317,7 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
   };
 
   const handleCommentSubmit = async () => {
+    setLoading(true);
     if (!userAuthenticated) {
       alert("Please sign in to comment");
       return;
@@ -428,6 +431,8 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
         );
         alert("Failed to submit comment. Please try again.");
       }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -437,84 +442,95 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
     setCommentDialogOpen(true);
   };
 
-  const handleDeleteComment = async (commentId) => {
+  const confirmDeleteComment = (commentId) => {
+    setCommentDialogOpen(false);
+    setCommentToDeleteId(commentId);
+    setDeleteConfirm(true);
+  };
+
+  const handleDeleteClick = async () => {
+    setCommentDialogOpen(false);
+    if (!commentToDeleteId) return;
+    setIsDeleting(true);
+    const commentIdToDelete = commentToDeleteId;
+    setCommentToDeleteId(null);
+    setDeleteConfirm(false);
+
     if (!userAuthenticated || !auth.currentUser) {
       alert("Please sign in to delete comments.");
+      setIsDeleting(false);
       return;
     }
-    if (!resource.id || !commentId) {
+    if (!resource.id || !commentIdToDelete) {
       console.warn("Missing resource ID or comment ID for deletion.");
+      setIsDeleting(false);
       return;
     }
-    if (!window.confirm("Are you sure you want to delete this comment?"))
-      return;
-
     const userUid = auth.currentUser.uid;
 
     try {
-      const updates = {};
-      updates[`resources/${resource.id}/comments/${commentId}`] = null;
-      updates[`userComments/${userUid}/${resource.id}/${commentId}`] = null;
-      await update(ref(database), updates);
-
-      try {
-        const batch = writeBatch(db);
-        const commentDocRef = doc(
-          db,
-          `resources/${resource.id}/comments`,
-          commentId
-        );
-        batch.delete(commentDocRef);
-
-        const userCommentsQuery = query(
-          collection(db, `users/${userUid}/comments`),
-          where("resourceId", "==", resource.id),
-          where("commentId", "==", commentId)
-        );
-        const querySnapshot = await getDocs(userCommentsQuery);
-        querySnapshot.forEach((doc) => {
-          batch.delete(doc.ref);
-        });
-
-        await batch.commit();
-      } catch (fsError) {
-        console.warn(
-          "Firestore comment delete sync failed (RTDB succeeded):",
-          fsError
-        );
-      }
-
-      fetchComments();
-    } catch (rtdbError) {
-      console.warn(
-        "RTDB comment delete failed, attempting Firestore directly:",
-        rtdbError
+      const rtdbCommentRef = ref(
+        database,
+        `resources/${resource.id}/comments/${commentIdToDelete}`
       );
+      const rtdbUserCommentRef = ref(
+        database,
+        `userComments/${userUid}/${resource.id}/${commentIdToDelete}`
+      );
+      await Promise.all([remove(rtdbCommentRef), remove(rtdbUserCommentRef)]);
+
       try {
-        const batch = writeBatch(db);
-        const commentDocRef = doc(
+        const firestoreCommentRef = doc(
           db,
           `resources/${resource.id}/comments`,
-          commentId
+          commentIdToDelete
         );
-        batch.delete(commentDocRef);
-
         const userCommentsQuery = query(
           collection(db, `users/${userUid}/comments`),
           where("resourceId", "==", resource.id),
-          where("commentId", "==", commentId)
+          where("commentId", "==", commentIdToDelete)
         );
         const querySnapshot = await getDocs(userCommentsQuery);
+
+        const batch = writeBatch(db);
+        batch.delete(firestoreCommentRef);
         querySnapshot.forEach((doc) => {
           batch.delete(doc.ref);
         });
+        await batch.commit();
+        fetchComments();
+      } catch (firestoreError) {
+        console.warn("Firestore comment delete sync failed:", firestoreError);
+        fetchComments();
+      }
+    } catch (rtdbError) {
+      console.warn("RTDB comment delete failed:", rtdbError);
+      try {
+        const firestoreCommentRef = doc(
+          db,
+          `resources/${resource.id}/comments`,
+          commentIdToDelete
+        );
+        const userCommentsQuery = query(
+          collection(db, `users/${userUid}/comments`),
+          where("resourceId", "==", resource.id),
+          where("commentId", "==", commentIdToDelete)
+        );
+        const querySnapshot = await getDocs(userCommentsQuery);
 
+        const batch = writeBatch(db);
+        batch.delete(firestoreCommentRef);
+        querySnapshot.forEach((doc) => {
+          batch.delete(doc.ref);
+        });
         await batch.commit();
         fetchComments();
       } catch (firestoreError) {
         console.error("Firestore comment delete also failed:", firestoreError);
         alert("Failed to delete comment. Please try again.");
       }
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -573,16 +589,14 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
             </div>
             {checkedOpenStatus && (
               <div
-                className={`px-3 py-1 text-xs font-semibold rounded-full shadow flex items-center ${
-                  isOpen
-                    ? "bg-green-100 text-green-800"
-                    : "bg-red-100 text-red-800"
-                }`}
+                className={`px-3 py-1 text-xs font-semibold rounded-full shadow flex items-center ${isOpen
+                  ? "bg-green-100 text-green-800"
+                  : "bg-red-100 text-red-800"
+                  }`}
               >
                 <div
-                  className={`w-2 h-2 rounded-full mr-1.5 ${
-                    isOpen ? "bg-green-500" : "bg-red-500"
-                  } ${isOpen ? "animate-pulse" : ""}`}
+                  className={`w-2 h-2 rounded-full mr-1.5 ${isOpen ? "bg-green-500" : "bg-red-500"
+                    } ${isOpen ? "animate-pulse" : ""}`}
                 ></div>
                 {isOpen ? "Open" : "Closed"}
               </div>
@@ -593,9 +607,8 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               onClick={handleLike}
-              className={`bg-white w-9 h-9 rounded-full flex items-center justify-center shadow-md transition-colors ${
-                liked ? "text-red-500" : "text-gray-500 hover:text-red-400"
-              } ${!userAuthenticated ? "cursor-not-allowed opacity-70" : ""}`}
+              className={`bg-white w-9 h-9 rounded-full flex items-center justify-center shadow-md transition-colors ${liked ? "text-red-500" : "text-gray-500 hover:text-red-400"
+                } ${!userAuthenticated ? "cursor-not-allowed opacity-70" : ""}`}
               disabled={!userAuthenticated}
               title={
                 userAuthenticated
@@ -717,6 +730,77 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
       </motion.div>
 
       <AnimatePresence>
+        {deleteConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-black bg-opacity-70 z-50 flex flex-col items-center justify-center p-6"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="bg-white rounded-xl max-w-sm w-full shadow-xl overflow-hidden flex flex-col max-h-[60vh]"
+            >
+              <div className="p-3 bg-lavender-50 border-b border-lavender-200 flex-shrink-0">
+                <h3 className="text-lg font-bold text-gray-900 mb-2">
+                  Delete Comment
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  Are you sure you want to delete this comment? This action
+                  cannot be undone.
+                </p>
+                <div className="flex justify-end space-x-3">
+                  <button
+                    onClick={() => setDeleteConfirm(false)}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                    disabled={isDeleting}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleDeleteClick}
+                    className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors flex items-center justify-center"
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? (
+                      <>
+                        <svg
+                          className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          ></path>
+                        </svg>
+                        Deleting...
+                      </>
+                    ) : (
+                      "Delete"
+                    )}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {commentDialogOpen && (
           <motion.div
             key="hours-modal"
@@ -772,7 +856,7 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
                                 <FiEdit2 className="w-3 h-3" />
                               </button>
                               <button
-                                onClick={() => handleDeleteComment(comment.id)}
+                                onClick={() => confirmDeleteComment(comment.id)}
                                 className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50"
                                 title="Delete"
                                 aria-label="Delete comment"
@@ -830,14 +914,35 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
                       )}
                       <button
                         onClick={handleCommentSubmit}
-                        disabled={!newComment.trim()}
-                        className={`px-3 py-1 text-xs text-white rounded-lg transition-colors ${
-                          !newComment.trim()
-                            ? "bg-gray-300 cursor-not-allowed"
-                            : `bg-lavender-600 hover:bg-lavender-700`
-                        }`}
+                        disabled={!newComment.trim() || loading}
+                        className={`px-3 py-1 text-xs text-white rounded-lg flex items-center justify-center gap-2 transition-colors ${!newComment.trim() || loading
+                          ? "bg-gray-300 cursor-not-allowed"
+                          : "bg-lavender-600 hover:bg-lavender-700"
+                          }`}
                       >
-                        {editComment ? "Update" : "Submit"}
+                        {loading ? (
+                          <svg
+                            className="w-4 h-4 animate-spin text-white"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            />
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 100 16v-4l-3 3 3 3v-4a8 8 0 01-8-8z"
+                            />
+                          </svg>
+                        ) : (
+                          editComment ? "Update" : "Submit"
+                        )}
                       </button>
                     </div>
                   </div>
