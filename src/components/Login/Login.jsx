@@ -12,14 +12,20 @@ const Login = () => {
 
   const handleGoogleLogin = async () => {
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      navigate("/dashboard", { user: result?.user });
+      await signInWithPopup(auth, googleProvider);
+      navigate("/dashboard");
     } catch (error) {
       console.error("Error during sign in:", error);
     }
   };
 
   useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        navigate("/dashboard");
+      }
+    });
+
     const timer = setTimeout(() => {
       setShowContent(true);
     }, 300);
@@ -33,13 +39,14 @@ const Login = () => {
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
     return () => {
+      unsubscribe();
       window.removeEventListener(
         "beforeinstallprompt",
         handleBeforeInstallPrompt
       );
       clearTimeout(timer);
     };
-  }, []);
+  }, [navigate]);
 
   const handleInstallClick = () => {
     if (deferredPrompt) {
