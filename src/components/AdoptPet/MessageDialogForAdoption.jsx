@@ -75,7 +75,7 @@ const MessageDialogForAdoption = ({
           setMatingRequest(receivedSnapshot.val());
         }
       } catch (error) {
-        console.error("Error fetching mating request:", error);
+        console.error("Error fetching adoption request:", error);
       }
     };
 
@@ -238,9 +238,8 @@ const MessageDialogForAdoption = ({
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center ${
-        open ? "" : "hidden"
-      }`}
+      className={`fixed inset-0 z-50 flex items-center justify-center ${open ? "" : "hidden"
+        }`}
     >
       <div
         className="fixed inset-0 bg-black bg-opacity-50"
@@ -254,9 +253,8 @@ const MessageDialogForAdoption = ({
         >
           <div className="flex items-center">
             <div
-              className={`w-12 h-12 rounded-full border-2 border-white shadow-md flex items-center justify-center ${
-                senderPet?.image ? "" : getPetGradient(senderPet?.type)
-              } mr-3`}
+              className={`w-12 h-12 rounded-full border-2 border-white shadow-md flex items-center justify-center ${senderPet?.image ? "" : getPetGradient(senderPet?.type)
+                } mr-3`}
             >
               {senderPet?.image ? (
                 <img
@@ -342,13 +340,12 @@ const MessageDialogForAdoption = ({
                     const showAvatar =
                       idx === 0 ||
                       groupedMessages[date][idx - 1].senderId !==
-                        message.senderId;
+                      message.senderId;
                     return (
                       <div
                         key={message.id}
-                        className={`flex mb-3 ${
-                          isSender ? "justify-end" : "justify-start"
-                        }`}
+                        className={`flex mb-3 ${isSender ? "justify-end" : "justify-start"
+                          }`}
                       >
                         {!isSender && showAvatar && (
                           <div className="mr-2 mt-1 w-9 h-9 rounded-full bg-purple-500 flex items-center justify-center text-white">
@@ -365,20 +362,18 @@ const MessageDialogForAdoption = ({
                             </p>
                           )}
                           <div
-                            className={`p-3 rounded-xl ${
-                              isSender
+                            className={`p-3 rounded-xl ${isSender
                                 ? "bg-lavender-600 text-white rounded-br-none"
                                 : "bg-white border border-gray-100 rounded-bl-none"
-                            } shadow-sm`}
+                              } shadow-sm`}
                           >
                             <p>{message.text}</p>
                           </div>
                           <p
-                            className={`text-xs mt-1 ${
-                              isSender
+                            className={`text-xs mt-1 ${isSender
                                 ? "text-gray-500 text-right"
                                 : "text-gray-500 text-left"
-                            }`}
+                              }`}
                           >
                             {formatMessageTime(message.timestamp)}
                           </p>
@@ -436,11 +431,10 @@ const MessageDialogForAdoption = ({
             <button
               onClick={handleSendMessage}
               disabled={!newMessage.trim()}
-              className={`ml-2 p-2 rounded-full ${
-                newMessage.trim()
+              className={`ml-2 p-2 rounded-full ${newMessage.trim()
                   ? "bg-lavender-500 text-white hover:bg-lavender-600"
                   : "bg-gray-200 text-gray-400"
-              }`}
+                }`}
             >
               <Send size={20} />
             </button>
