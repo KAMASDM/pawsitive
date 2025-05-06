@@ -747,43 +747,49 @@ const Profile = () => {
           <div className="flex">
             <button
               onClick={() => handleProfileTabChange(0)}
-              className={`px-4 py-3 text-sm font-medium flex items-center border-b-2 transition-colors ${profileTabValue === 0
+              className={`px-4 py-3 text-sm font-medium flex items-center border-b-2 transition-colors ${
+                profileTabValue === 0
                   ? "text-lavender-700 border-lavender-600"
                   : "text-gray-500 border-transparent hover:text-lavender-600 hover:border-lavender-200"
-                }`}
+              }`}
             >
               <FaPaw
-                className={`${profileTabValue === 0 ? "text-lavender-600" : "text-gray-400"
-                  } mr-2`}
+                className={`${
+                  profileTabValue === 0 ? "text-lavender-600" : "text-gray-400"
+                } mr-2`}
               />
               My Pets
             </button>
             <button
               onClick={() => handleProfileTabChange(1)}
-              className={`px-4 py-3 text-sm font-medium flex items-center border-b-2 transition-colors ${profileTabValue === 1
+              className={`px-4 py-3 text-sm font-medium flex items-center border-b-2 transition-colors ${
+                profileTabValue === 1
                   ? "text-lavender-700 border-lavender-600"
                   : "text-gray-500 border-transparent hover:text-lavender-600 hover:border-lavender-200"
-                }`}
+              }`}
             >
               <FiHeart
-                className={`${profileTabValue === 1 ? "text-lavender-600" : "text-gray-400"
-                  } mr-2`}
+                className={`${
+                  profileTabValue === 1 ? "text-lavender-600" : "text-gray-400"
+                } mr-2`}
               />
               Resources
             </button>
             <button
               onClick={() => handleProfileTabChange(2)}
-              className={`px-4 py-3 text-sm font-medium flex items-center border-b-2 transition-colors ${profileTabValue === 2
+              className={`px-4 py-3 text-sm font-medium flex items-center border-b-2 transition-colors ${
+                profileTabValue === 2
                   ? "text-lavender-700 border-lavender-600"
                   : "text-gray-500 border-transparent hover:text-lavender-600 hover:border-lavender-200"
-                }`}
+              }`}
             >
               <div className="relative mr-2">
                 <FiHeart
-                  className={`${profileTabValue === 2
+                  className={`${
+                    profileTabValue === 2
                       ? "text-lavender-600"
                       : "text-gray-400"
-                    }`}
+                  }`}
                 />
                 {pendingRequestsCount > 0 && (
                   <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
@@ -793,14 +799,16 @@ const Profile = () => {
             </button>
             <button
               onClick={() => handleProfileTabChange(3)}
-              className={`px-4 py-3 text-sm font-medium flex items-center border-b-2 transition-colors ${profileTabValue === 3
+              className={`px-4 py-3 text-sm font-medium flex items-center border-b-2 transition-colors ${
+                profileTabValue === 3
                   ? "text-lavender-700 border-lavender-600"
                   : "text-gray-500 border-transparent hover:text-lavender-600 hover:border-lavender-200"
-                }`}
+              }`}
             >
               <FiMessageSquare
-                className={`${profileTabValue === 3 ? "text-lavender-600" : "text-gray-400"
-                  } mr-2`}
+                className={`${
+                  profileTabValue === 3 ? "text-lavender-600" : "text-gray-400"
+                } mr-2`}
               />
               Messages
             </button>
@@ -901,10 +909,12 @@ const Profile = () => {
                         </div>
                         <div className="text-sm text-gray-600 mt-1">
                           {request.direction === "incoming"
-                            ? `${request.senderPetName} (${request.senderPetBreed || "Unknown breed"
-                            })`
-                            : `${request.receiverPetName} (${request.receiverPetBreed || "Unknown breed"
-                            })`}{" "}
+                            ? `${request.senderPetName} (${
+                                request.senderPetBreed || "Unknown breed"
+                              })`
+                            : `${request.receiverPetName} (${
+                                request.receiverPetBreed || "Unknown breed"
+                              })`}{" "}
                           for your{" "}
                           {request.direction === "incoming"
                             ? request.receiverPetName

@@ -88,8 +88,9 @@ const Login = () => {
       </div>
 
       <div
-        className={`max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden transform transition-all duration-500 ${showContent ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"
-          } relative z-10`}
+        className={`max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden transform transition-all duration-500 ${
+          showContent ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"
+        } relative z-10`}
       >
         <div className="p-8">
           <div className="flex justify-center mb-6 relative">

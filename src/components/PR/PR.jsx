@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { auth } from "../../firebase";

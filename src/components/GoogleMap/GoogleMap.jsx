@@ -350,323 +350,333 @@ const Googlemap = React.forwardRef(
       }
     }, [isLoaded, loadError]);
 
-    const calculateRelevanceScore = useCallback((place, keyword) => {
-      let score = 0;
+    const calculateRelevanceScore = useCallback(
+      (place, keyword) => {
+        let score = 0;
 
-      const placeName = place.name.toLowerCase();
-      const keywordLower = keyword.toLowerCase();
+        const placeName = place.name.toLowerCase();
+        const keywordLower = keyword.toLowerCase();
 
-      if (searchQuery && searchQuery.trim() !== "") {
-        const searchTerms = searchQuery.toLowerCase().split(/\s+/);
+        if (searchQuery && searchQuery.trim() !== "") {
+          const searchTerms = searchQuery.toLowerCase().split(/\s+/);
 
-        if (searchTerms.every((term) => placeName.includes(term))) {
-          score += 50;
-        }
-
-        searchTerms.forEach((term) => {
-          if (placeName.includes(term)) {
-            score += 10;
+          if (searchTerms.every((term) => placeName.includes(term))) {
+            score += 50;
           }
-        });
-      }
 
-      if (placeName === keywordLower) {
-        score += 30;
-      } else if (placeName.includes(keywordLower)) {
-        score += 15;
-      }
-
-      if (searchQuery) {
-        const searchQueryLower = searchQuery.toLowerCase();
-
-        if (
-          searchQueryLower.includes("trainer") ||
-          searchQueryLower.includes("training")
-        ) {
-          if (
-            placeName.includes("trainer") ||
-            placeName.includes("training") ||
-            placeName.includes("obedience") ||
-            placeName.includes("school")
-          ) {
-            score += 40;
-          } else {
-            score -= 20;
-          }
-        }
-
-        if (
-          searchQueryLower.includes("walker") ||
-          searchQueryLower.includes("walking")
-        ) {
-          if (placeName.includes("walker") || placeName.includes("walking")) {
-            score += 40;
-          } else {
-            score -= 20;
-          }
-        }
-
-        if (searchQueryLower.includes("groom")) {
-          if (placeName.includes("groom")) {
-            score += 40;
-          } else {
-            score -= 20;
-          }
-        }
-
-        if (
-          searchQueryLower.includes("vet") ||
-          searchQueryLower.includes("clinic") ||
-          searchQueryLower.includes("hospital") ||
-          searchQueryLower.includes("doctor")
-        ) {
-          if (
-            placeName.includes("vet") ||
-            placeName.includes("clinic") ||
-            placeName.includes("hospital") ||
-            placeName.includes("doctor") ||
-            placeName.includes("medical")
-          ) {
-            score += 40;
-          } else {
-            score -= 20;
-          }
-        }
-      }
-
-      if (
-        category === "dog_services" &&
-        (placeName.includes("walker") ||
-          placeName.includes("walking") ||
-          placeName.includes("daycare") ||
-          placeName.includes("boarding") ||
-          placeName.includes("trainer") ||
-          placeName.includes("training"))
-      ) {
-        score += 20;
-      }
-
-      if (
-        category === "cat_services" &&
-        (placeName.includes("sitter") ||
-          placeName.includes("sitting") ||
-          placeName.includes("boarding") ||
-          placeName.includes("groomer") ||
-          placeName.includes("grooming"))
-      ) {
-        score += 20;
-      }
-
-      if (
-        category?.includes("_health") &&
-        (placeName.includes("vet") ||
-          placeName.includes("clinic") ||
-          placeName.includes("hospital") ||
-          placeName.includes("doctor") ||
-          placeName.includes("emergency"))
-      ) {
-        score += 20;
-      }
-
-      if (place.rating) {
-        score += place.rating * 2;
-      }
-
-      if (place.user_ratings_total) {
-        score += Math.min(place.user_ratings_total / 50, 10);
-      }
-
-      return score;
-    },[category, searchQuery]);
-
-    const fetchPlaceDetails = useCallback(async (service, place) => {
-      return new Promise((resolve) => {
-        const detailsRequest = {
-          placeId: place.place_id,
-          fields: [
-            "name",
-            "vicinity",
-            "geometry",
-            "formatted_phone_number",
-            "business_status",
-            "opening_hours",
-            "photos",
-            "types",
-            "rating",
-            "user_ratings_total",
-            "website",
-            "formatted_address",
-            "international_phone_number",
-          ],
-        };
-
-        service.getDetails(detailsRequest, (placeDetails, detailsStatus) => {
-          if (
-            detailsStatus === window.google.maps.places.PlacesServiceStatus.OK
-          ) {
-            const photoUrl = placeDetails.photos?.[0]?.getUrl({
-              maxHeight: 300,
-              maxWidth: 400,
-            });
-
-            let resourceType = "Establishment";
-            const name = placeDetails.name.toLowerCase();
-            const types = placeDetails.types || [];
-
-            if (searchQuery) {
-              const searchQueryLower = searchQuery.toLowerCase();
-              if (
-                searchQueryLower.includes("trainer") ||
-                searchQueryLower.includes("training")
-              ) {
-                if (
-                  name.includes("train") ||
-                  name.includes("obedience") ||
-                  name.includes("school")
-                ) {
-                  resourceType = "Dog Trainer";
-                }
-              } else if (
-                searchQueryLower.includes("walker") ||
-                searchQueryLower.includes("walking")
-              ) {
-                if (name.includes("walk")) {
-                  resourceType = "Dog Walker";
-                }
-              } else if (searchQueryLower.includes("groom")) {
-                if (name.includes("groom")) {
-                  resourceType = category?.startsWith("dog")
-                    ? "Dog Groomer"
-                    : "Cat Groomer";
-                }
-              } else if (
-                searchQueryLower.includes("vet") ||
-                searchQueryLower.includes("clinic") ||
-                searchQueryLower.includes("hospital")
-              ) {
-                if (
-                  name.includes("vet") ||
-                  name.includes("clinic") ||
-                  name.includes("hospital") ||
-                  name.includes("doctor") ||
-                  name.includes("care")
-                ) {
-                  resourceType = "Veterinarian";
-                }
-              }
+          searchTerms.forEach((term) => {
+            if (placeName.includes(term)) {
+              score += 10;
             }
+          });
+        }
 
-            if (resourceType === "Establishment") {
-              if (
-                types.includes("veterinary_care") ||
-                name.includes("vet") ||
-                name.includes("clinic") ||
-                name.includes("hospital")
-              ) {
-                resourceType = "Veterinarian";
-              } else if (category === "dog_services") {
-                if (name.includes("walk") || name.includes("walker")) {
-                  resourceType = "Dog Walker";
-                } else if (
-                  name.includes("train") ||
-                  name.includes("obedience")
-                ) {
-                  resourceType = "Dog Trainer";
-                } else if (
-                  name.includes("daycare") ||
-                  name.includes("boarding")
-                ) {
-                  resourceType = "Pet Boarding";
-                } else if (name.includes("groom")) {
-                  resourceType = "Pet Groomer";
-                } else if (types.includes("park") || name.includes("park")) {
-                  resourceType = "Dog Park";
-                }
-              } else if (category === "cat_services") {
-                if (name.includes("sit") || name.includes("sitter")) {
-                  resourceType = "Cat Sitter";
-                } else if (name.includes("groom")) {
-                  resourceType = "Cat Groomer";
-                } else if (name.includes("board") || name.includes("hotel")) {
-                  resourceType = "Cat Boarding";
-                }
-              } else if (category?.includes("_nutrition")) {
-                resourceType = "Pet Food Store";
-              } else if (category?.includes("_supplies")) {
-                resourceType = "Pet Supplies";
-              }
-            }
-
-            const formattedResource = {
-              id: place.place_id,
-              name: placeDetails.name,
-              address: placeDetails.formatted_address || placeDetails.vicinity,
-              lat: placeDetails.geometry.location.lat(),
-              lng: placeDetails.geometry.location.lng(),
-              phone:
-                placeDetails.international_phone_number ||
-                placeDetails.formatted_phone_number ||
-                "N/A",
-              website: placeDetails.website || "N/A",
-              status:
-                placeDetails.business_status === "OPERATIONAL"
-                  ? "Open"
-                  : "Closed",
-              hours: placeDetails.opening_hours?.weekday_text || "N/A",
-              photoUrl,
-              types: placeDetails.types || [],
-              rating: placeDetails.rating || 0,
-              userRatingsTotal: placeDetails.user_ratings_total || 0,
-              category: category,
-              type: resourceType,
-            };
-
-            resolve(formattedResource);
-          } else {
-            console.warn("Place details fetch failed:", detailsStatus);
-            resolve(null);
-          }
-        });
-      });
-    },[category, searchQuery]);
-
-    const performSearch = useCallback(async (service, location, keyword) => {
-      return new Promise((resolve) => {
-        let type =
-          categoryTypes[category?.toLowerCase()]?.[0] || "establishment";
+        if (placeName === keywordLower) {
+          score += 30;
+        } else if (placeName.includes(keywordLower)) {
+          score += 15;
+        }
 
         if (searchQuery) {
           const searchQueryLower = searchQuery.toLowerCase();
+
+          if (
+            searchQueryLower.includes("trainer") ||
+            searchQueryLower.includes("training")
+          ) {
+            if (
+              placeName.includes("trainer") ||
+              placeName.includes("training") ||
+              placeName.includes("obedience") ||
+              placeName.includes("school")
+            ) {
+              score += 40;
+            } else {
+              score -= 20;
+            }
+          }
+
+          if (
+            searchQueryLower.includes("walker") ||
+            searchQueryLower.includes("walking")
+          ) {
+            if (placeName.includes("walker") || placeName.includes("walking")) {
+              score += 40;
+            } else {
+              score -= 20;
+            }
+          }
+
+          if (searchQueryLower.includes("groom")) {
+            if (placeName.includes("groom")) {
+              score += 40;
+            } else {
+              score -= 20;
+            }
+          }
+
           if (
             searchQueryLower.includes("vet") ||
-            searchQueryLower.includes("clinic")
+            searchQueryLower.includes("clinic") ||
+            searchQueryLower.includes("hospital") ||
+            searchQueryLower.includes("doctor")
           ) {
-            type = "veterinary_care";
-          } else if (searchQueryLower.includes("park")) {
-            type = "park";
+            if (
+              placeName.includes("vet") ||
+              placeName.includes("clinic") ||
+              placeName.includes("hospital") ||
+              placeName.includes("doctor") ||
+              placeName.includes("medical")
+            ) {
+              score += 40;
+            } else {
+              score -= 20;
+            }
           }
         }
 
-        const request = {
-          location: new window.google.maps.LatLng(location.lat, location.lng),
-          radius: 10000,
-          keyword: keyword,
-          type: type,
-        };
+        if (
+          category === "dog_services" &&
+          (placeName.includes("walker") ||
+            placeName.includes("walking") ||
+            placeName.includes("daycare") ||
+            placeName.includes("boarding") ||
+            placeName.includes("trainer") ||
+            placeName.includes("training"))
+        ) {
+          score += 20;
+        }
 
-        service.nearbySearch(request, (results, status) => {
-          if (status === window.google.maps.places.PlacesServiceStatus.OK) {
-            console.log(
-              `Found ${results.length} results for keyword "${keyword}"`
-            );
-            resolve(results);
-          } else {
-            console.warn(`Search failed for keyword ${keyword}:`, status);
-            resolve([]);
-          }
+        if (
+          category === "cat_services" &&
+          (placeName.includes("sitter") ||
+            placeName.includes("sitting") ||
+            placeName.includes("boarding") ||
+            placeName.includes("groomer") ||
+            placeName.includes("grooming"))
+        ) {
+          score += 20;
+        }
+
+        if (
+          category?.includes("_health") &&
+          (placeName.includes("vet") ||
+            placeName.includes("clinic") ||
+            placeName.includes("hospital") ||
+            placeName.includes("doctor") ||
+            placeName.includes("emergency"))
+        ) {
+          score += 20;
+        }
+
+        if (place.rating) {
+          score += place.rating * 2;
+        }
+
+        if (place.user_ratings_total) {
+          score += Math.min(place.user_ratings_total / 50, 10);
+        }
+
+        return score;
+      },
+      [category, searchQuery]
+    );
+
+    const fetchPlaceDetails = useCallback(
+      async (service, place) => {
+        return new Promise((resolve) => {
+          const detailsRequest = {
+            placeId: place.place_id,
+            fields: [
+              "name",
+              "vicinity",
+              "geometry",
+              "formatted_phone_number",
+              "business_status",
+              "opening_hours",
+              "photos",
+              "types",
+              "rating",
+              "user_ratings_total",
+              "website",
+              "formatted_address",
+              "international_phone_number",
+            ],
+          };
+
+          service.getDetails(detailsRequest, (placeDetails, detailsStatus) => {
+            if (
+              detailsStatus === window.google.maps.places.PlacesServiceStatus.OK
+            ) {
+              const photoUrl = placeDetails.photos?.[0]?.getUrl({
+                maxHeight: 300,
+                maxWidth: 400,
+              });
+
+              let resourceType = "Establishment";
+              const name = placeDetails.name.toLowerCase();
+              const types = placeDetails.types || [];
+
+              if (searchQuery) {
+                const searchQueryLower = searchQuery.toLowerCase();
+                if (
+                  searchQueryLower.includes("trainer") ||
+                  searchQueryLower.includes("training")
+                ) {
+                  if (
+                    name.includes("train") ||
+                    name.includes("obedience") ||
+                    name.includes("school")
+                  ) {
+                    resourceType = "Dog Trainer";
+                  }
+                } else if (
+                  searchQueryLower.includes("walker") ||
+                  searchQueryLower.includes("walking")
+                ) {
+                  if (name.includes("walk")) {
+                    resourceType = "Dog Walker";
+                  }
+                } else if (searchQueryLower.includes("groom")) {
+                  if (name.includes("groom")) {
+                    resourceType = category?.startsWith("dog")
+                      ? "Dog Groomer"
+                      : "Cat Groomer";
+                  }
+                } else if (
+                  searchQueryLower.includes("vet") ||
+                  searchQueryLower.includes("clinic") ||
+                  searchQueryLower.includes("hospital")
+                ) {
+                  if (
+                    name.includes("vet") ||
+                    name.includes("clinic") ||
+                    name.includes("hospital") ||
+                    name.includes("doctor") ||
+                    name.includes("care")
+                  ) {
+                    resourceType = "Veterinarian";
+                  }
+                }
+              }
+
+              if (resourceType === "Establishment") {
+                if (
+                  types.includes("veterinary_care") ||
+                  name.includes("vet") ||
+                  name.includes("clinic") ||
+                  name.includes("hospital")
+                ) {
+                  resourceType = "Veterinarian";
+                } else if (category === "dog_services") {
+                  if (name.includes("walk") || name.includes("walker")) {
+                    resourceType = "Dog Walker";
+                  } else if (
+                    name.includes("train") ||
+                    name.includes("obedience")
+                  ) {
+                    resourceType = "Dog Trainer";
+                  } else if (
+                    name.includes("daycare") ||
+                    name.includes("boarding")
+                  ) {
+                    resourceType = "Pet Boarding";
+                  } else if (name.includes("groom")) {
+                    resourceType = "Pet Groomer";
+                  } else if (types.includes("park") || name.includes("park")) {
+                    resourceType = "Dog Park";
+                  }
+                } else if (category === "cat_services") {
+                  if (name.includes("sit") || name.includes("sitter")) {
+                    resourceType = "Cat Sitter";
+                  } else if (name.includes("groom")) {
+                    resourceType = "Cat Groomer";
+                  } else if (name.includes("board") || name.includes("hotel")) {
+                    resourceType = "Cat Boarding";
+                  }
+                } else if (category?.includes("_nutrition")) {
+                  resourceType = "Pet Food Store";
+                } else if (category?.includes("_supplies")) {
+                  resourceType = "Pet Supplies";
+                }
+              }
+
+              const formattedResource = {
+                id: place.place_id,
+                name: placeDetails.name,
+                address:
+                  placeDetails.formatted_address || placeDetails.vicinity,
+                lat: placeDetails.geometry.location.lat(),
+                lng: placeDetails.geometry.location.lng(),
+                phone:
+                  placeDetails.international_phone_number ||
+                  placeDetails.formatted_phone_number ||
+                  "N/A",
+                website: placeDetails.website || "N/A",
+                status:
+                  placeDetails.business_status === "OPERATIONAL"
+                    ? "Open"
+                    : "Closed",
+                hours: placeDetails.opening_hours?.weekday_text || "N/A",
+                photoUrl,
+                types: placeDetails.types || [],
+                rating: placeDetails.rating || 0,
+                userRatingsTotal: placeDetails.user_ratings_total || 0,
+                category: category,
+                type: resourceType,
+              };
+
+              resolve(formattedResource);
+            } else {
+              console.warn("Place details fetch failed:", detailsStatus);
+              resolve(null);
+            }
+          });
         });
-      });
-    },[category, searchQuery]);
+      },
+      [category, searchQuery]
+    );
+
+    const performSearch = useCallback(
+      async (service, location, keyword) => {
+        return new Promise((resolve) => {
+          let type =
+            categoryTypes[category?.toLowerCase()]?.[0] || "establishment";
+
+          if (searchQuery) {
+            const searchQueryLower = searchQuery.toLowerCase();
+            if (
+              searchQueryLower.includes("vet") ||
+              searchQueryLower.includes("clinic")
+            ) {
+              type = "veterinary_care";
+            } else if (searchQueryLower.includes("park")) {
+              type = "park";
+            }
+          }
+
+          const request = {
+            location: new window.google.maps.LatLng(location.lat, location.lng),
+            radius: 10000,
+            keyword: keyword,
+            type: type,
+          };
+
+          service.nearbySearch(request, (results, status) => {
+            if (status === window.google.maps.places.PlacesServiceStatus.OK) {
+              console.log(
+                `Found ${results.length} results for keyword "${keyword}"`
+              );
+              resolve(results);
+            } else {
+              console.warn(`Search failed for keyword ${keyword}:`, status);
+              resolve([]);
+            }
+          });
+        });
+      },
+      [category, searchQuery]
+    );
 
     const filterBySearchQuery = (resources, query) => {
       if (!query || query.trim() === "") {
@@ -934,10 +944,13 @@ const Googlemap = React.forwardRef(
       }
     };
 
-    const handleViewModeChange = useCallback((mode) => {
-      navigate(`/map/${category}/${mode}`);
-    },[category, navigate]);
-    
+    const handleViewModeChange = useCallback(
+      (mode) => {
+        navigate(`/map/${category}/${mode}`);
+      },
+      [category, navigate]
+    );
+
     const handleDirectionsClick = useCallback(() => {
       if (destination) {
         window.open(
@@ -945,7 +958,7 @@ const Googlemap = React.forwardRef(
           "_blank"
         );
       }
-    },[destination]);
+    }, [destination]);
 
     const handleMapLoad = (map) => {
       onMapLoaded(map);

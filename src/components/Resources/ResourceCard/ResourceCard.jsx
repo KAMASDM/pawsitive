@@ -123,7 +123,7 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
             doc(db, "resources", resource.id, "likes", userUid)
           );
           setLiked(likeDoc.exists());
-        } catch (firestoreErr) { }
+        } catch (firestoreErr) {}
       }
     } catch (error) {
       try {
@@ -229,8 +229,8 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
     const newLikesCount = newLikedState
       ? currentLikes + 1
       : currentLikes > 0
-        ? currentLikes - 1
-        : 0;
+      ? currentLikes - 1
+      : 0;
 
     setLiked(newLikedState);
     setLikes(newLikesCount);
@@ -295,12 +295,14 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
   };
 
   const handleShare = () => {
-    const detailUrl = `${window.location.origin}/resource-details/${resource.id || resource.place_id
-      }`;
+    const detailUrl = `${window.location.origin}/resource-details/${
+      resource.id || resource.place_id
+    }`;
     const shareData = {
       title: resource.name,
-      text: `Check out this pet resource: ${resource.name} at ${resource.address || resource.vicinity || "N/A"
-        }.`,
+      text: `Check out this pet resource: ${resource.name} at ${
+        resource.address || resource.vicinity || "N/A"
+      }.`,
       url: detailUrl,
     };
     if (navigator.share) {
@@ -589,14 +591,16 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
             </div>
             {checkedOpenStatus && (
               <div
-                className={`px-3 py-1 text-xs font-semibold rounded-full shadow flex items-center ${isOpen
-                  ? "bg-green-100 text-green-800"
-                  : "bg-red-100 text-red-800"
-                  }`}
+                className={`px-3 py-1 text-xs font-semibold rounded-full shadow flex items-center ${
+                  isOpen
+                    ? "bg-green-100 text-green-800"
+                    : "bg-red-100 text-red-800"
+                }`}
               >
                 <div
-                  className={`w-2 h-2 rounded-full mr-1.5 ${isOpen ? "bg-green-500" : "bg-red-500"
-                    } ${isOpen ? "animate-pulse" : ""}`}
+                  className={`w-2 h-2 rounded-full mr-1.5 ${
+                    isOpen ? "bg-green-500" : "bg-red-500"
+                  } ${isOpen ? "animate-pulse" : ""}`}
                 ></div>
                 {isOpen ? "Open" : "Closed"}
               </div>
@@ -607,8 +611,9 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               onClick={handleLike}
-              className={`bg-white w-9 h-9 rounded-full flex items-center justify-center shadow-md transition-colors ${liked ? "text-red-500" : "text-gray-500 hover:text-red-400"
-                } ${!userAuthenticated ? "cursor-not-allowed opacity-70" : ""}`}
+              className={`bg-white w-9 h-9 rounded-full flex items-center justify-center shadow-md transition-colors ${
+                liked ? "text-red-500" : "text-gray-500 hover:text-red-400"
+              } ${!userAuthenticated ? "cursor-not-allowed opacity-70" : ""}`}
               disabled={!userAuthenticated}
               title={
                 userAuthenticated
@@ -915,10 +920,11 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
                       <button
                         onClick={handleCommentSubmit}
                         disabled={!newComment.trim() || loading}
-                        className={`px-3 py-1 text-xs text-white rounded-lg flex items-center justify-center gap-2 transition-colors ${!newComment.trim() || loading
-                          ? "bg-gray-300 cursor-not-allowed"
-                          : "bg-lavender-600 hover:bg-lavender-700"
-                          }`}
+                        className={`px-3 py-1 text-xs text-white rounded-lg flex items-center justify-center gap-2 transition-colors ${
+                          !newComment.trim() || loading
+                            ? "bg-gray-300 cursor-not-allowed"
+                            : "bg-lavender-600 hover:bg-lavender-700"
+                        }`}
                       >
                         {loading ? (
                           <svg
@@ -940,8 +946,10 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
                               d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 100 16v-4l-3 3 3 3v-4a8 8 0 01-8-8z"
                             />
                           </svg>
+                        ) : editComment ? (
+                          "Update"
                         ) : (
-                          editComment ? "Update" : "Submit"
+                          "Submit"
                         )}
                       </button>
                     </div>

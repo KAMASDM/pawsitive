@@ -290,8 +290,8 @@ const PetCard = ({ pet, onEdit, onDelete }) => {
                 <div className="pt-2 pb-4">
                   <div className="bg-lavender-50 rounded-lg p-4 text-sm text-gray-700">
                     {pet.medical?.conditions?.length > 0 ||
-                      pet.medical?.allergies?.length > 0 ||
-                      pet.medical?.medications ? (
+                    pet.medical?.allergies?.length > 0 ||
+                    pet.medical?.medications ? (
                       <>
                         {pet.medical?.conditions?.length > 0 && (
                           <div className="mb-3 last:mb-0">
@@ -399,12 +399,13 @@ const PetCard = ({ pet, onEdit, onDelete }) => {
                               </h4>
                               {status !== "unknown" && (
                                 <div
-                                  className={`flex-shrink-0 text-xs px-2 py-0.5 rounded-full flex items-center whitespace-nowrap ${status === "overdue"
+                                  className={`flex-shrink-0 text-xs px-2 py-0.5 rounded-full flex items-center whitespace-nowrap ${
+                                    status === "overdue"
                                       ? "bg-red-100 text-red-800"
                                       : status === "due-soon"
-                                        ? "bg-yellow-100 text-yellow-800"
-                                        : "bg-green-100 text-green-800"
-                                    }`}
+                                      ? "bg-yellow-100 text-yellow-800"
+                                      : "bg-green-100 text-green-800"
+                                  }`}
                                 >
                                   {status === "overdue" ? (
                                     <>
@@ -489,16 +490,18 @@ const PetCard = ({ pet, onEdit, onDelete }) => {
                 }
               />
               <div
-                className={`w-10 h-5 rounded-full transition-colors ${pet.availableForMating
+                className={`w-10 h-5 rounded-full transition-colors ${
+                  pet.availableForMating
                     ? "bg-pink-500 peer-checked:bg-pink-500"
                     : "bg-gray-300"
-                  } peer-focus:ring-2 peer-focus:ring-pink-300`}
+                } peer-focus:ring-2 peer-focus:ring-pink-300`}
               ></div>
               <div
-                className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform transform ${pet.availableForMating
+                className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform transform ${
+                  pet.availableForMating
                     ? "translate-x-5 peer-checked:translate-x-5"
                     : "translate-x-0"
-                  }`}
+                }`}
               ></div>
             </div>
           </label>

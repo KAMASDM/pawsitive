@@ -90,9 +90,9 @@ const AdoptPet = () => {
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     const distance = R * c;
     return distance;
@@ -309,28 +309,31 @@ const AdoptPet = () => {
               <nav className="flex space-x-4 overflow-x-auto">
                 <button
                   onClick={() => handleTabChange(0)}
-                  className={`py-2 px-4 whitespace-nowrap ${tabValue === 0
+                  className={`py-2 px-4 whitespace-nowrap ${
+                    tabValue === 0
                       ? "border-b-2 border-lavender-500 text-lavender-600"
                       : "text-gray-500 hover:text-gray-700"
-                    }`}
+                  }`}
                 >
                   All Matches
                 </button>
                 <button
                   onClick={() => handleTabChange(1)}
-                  className={`py-2 px-4 whitespace-nowrap ${tabValue === 1
+                  className={`py-2 px-4 whitespace-nowrap ${
+                    tabValue === 1
                       ? "border-b-2 border-lavender-500 text-lavender-600"
                       : "text-gray-500 hover:text-gray-700"
-                    }`}
+                  }`}
                 >
                   Nearby (&lt; 5km)
                 </button>
                 <button
                   onClick={() => handleTabChange(2)}
-                  className={`py-2 px-4 whitespace-nowrap ${tabValue === 2
+                  className={`py-2 px-4 whitespace-nowrap ${
+                    tabValue === 2
                       ? "border-b-2 border-lavender-500 text-lavender-600"
                       : "text-gray-500 hover:text-gray-700"
-                    }`}
+                  }`}
                 >
                   Same Breed
                 </button>
@@ -358,9 +361,10 @@ const AdoptPet = () => {
                       </div>
                       <div className="absolute top-3 left-3 z-10">
                         <span
-                          className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full shadow ${pet.gender === "Female" &&
+                          className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full shadow ${
+                            pet.gender === "Female" &&
                             "bg-lavender-600 text-white"
-                            }`}
+                          }`}
                         >
                           {pet.gender}
                         </span>

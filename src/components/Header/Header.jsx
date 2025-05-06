@@ -176,12 +176,12 @@ const Header = () => {
               <NavLink to="/profile">
                 <div className="flex items-center relative">
                   <FiBell className="mr-1" />
+                  Notifications
                   {pendingRequestsCount > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                    <span className="ml-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
                       {pendingRequestsCount}
                     </span>
                   )}
-                  Notifications
                 </div>
               </NavLink>
               <button
@@ -215,7 +215,10 @@ const Header = () => {
         {isMenuOpen && (
           <div className="md:hidden bg-lavender-800 animate-fadeIn">
             <div className="container mx-auto px-4 py-2 space-y-1">
-              <MobileNavLink to="/dashboard" onClick={() => setIsMenuOpen(false)}>
+              <MobileNavLink
+                to="/dashboard"
+                onClick={() => setIsMenuOpen(false)}
+              >
                 <FiHome className="mr-2" /> Home
               </MobileNavLink>
               <MobileNavLink
@@ -254,10 +257,11 @@ const NavLink = ({ to, children }) => {
   return (
     <Link
       to={to}
-      className={`flex items-center px-3 py-2 rounded-lg transition-colors ${isActive
-        ? "text-white bg-lavender-700"
-        : "text-lavender-200 hover:text-white hover:bg-lavender-700"
-        }`}
+      className={`flex items-center px-3 py-2 rounded-lg transition-colors ${
+        isActive
+          ? "text-white bg-lavender-700"
+          : "text-lavender-200 hover:text-white hover:bg-lavender-700"
+      }`}
     >
       {children}
     </Link>
@@ -271,10 +275,11 @@ const MobileNavLink = ({ to, onClick, children }) => {
     <Link
       to={to}
       onClick={onClick}
-      className={`flex items-center py-2 px-4 rounded-lg transition-colors ${isActive
-        ? "text-white bg-lavender-700"
-        : "text-lavender-200 hover:text-white hover:bg-lavender-700"
-        }`}
+      className={`flex items-center py-2 px-4 rounded-lg transition-colors ${
+        isActive
+          ? "text-white bg-lavender-700"
+          : "text-lavender-200 hover:text-white hover:bg-lavender-700"
+      }`}
     >
       {children}
     </Link>
