@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ref, get, set, onValue } from "firebase/database";
@@ -20,7 +19,7 @@ import {
   Syringe,
 } from "lucide-react";
 import MatingRequestDialog from "../Profile/components/MatingRequestDialog";
-import { LocationCity } from "@mui/icons-material";
+import { FaLocationDot } from "react-icons/fa6";
 import { FaPaw } from "react-icons/fa";
 import PetDetailShimmer from "../../UI/PetDetailShimmer";
 
@@ -117,7 +116,7 @@ const PetDetail = () => {
       const unsubscribeReceived = onValue(receivedRequestsRef, onValueChange);
       return () => unsubscribeReceived();
     }
-  }, [petId, user]);
+  }, [pet?.id, pet?.userId, petId, requestStatus, user]);
 
   const checkRequestStatus = async (
     currentUserId,
@@ -339,7 +338,7 @@ const PetDetail = () => {
               )}
               {pet.location && (
                 <div className="flex items-center">
-                  <LocationCity className="text-lavender-600 mr-2" />
+                  <FaLocationDot className="text-lavender-600 mr-2" />
                   <span>Location Tracked</span>
                 </div>
               )}
@@ -424,12 +423,13 @@ const PetDetail = () => {
                       requestStatus !== null && requestStatus !== "accepted"
                     }
                     className={`flex items-center px-4 py-2 rounded-lg transition-colors text-sm font-medium
-                                            ${requestStatus === "pending"
-                        ? "bg-yellow-500 text-white hover:bg-yellow-600"
-                        : requestStatus === "accepted"
-                          ? "bg-green-500 text-white hover:bg-green-600"
-                          : "bg-lavender-600 hover:bg-lavender-700 text-white"
-                      }
+                                            ${
+                                              requestStatus === "pending"
+                                                ? "bg-yellow-500 text-white hover:bg-yellow-600"
+                                                : requestStatus === "accepted"
+                                                ? "bg-green-500 text-white hover:bg-green-600"
+                                                : "bg-lavender-600 hover:bg-lavender-700 text-white"
+                                            }
                                         `}
                   >
                     {requestStatus === "pending" ? (

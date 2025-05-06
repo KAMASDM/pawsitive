@@ -12,7 +12,6 @@ const shimmerKeyframes = `
 `;
 
 const MeetingDetailsSkeleton = ({ activeTab = 0 }) => {
-  
   useEffect(() => {
     const styleElement = document.createElement("style");
     styleElement.innerHTML = shimmerKeyframes;

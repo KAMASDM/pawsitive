@@ -149,10 +149,11 @@ const MobileCategorySelector = ({ categories, onSelect, activeCategory }) => {
           <button
             key={category.id}
             onClick={() => onSelect(category.id)}
-            className={`flex flex-col items-center px-4 py-2 rounded-lg text-center ${activeCategory === category.id
+            className={`flex flex-col items-center px-4 py-2 rounded-lg text-center ${
+              activeCategory === category.id
                 ? "bg-lavender-600 text-white"
                 : "bg-white text-lavender-900 border border-lavender-200"
-              }`}
+            }`}
           >
             <span className="text-2xl mb-1">{category.icon}</span>
             <span className="text-xs font-medium whitespace-nowrap">
@@ -189,20 +190,20 @@ const CatResources = () => {
 
   const filteredCategories = searchTerm
     ? catResourceCategories.filter(
-      (category) =>
-        category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        category.description
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        category.examples.some((ex) =>
-          ex.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-    )
+        (category) =>
+          category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          category.description
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          category.examples.some((ex) =>
+            ex.toLowerCase().includes(searchTerm.toLowerCase())
+          )
+      )
     : activeMobileCategory && isMobile
-      ? catResourceCategories.filter(
+    ? catResourceCategories.filter(
         (category) => category.id === activeMobileCategory
       )
-      : catResourceCategories;
+    : catResourceCategories;
 
   if (loading) {
     return (

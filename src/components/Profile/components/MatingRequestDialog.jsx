@@ -240,10 +240,13 @@ const MatingRequestDialog = ({
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
                         className="w-full rounded-lg border border-lavender-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent resize-none"
-                        placeholder={`Hello! I'd like to arrange a mating between my pet ${senderPet?.name
-                          } and your pet ${receiverPet?.name}. My pet is a ${senderPet?.breed || ""
-                          } ${senderPet?.gender || ""}, ${senderPet?.age || ""
-                          }. Please let me know if you're interested.`}
+                        placeholder={`Hello! I'd like to arrange a mating between my pet ${
+                          senderPet?.name
+                        } and your pet ${receiverPet?.name}. My pet is a ${
+                          senderPet?.breed || ""
+                        } ${senderPet?.gender || ""}, ${
+                          senderPet?.age || ""
+                        }. Please let me know if you're interested.`}
                         rows={6}
                       ></textarea>
                     </div>

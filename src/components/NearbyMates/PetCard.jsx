@@ -36,9 +36,7 @@ const PetCard = ({ pet, onViewDetails }) => {
           ) : (
             <>
               <BiMale className="mr-1 h-4 w-4 text-blue-400" />
-              <span className="bg-blue-400 rounded-full px-1 py-0.5">
-                Male
-              </span>
+              <span className="bg-blue-400 rounded-full px-1 py-0.5">Male</span>
             </>
           )}
         </div>
@@ -65,9 +63,7 @@ const PetCard = ({ pet, onViewDetails }) => {
             <div className="flex items-center text-sm text-gray-600">
               <FiClock className="mr-2 h-4 w-4 text-orange-400" />
               Age:
-              <span className="font-medium ml-1">
-                {pet.age} years
-              </span>
+              <span className="font-medium ml-1">{pet.age} years</span>
             </div>
             {pet.color && (
               <div className="flex items-center text-sm text-gray-600">

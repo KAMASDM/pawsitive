@@ -20,10 +20,11 @@ const BottomNavigation = () => {
       <div className="grid grid-cols-5 h-16">
         <Link
           to="/dashboard"
-          className={`flex flex-col items-center justify-center transition-colors ${isActive("/")
-            ? "text-white bg-lavender-700"
-            : "text-lavender-200 hover:text-white hover:bg-lavender-800"
-            }`}
+          className={`flex flex-col items-center justify-center transition-colors ${
+            isActive("/")
+              ? "text-white bg-lavender-700"
+              : "text-lavender-200 hover:text-white hover:bg-lavender-800"
+          }`}
           aria-label="Home"
         >
           <FiHome className="text-lg" />
@@ -31,10 +32,11 @@ const BottomNavigation = () => {
         </Link>
         <Link
           to="/dog-resources"
-          className={`flex flex-col items-center justify-center transition-colors ${isActive("/dog-resources")
-            ? "text-white bg-lavender-700"
-            : "text-lavender-200 hover:text-white hover:bg-lavender-800"
-            }`}
+          className={`flex flex-col items-center justify-center transition-colors ${
+            isActive("/dog-resources")
+              ? "text-white bg-lavender-700"
+              : "text-lavender-200 hover:text-white hover:bg-lavender-800"
+          }`}
           aria-label="Dog Resources"
         >
           <FaDog className="text-lg" />
@@ -42,10 +44,11 @@ const BottomNavigation = () => {
         </Link>
         <Link
           to="/cat-resources"
-          className={`flex flex-col items-center justify-center transition-colors ${isActive("/cat-resources")
-            ? "text-white bg-lavender-700"
-            : "text-lavender-200 hover:text-white hover:bg-lavender-800"
-            }`}
+          className={`flex flex-col items-center justify-center transition-colors ${
+            isActive("/cat-resources")
+              ? "text-white bg-lavender-700"
+              : "text-lavender-200 hover:text-white hover:bg-lavender-800"
+          }`}
           aria-label="Cat Resources"
         >
           <FaCat className="text-lg" />
@@ -53,10 +56,11 @@ const BottomNavigation = () => {
         </Link>
         <Link
           to="/profile"
-          className={`flex flex-col items-center justify-center transition-colors ${isActive("/profile")
-            ? "text-white bg-lavender-700"
-            : "text-lavender-200 hover:text-white hover:bg-lavender-800"
-            }`}
+          className={`flex flex-col items-center justify-center transition-colors ${
+            isActive("/profile")
+              ? "text-white bg-lavender-700"
+              : "text-lavender-200 hover:text-white hover:bg-lavender-800"
+          }`}
           aria-label="Profile"
         >
           <FiUser className="text-lg" />

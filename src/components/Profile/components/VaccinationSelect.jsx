@@ -40,8 +40,8 @@ const VaccinationSelect = ({ petType, value, onChange }) => {
 
   const filteredVaccinations = searchQuery.trim()
     ? getVaccinationList().filter((vaccine) =>
-      vaccine.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+        vaccine.toLowerCase().includes(searchQuery.toLowerCase())
+      )
     : getVaccinationList();
 
   useEffect(() => {
@@ -86,10 +86,11 @@ const VaccinationSelect = ({ petType, value, onChange }) => {
           onClick={() =>
             petType && ["dog", "cat"].includes(petType) && setIsOpen(!isOpen)
           }
-          className={`w-full px-4 py-2.5 bg-white rounded-lg border ${!petType || !["dog", "cat"].includes(petType)
-            ? "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
-            : "border-lavender-200 hover:border-lavender-400 text-gray-700"
-            } flex items-center justify-between transition-colors`}
+          className={`w-full px-4 py-2.5 bg-white rounded-lg border ${
+            !petType || !["dog", "cat"].includes(petType)
+              ? "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
+              : "border-lavender-200 hover:border-lavender-400 text-gray-700"
+          } flex items-center justify-between transition-colors`}
           disabled={!petType || !["dog", "cat"].includes(petType)}
         >
           <span className={value ? "text-gray-900" : "text-gray-500"}>
@@ -107,8 +108,9 @@ const VaccinationSelect = ({ petType, value, onChange }) => {
               </button>
             )}
             <FiChevronDown
-              className={`text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""
-                }`}
+              className={`text-gray-400 transition-transform ${
+                isOpen ? "rotate-180" : ""
+              }`}
             />
           </div>
         </button>
@@ -144,10 +146,11 @@ const VaccinationSelect = ({ petType, value, onChange }) => {
                         key={vaccination}
                         type="button"
                         onClick={() => handleSelect(vaccination)}
-                        className={`w-full text-left px-3 py-2.5 rounded-md text-sm transition-colors ${value === vaccination
-                          ? "bg-lavender-100 text-lavender-800 font-medium"
-                          : "text-gray-700 hover:bg-lavender-50"
-                          }`}
+                        className={`w-full text-left px-3 py-2.5 rounded-md text-sm transition-colors ${
+                          value === vaccination
+                            ? "bg-lavender-100 text-lavender-800 font-medium"
+                            : "text-gray-700 hover:bg-lavender-50"
+                        }`}
                       >
                         <div className="flex items-center">
                           {value === vaccination && (
@@ -167,10 +170,11 @@ const VaccinationSelect = ({ petType, value, onChange }) => {
                 <button
                   type="button"
                   onClick={() => handleSelect("Other")}
-                  className={`w-full text-left px-3 py-2.5 rounded-md text-sm mt-2 border-t border-lavender-100 pt-3 transition-colors ${value === "Other"
-                    ? "bg-lavender-100 text-lavender-800 font-medium"
-                    : "text-gray-700 hover:bg-lavender-50"
-                    }`}
+                  className={`w-full text-left px-3 py-2.5 rounded-md text-sm mt-2 border-t border-lavender-100 pt-3 transition-colors ${
+                    value === "Other"
+                      ? "bg-lavender-100 text-lavender-800 font-medium"
+                      : "text-gray-700 hover:bg-lavender-50"
+                  }`}
                 >
                   <div className="flex items-center">
                     {value === "Other" && (
