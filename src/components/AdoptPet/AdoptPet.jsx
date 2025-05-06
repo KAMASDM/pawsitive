@@ -4,6 +4,7 @@ import { database, auth } from "../../firebase";
 import { useNavigate } from "react-router-dom";
 import { FiArrowLeft, FiHeart, FiInfo, FiMapPin } from "react-icons/fi";
 import MessageDialogForAdoption from "./MessageDialogForAdoption";
+import SkeletonLoader from "../Loaders/SkeletonLoader";
 
 const AdoptPet = () => {
   const navigate = useNavigate();
@@ -89,9 +90,9 @@ const AdoptPet = () => {
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     const distance = R * c;
     return distance;
@@ -99,8 +100,8 @@ const AdoptPet = () => {
 
   useEffect(() => {
     const fetchAvailablePets = async () => {
-      if (!userLocation || !selectedUserPetData) return;
       setLoading(true);
+      if (!userLocation || !selectedUserPetData) return;
       try {
         const userPetsRef = ref(database, "userPets");
         const snapshot = await get(userPetsRef);
@@ -308,40 +309,38 @@ const AdoptPet = () => {
               <nav className="flex space-x-4 overflow-x-auto">
                 <button
                   onClick={() => handleTabChange(0)}
-                  className={`py-2 px-4 whitespace-nowrap ${
-                    tabValue === 0
+                  className={`py-2 px-4 whitespace-nowrap ${tabValue === 0
                       ? "border-b-2 border-lavender-500 text-lavender-600"
                       : "text-gray-500 hover:text-gray-700"
-                  }`}
+                    }`}
                 >
                   All Matches
                 </button>
                 <button
                   onClick={() => handleTabChange(1)}
-                  className={`py-2 px-4 whitespace-nowrap ${
-                    tabValue === 1
+                  className={`py-2 px-4 whitespace-nowrap ${tabValue === 1
                       ? "border-b-2 border-lavender-500 text-lavender-600"
                       : "text-gray-500 hover:text-gray-700"
-                  }`}
+                    }`}
                 >
                   Nearby (&lt; 5km)
                 </button>
                 <button
                   onClick={() => handleTabChange(2)}
-                  className={`py-2 px-4 whitespace-nowrap ${
-                    tabValue === 2
+                  className={`py-2 px-4 whitespace-nowrap ${tabValue === 2
                       ? "border-b-2 border-lavender-500 text-lavender-600"
                       : "text-gray-500 hover:text-gray-700"
-                  }`}
+                    }`}
                 >
                   Same Breed
                 </button>
               </nav>
             </div>
             {loading ? (
-              <div className="flex flex-col items-center justify-center h-64">
-                <div className="w-12 h-12 border-4 border-lavender-200 border-t-lavender-600 rounded-full animate-spin"></div>
-                <p className="mt-4 text-lavender-900 font-medium">Loading...</p>
+              <div className="min-h-screen bg-lavender-50 p-6">
+                <div className="max-w-7xl mx-auto">
+                  <SkeletonLoader type="list" count={9} />
+                </div>
               </div>
             ) : filteredPets.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -359,10 +358,9 @@ const AdoptPet = () => {
                       </div>
                       <div className="absolute top-3 left-3 z-10">
                         <span
-                          className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full shadow ${
-                            pet.gender === "Female" &&
+                          className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full shadow ${pet.gender === "Female" &&
                             "bg-lavender-600 text-white"
-                          }`}
+                            }`}
                         >
                           {pet.gender}
                         </span>

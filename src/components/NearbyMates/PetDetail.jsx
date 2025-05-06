@@ -22,6 +22,7 @@ import {
 import MatingRequestDialog from "../Profile/components/MatingRequestDialog";
 import { LocationCity } from "@mui/icons-material";
 import { FaPaw } from "react-icons/fa";
+import PetDetailShimmer from "../../UI/PetDetailShimmer";
 
 const PetDetail = () => {
   const { petId } = useParams();
@@ -145,7 +146,6 @@ const PetDetail = () => {
     }
   };
 
-
   const handleGoBack = () => {
     navigate(-1);
   };
@@ -209,11 +209,7 @@ const PetDetail = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-lavender-500"></div>
-      </div>
-    );
+    return <PetDetailShimmer />;
   }
 
   if (error) {

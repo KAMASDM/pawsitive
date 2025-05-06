@@ -9,6 +9,7 @@ import {
   FiClock,
 } from "react-icons/fi";
 import { FaPaw } from "react-icons/fa";
+import ConversationsListShimmer from "../../../UI/ConversationsListShimmer";
 
 const ConversationsList = ({ onOpenConversation }) => {
   const [conversations, setConversations] = useState([]);
@@ -200,14 +201,7 @@ const ConversationsList = ({ onOpenConversation }) => {
   };
 
   if (loading) {
-    return (
-      <div className="bg-white rounded-2xl shadow-sm border border-lavender-100 p-6 flex flex-col items-center justify-center h-64">
-        <div className="w-12 h-12 border-4 border-t-lavender-600 border-lavender-200 rounded-full animate-spin mb-4"></div>
-        <p className="text-lavender-900 font-medium">
-          Loading conversations...
-        </p>
-      </div>
-    );
+    return <ConversationsListShimmer count={7} />;
   }
 
   if (conversations.length === 0) {
@@ -233,8 +227,8 @@ const ConversationsList = ({ onOpenConversation }) => {
         <button
           onClick={() => setActiveFilter("all")}
           className={`px-3 py-1.5 rounded-full text-sm transition-colors ${activeFilter === "all"
-            ? "bg-lavender-600 text-white"
-            : "bg-lavender-50 text-lavender-800 hover:bg-lavender-100"
+              ? "bg-lavender-600 text-white"
+              : "bg-lavender-50 text-lavender-800 hover:bg-lavender-100"
             }`}
         >
           All
@@ -242,8 +236,8 @@ const ConversationsList = ({ onOpenConversation }) => {
         <button
           onClick={() => setActiveFilter("mating")}
           className={`px-3 py-1.5 rounded-full text-sm transition-colors flex items-center ${activeFilter === "mating"
-            ? "bg-pink-500 text-white"
-            : "bg-pink-50 text-pink-800 hover:bg-pink-100"
+              ? "bg-pink-500 text-white"
+              : "bg-pink-50 text-pink-800 hover:bg-pink-100"
             }`}
         >
           <FiHeart className="mr-1 w-3.5 h-3.5" />
@@ -252,8 +246,8 @@ const ConversationsList = ({ onOpenConversation }) => {
         <button
           onClick={() => setActiveFilter("adoption")}
           className={`px-3 py-1.5 rounded-full text-sm transition-colors flex items-center ${activeFilter === "adoption"
-            ? "bg-green-500 text-white"
-            : "bg-green-50 text-green-800 hover:bg-green-100"
+              ? "bg-green-500 text-white"
+              : "bg-green-50 text-green-800 hover:bg-green-100"
             }`}
         >
           <FaPaw className="mr-1 w-3.5 h-3.5" />
@@ -328,13 +322,12 @@ const ConversationsList = ({ onOpenConversation }) => {
                   <div className="flex items-center justify-between">
                     <div className="text-xs text-gray-500">
                       {conversation.senderPet?.name}
-                      <span className="mx-1">⟷</span>
                       {conversation.receiverPet?.name}
                     </div>
                     <div
                       className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${conversation.type === "mating"
-                        ? "bg-pink-100 text-pink-800"
-                        : "bg-green-100 text-green-800"
+                          ? "bg-pink-100 text-pink-800"
+                          : "bg-green-100 text-green-800"
                         }`}
                     >
                       {conversation.type === "mating" ? "Mating" : "Adoption"}
