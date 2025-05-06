@@ -15,6 +15,7 @@ import {
 import { FaPaw } from "react-icons/fa";
 import PetCard from "./PetCard";
 import PetMatingRequestModal from "./PetMatingRequestModal";
+import SkeletonLoader from "../Loaders/SkeletonLoader";
 
 const NearbyMates = () => {
   const navigate = useNavigate();
@@ -68,9 +69,9 @@ const NearbyMates = () => {
 
   useEffect(() => {
     const fetchUserPets = async () => {
+      setLoading(true);
       if (!user) return;
       try {
-        setLoading(true);
         const userPetsRef = ref(database, `userPets/${user.uid}`);
         const snapshot = await get(userPetsRef);
         if (snapshot.exists()) {
@@ -96,23 +97,23 @@ const NearbyMates = () => {
   }, [user]);
 
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
-    const R = 6371; // Earth's radius in km
+    const R = 6371;
     const dLat = ((lat2 - lat1) * Math.PI) / 180;
     const dLon = ((lon2 - lon1) * Math.PI) / 180;
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c; // Distance in km
+    return R * c;
   };
 
   useEffect(() => {
     const fetchAvailablePets = async () => {
-      if (!userLocation || !selectedUserPet) return;
       setLoading(true);
+      if (!userLocation || !selectedUserPet) return;
       try {
         const userPetsRef = ref(database, "userPets");
         const snapshot = await get(userPetsRef);
@@ -355,39 +356,35 @@ const NearbyMates = () => {
               <div className="grid grid-cols-3 gap-2 sm:flex sm:items-center sm:space-x-3">
                 <button
                   onClick={() => setActiveCategory("all")}
-                  className={`px-3 py-2 sm:px-4 rounded-full text-sm whitespace-nowrap transition-all ${
-                    activeCategory === "all"
+                  className={`px-3 py-2 sm:px-4 rounded-full text-sm whitespace-nowrap transition-all ${activeCategory === "all"
                       ? "bg-lavender-600 text-white font-medium shadow-sm"
                       : "text-lavender-700 hover:bg-lavender-100"
-                  }`}
+                    }`}
                 >
                   All Matches
                 </button>
                 <button
                   onClick={() => setActiveCategory("nearby")}
-                  className={`px-3 py-2 sm:px-4 rounded-full text-sm whitespace-nowrap transition-all flex items-center justify-center ${
-                    activeCategory === "nearby"
+                  className={`px-3 py-2 sm:px-4 rounded-full text-sm whitespace-nowrap transition-all flex items-center justify-center ${activeCategory === "nearby"
                       ? "bg-lavender-600 text-white font-medium shadow-sm"
                       : "text-lavender-700 hover:bg-lavender-100"
-                  }`}
+                    }`}
                 >
                   <FiMapPin
-                    className={`mr-1 ${
-                      activeCategory === "nearby"
+                    className={`mr-1 ${activeCategory === "nearby"
                         ? "text-white"
                         : "text-lavender-600"
-                    }`}
+                      }`}
                   />
                   <span className="hidden sm:inline">Nearby</span>
                   <span className="sm:hidden">{"<"}5km</span>
                 </button>
                 <button
                   onClick={() => setActiveCategory("breed")}
-                  className={`px-3 py-2 sm:px-4 rounded-full text-sm whitespace-nowrap transition-all ${
-                    activeCategory === "breed"
+                  className={`px-3 py-2 sm:px-4 rounded-full text-sm whitespace-nowrap transition-all ${activeCategory === "breed"
                       ? "bg-lavender-600 text-white font-medium shadow-sm"
                       : "text-lavender-700 hover:bg-lavender-100"
-                  }`}
+                    }`}
                 >
                   Same Breed
                 </button>
@@ -479,11 +476,10 @@ const NearbyMates = () => {
                         <button
                           key={pet.id}
                           onClick={() => setSelectedUserPet(pet)}
-                          className={`flex flex-col items-center p-3 rounded-lg border transition-all ${
-                            selectedUserPet?.id === pet.id
+                          className={`flex flex-col items-center p-3 rounded-lg border transition-all ${selectedUserPet?.id === pet.id
                               ? "border-lavender-600 bg-lavender-50 shadow-sm"
                               : "border-gray-200 hover:border-lavender-300"
-                          }`}
+                            }`}
                         >
                           <div className="h-12 w-12 rounded-full overflow-hidden bg-lavender-100 flex items-center justify-center mb-2">
                             {pet.image ? (
@@ -549,11 +545,10 @@ const NearbyMates = () => {
           )}
         </AnimatePresence>
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="w-12 h-12 border-4 border-lavender-200 border-t-lavender-600 rounded-full animate-spin"></div>
-            <p className="mt-4 text-lavender-900 font-medium">
-              Finding matches...
-            </p>
+          <div className="min-h-screen bg-lavender-50 p-6">
+            <div className="max-w-7xl mx-auto">
+              <SkeletonLoader type="list" count={9} />
+            </div>
           </div>
         ) : filteredPets.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
