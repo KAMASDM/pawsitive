@@ -21,6 +21,8 @@ import OurTeam from "./components/OurTeam/OurTeam";
 import PrivacyPolicy from "./components/PrivacyPolicy/PrivacyPolicy";
 import TermsAndConditions from "./components/TermsAndConditions/TermsAndConditions";
 import CookiePolicy from "./components/CookiePolicy/CookiePolicy";
+import Blogs from "./components/Blog/Blogs";
+import BlogDetail from "./components/Blog/BlogDetail";
 
 function App() {
   return (
@@ -132,6 +134,22 @@ function App() {
               element={
                 <PR>
                   <OurTeam />
+                </PR>
+              }
+            />
+            <Route
+              path="/blogs"
+              element={
+                <PR>
+                  <Blogs />
+                </PR>
+              }
+            />
+            <Route
+              path="/blog/:slug"
+              element={
+                <PR>
+                  <BlogDetail />
                 </PR>
               }
             />

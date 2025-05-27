@@ -2,7 +2,7 @@ import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { auth } from "../../firebase";
 import { FiHome, FiUser, FiLogOut } from "react-icons/fi";
-import { FaDog, FaCat } from "react-icons/fa";
+import { FaDog, FaCat, FaFile } from "react-icons/fa";
 
 const BottomNavigation = () => {
   const location = useLocation();
@@ -17,7 +17,7 @@ const BottomNavigation = () => {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-lavender-900 shadow-lg z-50 md:hidden">
-      <div className="grid grid-cols-5 h-16">
+      <div className="grid grid-cols-6 h-16">
         <Link
           to="/dashboard"
           className={`flex flex-col items-center justify-center transition-colors ${
@@ -65,6 +65,18 @@ const BottomNavigation = () => {
         >
           <FiUser className="text-lg" />
           <span className="text-xs mt-0.5">Profile</span>
+        </Link>
+        <Link
+          to="/blogs"
+          className={`flex flex-col items-center justify-center transition-colors ${
+            isActive("/blogs")
+              ? "text-white bg-lavender-700"
+              : "text-lavender-200 hover:text-white hover:bg-lavender-800"
+          }`}
+          aria-label="Resources"
+        >
+          <FaFile className="text-lg" />
+          <span className="text-xs mt-0.5">Blogs</span>
         </Link>
         <button
           onClick={handleLogout}

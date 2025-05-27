@@ -5,7 +5,7 @@ import logo from "../../images/logo.png";
 import BottomNavigation from "./BottomNavigation";
 import { get, ref } from "firebase/database";
 import { FiHome, FiUser, FiLogOut, FiMenu, FiX, FiBell } from "react-icons/fi";
-import { FaDog, FaCat } from "react-icons/fa";
+import { FaDog, FaCat, FaFile } from "react-icons/fa";
 
 const Header = () => {
   const navigate = useNavigate();
@@ -173,6 +173,10 @@ const Header = () => {
               <NavLink to="/profile">
                 <FiUser className="mr-1" /> Profile
               </NavLink>
+              <NavLink to="/blogs">
+                <FaFile className="mr-1" />
+                Blogs
+              </NavLink>
               <NavLink to="/profile">
                 <div className="flex items-center relative">
                   <FiBell className="mr-1" />
@@ -225,16 +229,19 @@ const Header = () => {
                 to="/dog-resources"
                 onClick={() => setIsMenuOpen(false)}
               >
-                <FaDog className="mr-2" /> Dog Resources
+                <FaDog className="mr-2" /> Dog
               </MobileNavLink>
               <MobileNavLink
                 to="/cat-resources"
                 onClick={() => setIsMenuOpen(false)}
               >
-                <FaCat className="mr-2" /> Cat Resources
+                <FaCat className="mr-2" /> Cat
               </MobileNavLink>
               <MobileNavLink to="/profile" onClick={() => setIsMenuOpen(false)}>
                 <FiUser className="mr-2" /> Profile
+              </MobileNavLink>
+              <MobileNavLink to="/blogs" onClick={() => setIsMenuOpen(false)}>
+                <FaFile className="mr-2" /> Blogs
               </MobileNavLink>
               <button
                 onClick={handleLogout}
