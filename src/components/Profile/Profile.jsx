@@ -2,12 +2,14 @@ import React, { useEffect, useState, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { auth, database } from "../../firebase";
 import { ref, set, get, update } from "firebase/database";
+import SkeletonLoader from "../Loaders/SkeletonLoader";
 import {
   FiPlus,
   FiMail,
   FiPhone,
 } from "react-icons/fi";
 import useResponsive from "../../hooks/useResponsive";
+import { FaPlus } from "react-icons/fa";
 import {
   PetDialog,
   VaccinationDialog,
@@ -35,10 +37,10 @@ const MobileVersion = ({
   activeTab,
   setActiveTab,
   tabs,
-  handleAddPet,
+  handleAddPet, // This function is passed in props
   handleEditPet,
   handleAcceptRequest,
-  handleDeclineRequest
+  handleDeclineRequest,
 }) => (
   <div className="min-h-screen bg-gradient-to-br from-slate-50 to-violet-50 p-4">
     {/* User Profile Header */}
@@ -89,6 +91,18 @@ const MobileVersion = ({
         </div>
       </div>
     </motion.div>
+
+    {/* --- UPDATED ADD PET BUTTON --- */}
+    <motion.button
+      onClick={handleAddPet}
+      className="w-full flex items-center justify-center gap-2 py-3 mb-6 bg-gradient-to-r from-violet-400 to-indigo-400 text-white font-semibold rounded-xl shadow-md transition-all duration-300 hover:shadow-lg"
+      whileHover={{ scale: 1.03 }}
+      whileTap={{ scale: 0.98 }}
+    >
+      <FaPlus />
+      Add a New Pet
+    </motion.button>
+    {/* --- END OF UPDATE --- */}
 
     {/* Tab Navigation */}
     <motion.div
@@ -527,7 +541,6 @@ const Profile = () => {
 
     try {
       const petRef = ref(database, `userPets/${user.uid}/${currentPet.id}`);
-      console.log("currentPet:-  ", currentPet);
       await set(petRef, currentPet);
 
       setPets((prevPets) => {
@@ -587,11 +600,6 @@ const Profile = () => {
     try {
       const updatedPet = { ...currentPet };
       updatedPet.vaccinations = updatedPet.vaccinations || [];
-
-
-      console.log("updatedPet.vaccinations", updatedPet.vaccinations);
-      console.log("currentVaccination", currentVaccination)
-
 
       if (vaccinationEditIndex >= 0) {
         updatedPet.vaccinations[vaccinationEditIndex] = currentVaccination;
@@ -772,7 +780,7 @@ const Profile = () => {
 
 
   if (isLoading) {
-    return <div>Loading...</div>; // Replace with a proper skeleton loader
+    return <SkeletonLoader type="profile" />;
   }
 
 

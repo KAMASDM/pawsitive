@@ -4,10 +4,9 @@ import { useNavigate } from "react-router-dom";
 import { FaSearch, FaHeart, FaDog, FaCat, FaArrowRight } from "react-icons/fa";
 import { IoIosArrowForward } from "react-icons/io";
 
-
 const quickActions = [
   { icon: "🚨", title: "Emergency", subtitle: "24/7 Care", description: "Round-the-clock emergency veterinary services", color: "from-purple-300 to-purple-400", route: "/resource", state: { category: "all", subCategory: "Health & Wellness" } },
-  { icon: "🐾", title: "Adopt", subtitle: "Find Pets", description: "Browse verified pets looking for loving homes", color: "from-violet-300 to-violet-400", route: "/adopt-pets", },
+  { icon: "🐾", title: "Adopt", subtitle: "Find Pets", description: "Browse verified pets looking for loving homes", color: "from-violet-300 to-violet-400", route: "/adopt-pets" },
   { icon: "💕", title: "Mates", subtitle: "Find Partner", description: "Connect with nearby pets for responsible breeding", color: "from-indigo-300 to-indigo-400", route: "/nearby-mates" },
   { icon: "🏥", title: "Care", subtitle: "Health Services", description: "Complete healthcare and wellness services", color: "from-slate-300 to-slate-400", route: "/resource", state: { category: "all", subCategory: "Nutrition" } }
 ];
@@ -19,13 +18,13 @@ const services = [
 ];
 
 const adoptionCards = [
-  { emoji: "🐶", title: "Adopt a Pet", count: "500+ Pets", color: "from-violet-300 to-purple-400", route: "/adopt-pets" },
-  { emoji: "💕", title: "Find Mates", count: "200+ Matches", color: "from-indigo-300 to-violet-400", route: "/nearby-mates" }
+  { emoji: "🐶", title: "Adopt a Pet", count: "500+ Pets", color: "from-violet-100 to-purple-200", route: "/adopt-pets" },
+  { emoji: "💕", title: "Find Mates", count: "200+ Matches", color: "from-indigo-100 to-violet-200", route: "/nearby-mates" }
 ];
 
 const petResources = [
-  { emoji: "🐕", title: "Dog Care", services: "150+ Services", color: "from-purple-300 to-violet-400", route: "/dog-resources" },
-  { emoji: "🐈", title: "Cat Care", services: "120+ Services", color: "from-indigo-300 to-purple-400", route: "/cat-resources" }
+  { emoji: "🐕", title: "Dog Care", services: "150+ Services", color: "from-purple-100 to-violet-200", route: "/dog-resources" },
+  { emoji: "🐈", title: "Cat Care", services: "120+ Services", color: "from-indigo-100 to-purple-200", route: "/cat-resources" }
 ];
 
 const featuredStats = [
@@ -34,8 +33,6 @@ const featuredStats = [
   { icon: "🐾", number: "500+", label: "Adoptions" },
   { icon: "⭐", number: "4.9", label: "Rating" }
 ];
-
-
 
 const MobileVersion = ({ activeTab, setActiveTab, showSearchOptions, setShowSearchOptions, handlePetTypeSelect }) => {
   const navigate = useNavigate();
@@ -50,7 +47,16 @@ const MobileVersion = ({ activeTab, setActiveTab, showSearchOptions, setShowSear
       <motion.div className="mb-6" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}>
         <div className="grid grid-cols-4 gap-3">
           {quickActions.map((action, index) => (
-            <motion.button key={index} onClick={() => navigate(action.route)} className={`bg-gradient-to-br ${action.color} text-white p-3 rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 text-center`} whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 + index * 0.1 }}>
+            <motion.button
+              key={index}
+              onClick={() => navigate(action.route, { state: action.state })}
+              className={`bg-lavender-400 text-white p-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 text-center border border-purple-50`}
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 + index * 0.1 }}
+            >
               <div className="text-2xl mb-1">{action.icon}</div>
               <div className="text-xs font-medium">{action.title}</div>
               <div className="text-xs opacity-90">{action.subtitle}</div>
@@ -69,11 +75,21 @@ const MobileVersion = ({ activeTab, setActiveTab, showSearchOptions, setShowSear
           ) : (
             <motion.div key="options" className="bg-white rounded-2xl p-4 shadow-md border border-violet-100" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}>
               <div className="grid grid-cols-2 gap-3 mb-3">
-                <motion.button onClick={() => handlePetTypeSelect("dog")} className="flex items-center p-3 bg-gradient-to-r from-purple-50 to-violet-50 rounded-xl hover:from-purple-100 hover:to-violet-100 transition-all duration-300" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <motion.button
+                  onClick={() => navigate("/resource", { state: { category: "dog", subCategory: "all" } })}
+                  className="flex items-center p-3 bg-gradient-to-r from-purple-50 to-violet-50 rounded-xl hover:from-purple-100 hover:to-violet-100 transition-all duration-300"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
                   <FaDog className="mr-2 text-purple-500 text-lg" />
                   <span className="text-slate-700 font-medium text-sm">Dogs</span>
                 </motion.button>
-                <motion.button onClick={() => handlePetTypeSelect("cat")} className="flex items-center p-3 bg-gradient-to-r from-indigo-50 to-violet-50 rounded-xl hover:from-indigo-100 hover:to-violet-100 transition-all duration-300" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <motion.button
+                  onClick={() => navigate("/resource", { state: { category: "cat", subCategory: "all" } })}
+                  className="flex items-center p-3 bg-gradient-to-r from-indigo-50 to-violet-50 rounded-xl hover:from-indigo-100 hover:to-violet-100 transition-all duration-300"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
                   <FaCat className="mr-2 text-indigo-500 text-lg" />
                   <span className="text-slate-700 font-medium text-sm">Cats</span>
                 </motion.button>
@@ -182,7 +198,6 @@ const MobileVersion = ({ activeTab, setActiveTab, showSearchOptions, setShowSear
   );
 };
 
-
 const DesktopVersion = ({ showSearchOptions, setShowSearchOptions, handlePetTypeSelect }) => {
   const navigate = useNavigate();
 
@@ -281,8 +296,6 @@ const DesktopVersion = ({ showSearchOptions, setShowSearchOptions, handlePetType
   );
 };
 
-
-
 const Home = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("services");
@@ -299,12 +312,11 @@ const Home = () => {
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
-
   const handlePetTypeSelect = useCallback((petType) => {
     if (petType === "dog") {
-      navigate("/dog-resources");
+      navigate("/resource", { state: { category: "dog", subCategory: "all" } });
     } else if (petType === "cat") {
-      navigate("/cat-resources");
+      navigate("/resource", { state: { category: "cat", subCategory: "all" } });
     }
     setShowSearchOptions(false);
   }, [navigate]);

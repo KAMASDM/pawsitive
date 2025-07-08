@@ -2,9 +2,149 @@ import React, { useState, useEffect } from "react";
 import { ref, get, set } from "firebase/database";
 import { database, auth } from "../../firebase";
 import { useNavigate } from "react-router-dom";
-import { FiArrowLeft, FiHeart, FiInfo, FiMapPin } from "react-icons/fi";
+import {
+  FiArrowLeft,
+  FiHeart,
+  FiInfo,
+  FiMapPin,
+  FiX,
+  FiAward,
+  FiPlusCircle,
+  FiShield,
+} from "react-icons/fi";
 import MessageDialogForAdoption from "./MessageDialogForAdoption";
 import SkeletonLoader from "../Loaders/SkeletonLoader";
+
+// 1. PetDetailPopup component is now inside the same file
+const PetDetailPopup = ({ pet, onClose, onMessageOwner }) => {
+  if (!pet) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+      {/* --- Style the scrollbar on this div --- */}
+      <div
+        className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh]  overflow-y-auto 
+                   scrollbar-thin scrollbar-thumb-lavender-400 scrollbar-track-lavender-100 hover:scrollbar-thumb-lavender-500"
+      >
+        <div className="sticky top-0 bg-white p-4 border-b border-gray-200 flex justify-between items-center z-10">
+          <h2 className="text-2xl font-bold text-lavender-800 flex items-center">
+            <FiInfo className="mr-2" />
+            {pet.name}'s Details
+          </h2>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-full hover:bg-gray-200"
+          >
+            <FiX className="w-6 h-6 text-gray-600" />
+          </button>
+        </div>
+
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <img
+                src={pet.image}
+                alt={pet.name}
+                className="w-full h-64 object-cover rounded-lg shadow-md"
+              />
+            </div>
+            <div className="flex flex-col">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h3 className="text-3xl font-bold text-gray-800">
+                    {pet.name}
+                  </h3>
+                  <p className="text-gray-500">{pet.breed || "Unknown"}</p>
+                </div>
+                <span
+                  className={`px-3 py-1 rounded-full text-sm font-semibold ${pet.gender === "Male"
+                    ? "bg-blue-100 text-blue-800"
+                    : "bg-pink-100 text-pink-800"
+                    }`}
+                >
+                  {pet.gender}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 text-gray-700 mb-4">
+                <div className="flex items-center">
+                  <FiAward className="mr-2 text-lavender-600" />
+                  <span>{pet.age || "N/A"}</span>
+                </div>
+                <div className="flex items-center">
+                  <FiMapPin className="mr-2 text-lavender-600" />
+                  <span>{pet.distance} km away</span>
+                </div>
+              </div>
+
+              {pet.description && (
+                <p className="text-gray-600 mb-4">{pet.description}</p>
+              )}
+
+              <div className="mt-auto flex flex-col sm:flex-row gap-4">
+                <button
+                  onClick={() => onMessageOwner(pet)}
+                  className="w-full flex items-center justify-center px-4 py-2 bg-lavender-600 text-white rounded-lg hover:bg-lavender-700 transition-colors"
+                >
+                  <FiHeart className="mr-2" />
+                  Message Owner
+                </button>
+                <button
+                  onClick={onClose}
+                  className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {(pet.medical || pet.vaccinations) && (
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <h4 className="text-xl font-bold text-gray-800 mb-4">
+                Additional Information
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {pet.medical && (
+                  <div>
+                    <h5 className="font-semibold mb-2 flex items-center">
+                      <FiPlusCircle className="mr-2 text-lavender-600" />
+                      Medical
+                    </h5>
+                    <ul className="space-y-1 text-gray-600 list-disc list-inside">
+                      <li>
+                        Allergies:{" "}
+                        {pet.medical.allergies?.join(", ") || "None"}
+                      </li>
+                      <li>
+                        Conditions:{" "}
+                        {pet.medical.conditions?.join(", ") || "None"}
+                      </li>
+                      <li>Medications: {pet.medical.medications || "None"}</li>
+                    </ul>
+                  </div>
+                )}
+                {pet.vaccinations && pet.vaccinations.length > 0 && (
+                  <div>
+                    <h5 className="font-semibold mb-2 flex items-center">
+                      <FiShield className="mr-2 text-lavender-600" />
+                      Vaccinations
+                    </h5>
+                    <ul className="space-y-1 text-gray-600 list-disc list-inside">
+                      {pet.vaccinations.map((vax, index) => (
+                        <li key={index}>{vax.name}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const AdoptPet = () => {
   const navigate = useNavigate();
@@ -27,6 +167,10 @@ const AdoptPet = () => {
     petId: "",
     receiverPetId: "",
   });
+
+  // State for the detail popup
+  const [showDetailPopup, setShowDetailPopup] = useState(false);
+  const [selectedPetForDetail, setSelectedPetForDetail] = useState(null);
 
   useEffect(() => {
     setLoadingUserLocation(true);
@@ -90,9 +234,9 @@ const AdoptPet = () => {
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     const distance = R * c;
     return distance;
@@ -189,8 +333,10 @@ const AdoptPet = () => {
     setMaxDistance(e.target.value);
   };
 
+  // Modified function to open the popup
   const handlePetDetail = (pet) => {
-    navigate(`/pet-detail/${pet.id}`);
+    setSelectedPetForDetail(pet);
+    setShowDetailPopup(true);
   };
 
   const handleOpenMessageDialog = async (pet) => {
@@ -309,31 +455,28 @@ const AdoptPet = () => {
               <nav className="flex space-x-4 overflow-x-auto">
                 <button
                   onClick={() => handleTabChange(0)}
-                  className={`py-2 px-4 whitespace-nowrap ${
-                    tabValue === 0
-                      ? "border-b-2 border-lavender-500 text-lavender-600"
-                      : "text-gray-500 hover:text-gray-700"
-                  }`}
+                  className={`py-2 px-4 whitespace-nowrap ${tabValue === 0
+                    ? "border-b-2 border-lavender-500 text-lavender-600"
+                    : "text-gray-500 hover:text-gray-700"
+                    }`}
                 >
                   All Matches
                 </button>
                 <button
                   onClick={() => handleTabChange(1)}
-                  className={`py-2 px-4 whitespace-nowrap ${
-                    tabValue === 1
-                      ? "border-b-2 border-lavender-500 text-lavender-600"
-                      : "text-gray-500 hover:text-gray-700"
-                  }`}
+                  className={`py-2 px-4 whitespace-nowrap ${tabValue === 1
+                    ? "border-b-2 border-lavender-500 text-lavender-600"
+                    : "text-gray-500 hover:text-gray-700"
+                    }`}
                 >
                   Nearby (&lt; 5km)
                 </button>
                 <button
                   onClick={() => handleTabChange(2)}
-                  className={`py-2 px-4 whitespace-nowrap ${
-                    tabValue === 2
-                      ? "border-b-2 border-lavender-500 text-lavender-600"
-                      : "text-gray-500 hover:text-gray-700"
-                  }`}
+                  className={`py-2 px-4 whitespace-nowrap ${tabValue === 2
+                    ? "border-b-2 border-lavender-500 text-lavender-600"
+                    : "text-gray-500 hover:text-gray-700"
+                    }`}
                 >
                   Same Breed
                 </button>
@@ -361,10 +504,9 @@ const AdoptPet = () => {
                       </div>
                       <div className="absolute top-3 left-3 z-10">
                         <span
-                          className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full shadow ${
-                            pet.gender === "Female" &&
+                          className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full shadow ${pet.gender === "Female" &&
                             "bg-lavender-600 text-white"
-                          }`}
+                            }`}
                         >
                           {pet.gender}
                         </span>
@@ -453,6 +595,17 @@ const AdoptPet = () => {
           receiverPet={currentMessage.receiverPet}
           matingRequestId={currentMessage.matingRequestId}
         />
+        {/* Render the popup */}
+        {showDetailPopup && (
+          <PetDetailPopup
+            pet={selectedPetForDetail}
+            onClose={() => setShowDetailPopup(false)}
+            onMessageOwner={(pet) => {
+              setShowDetailPopup(false);
+              handleOpenMessageDialog(pet);
+            }}
+          />
+        )}
       </div>
     </div>
   );
