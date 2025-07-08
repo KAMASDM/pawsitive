@@ -11,9 +11,32 @@ const FeaturedServiceCard = ({
   buttonText,
   route,
   borderColor,
+  isMobile,
 }) => {
   const navigate = useNavigate();
 
+  // Mobile simplified version (just icon and title)
+  if (isMobile) {
+    return (
+      <motion.div
+        className="flex flex-col items-center p-3 bg-white rounded-xl shadow-sm border border-lavender-100 cursor-pointer hover:shadow-md transition-all duration-300"
+        whileHover={{ scale: 1.02, y: -2 }}
+        whileTap={{ scale: 0.98 }}
+        onClick={() => navigate(route)}
+        variants={{
+          hidden: { opacity: 0, y: 20 },
+          visible: { opacity: 1, y: 0 },
+        }}
+      >
+        <div className="text-2xl mb-2">{icon}</div>
+        <h3 className="text-xs font-semibold text-lavender-900 text-center leading-tight">
+          {title}
+        </h3>
+      </motion.div>
+    );
+  }
+
+  // Desktop full version
   return (
     <motion.div
       className="bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 border border-lavender-100"
@@ -64,7 +87,7 @@ const FeaturedServiceCard = ({
             borderColor === "pink-500" ? "pink-600" : "lavender-700"
           } font-medium text-xs hover:text-${
             borderColor === "pink-500" ? "pink-800" : "lavender-900"
-          } flex items-center`}
+          } flex items-center transition-colors duration-200`}
         >
           {buttonText}
           <FaArrowRight className="ml-2 text-xs" />

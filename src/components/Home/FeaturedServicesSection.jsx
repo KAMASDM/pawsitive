@@ -1,6 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import FeaturedServiceCard from "./FeaturedServiceCard";
+import { useNavigate } from "react-router-dom";
 
 const staggerContainer = {
   hidden: { opacity: 0 },
@@ -44,7 +45,62 @@ const featuredServices = [
     borderColor: "lavender-500",
   },
 ];
-const FeaturedServicesSection = () => {
+
+// Mobile simplified service item
+const MobileServiceItem = ({ icon, title, route }) => {
+  const navigate = useNavigate();
+
+  return (
+    <motion.div
+      className="flex flex-col items-center p-4 bg-white rounded-xl shadow-sm border border-lavender-100 cursor-pointer hover:shadow-md transition-all duration-300"
+      whileHover={{ scale: 1.02, y: -2 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={() => navigate(route)}
+      variants={{
+        hidden: { opacity: 0, y: 20 },
+        visible: { opacity: 1, y: 0 },
+      }}
+    >
+      <div className="text-2xl mb-2">{icon}</div>
+      <h3 className="text-xs font-semibold text-lavender-900 text-center leading-tight">
+        {title}
+      </h3>
+    </motion.div>
+  );
+};
+
+const FeaturedServicesSection = ({ isMobile, simplified }) => {
+  // Mobile simplified version
+  if (isMobile && simplified) {
+    return (
+      <div className="bg-white py-4">
+        <motion.div
+          className="max-w-6xl mx-auto px-6"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          variants={staggerContainer}
+        >
+          <h2 className="text-xl font-bold text-center text-lavender-900 mb-6">
+            Featured Pet Services
+          </h2>
+
+          <div className="grid grid-cols-3 gap-4">
+            {featuredServices.map((service, index) => (
+              <MobileServiceItem
+                key={index}
+                icon={service.icon}
+                title={service.title}
+                route={service.route}
+              />
+            ))}
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // Desktop full version
   return (
     <div className="bg-gradient-to-b from-lavender-50 to-white py-16">
       <motion.div

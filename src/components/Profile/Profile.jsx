@@ -1,98 +1,333 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { auth, db, database } from "../../firebase";
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  doc,
-  getDoc,
-} from "firebase/firestore";
+import { auth, database } from "../../firebase";
 import { ref, set, get, update, remove } from "firebase/database";
 import {
   FiPlus,
-  FiHeart,
-  FiMessageSquare,
-  FiX,
-  FiCheck,
-  FiMoreVertical,
+  FiMail,
+  FiPhone,
 } from "react-icons/fi";
-import { FaPaw } from "react-icons/fa";
-import UserInfo from "./components/UserInfo";
-import PetCard from "./components/PetCard";
-import PetDialog from "./components/PetDialog";
-import ResourcesList from "./components/ResourcesList";
-import VaccinationDialog from "./components/VaccinationDialog";
-import MessageDialog from "./components/MessageDialog";
-import ConversationsList from "./components/ConversationsList";
 import useResponsive from "../../hooks/useResponsive";
-import MeetingDetailsSkeleton from "../../UI/MeetingDetailsSkeleton";
+import {
+  PetDialog,
+  VaccinationDialog,
+  MessageDialog,
+  PetsSection as PetsSectionComponent,
+  DesktopPetsSection as DesktopPetsSectionComponent,
+  RequestsSection as RequestsSectionComponent,
+  DesktopRequestsSection as DesktopRequestsSectionComponent,
+  MessagesSection as MessagesSectionComponent,
+  DesktopMessagesSection as DesktopMessagesSectionComponent,
+} from "./components";
 
-const TabPanel = ({ children, value, index }) => {
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`profile-tabpanel-${index}`}
-      aria-labelledby={`profile-tab-${index}`}
+const PetsSection = memo(PetsSectionComponent);
+const DesktopPetsSection = memo(DesktopPetsSectionComponent);
+const RequestsSection = memo(RequestsSectionComponent);
+const DesktopRequestsSection = memo(DesktopRequestsSectionComponent);
+const MessagesSection = memo(MessagesSectionComponent);
+const DesktopMessagesSection = memo(DesktopMessagesSectionComponent);
+
+// Mobile Version Component
+const MobileVersion = ({
+  user,
+  pets,
+  matingRequests,
+  activeTab,
+  setActiveTab,
+  tabs,
+  handleAddPet,
+  handleEditPet,
+  handleAcceptRequest,
+  handleDeclineRequest
+}) => (
+  <div className="min-h-screen bg-gradient-to-br from-slate-50 to-violet-50 p-4">
+    {/* User Profile Header */}
+    <motion.div
+      className="bg-white rounded-2xl p-6 shadow-md border border-violet-100 mb-6"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+    >
+      <div className="flex items-center mb-4">
+        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-violet-400 to-indigo-500 text-white flex items-center justify-center text-xl font-bold mr-4">
+          {user.displayName
+            ?.split(" ")
+            .map((word) => word[0])
+            .join("")
+            .slice(0, 2)}
+        </div>
+        <div className="flex-1">
+          <h1 className="text-xl font-bold text-slate-800 mb-1">
+            {user.displayName}
+          </h1>
+          <div className="flex items-center text-gray-600 text-sm mb-1">
+            <FiMail className="w-3 h-3 mr-1" />
+            <span className="truncate">{user.email}</span>
+          </div>
+          {user.phoneNumber && (
+            <div className="flex items-center text-gray-600 text-sm">
+              <FiPhone className="w-3 h-3 mr-1" />
+              <span>{user.phoneNumber}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-violet-100">
+        <div className="text-center">
+          <div className="text-lg font-bold text-slate-800">
+            {pets.length}
+          </div>
+          <div className="text-xs text-gray-600">Pets</div>
+        </div>
+        <div className="text-center">
+          <div className="text-lg font-bold text-slate-800">
+            {matingRequests.length}
+          </div>
+          <div className="text-xs text-gray-600">Requests</div>
+        </div>
+      </div>
+    </motion.div>
+
+    {/* Tab Navigation */}
+    <motion.div
+      className="mb-6"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, delay: 0.1 }}
+    >
+      <div className="bg-white rounded-2xl p-2 shadow-md border border-violet-100">
+        <div className="grid grid-cols-3 gap-1">
+          {tabs.map((tab) => (
+            <motion.button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`relative flex flex-col items-center p-3 rounded-xl transition-all duration-300 ${activeTab === tab.id
+                ? "bg-gradient-to-r from-violet-400 to-indigo-400 text-white shadow-md"
+                : "text-gray-600 hover:bg-violet-50"
+                }`}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              {tab.badge > 0 && (
+                <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                  <span className="text-xs text-white font-bold">
+                    {tab.badge}
+                  </span>
+                </div>
+              )}
+              <span className="text-lg mb-1">{tab.icon}</span>
+              <span className="text-xs font-medium">{tab.label}</span>
+              {tab.count > 0 && !tab.badge && (
+                <span className="text-xs opacity-75">{tab.count}</span>
+              )}
+            </motion.button>
+          ))}
+        </div>
+      </div>
+    </motion.div>
+
+    {/* Content */}
+    <motion.div
+      className="min-h-[400px]"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, delay: 0.2 }}
     >
       <AnimatePresence mode="wait">
-        {value === index && (
-          <motion.div
-            key={`panel-${index}`}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="py-6"
-          >
-            {children}
-          </motion.div>
+        {activeTab === "pets" && (
+          <PetsSection
+            key="pets"
+            pets={pets}
+            onAddPet={handleAddPet}
+            onEditPet={handleEditPet}
+          />
         )}
+        {activeTab === "requests" && (
+          <RequestsSection
+            key="requests"
+            requests={matingRequests}
+            onAccept={handleAcceptRequest}
+            onDecline={handleDeclineRequest}
+          />
+        )}
+        {activeTab === "messages" && <MessagesSection key="messages" />}
       </AnimatePresence>
+    </motion.div>
+
+    {/* Floating Add Button */}
+    <motion.button
+      className="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-r from-violet-400 to-indigo-400 rounded-full shadow-lg flex items-center justify-center text-white z-20"
+      whileHover={{ scale: 1.1 }}
+      whileTap={{ scale: 0.9 }}
+      onClick={handleAddPet}
+      animate={{
+        boxShadow: [
+          "0 4px 15px rgba(139, 92, 246, 0.3)",
+          "0 6px 20px rgba(139, 92, 246, 0.4)",
+          "0 4px 15px rgba(139, 92, 246, 0.3)",
+        ],
+      }}
+      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+    >
+      <FiPlus className="text-lg" />
+    </motion.button>
+  </div>
+);
+
+// Desktop Version Component
+const DesktopVersion = ({
+  user,
+  pets,
+  matingRequests,
+  activeTab,
+  setActiveTab,
+  tabs,
+  handleAddPet,
+  handleEditPet,
+  handleAcceptRequest,
+  handleDeclineRequest
+}) => (
+  <div className="min-h-screen bg-gradient-to-br from-slate-50 to-violet-50 p-8">
+    <div className="max-w-7xl mx-auto">
+      {/* Header */}
+      <motion.div
+        className="bg-white rounded-3xl p-8 shadow-lg border border-violet-100 mb-8"
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-violet-400 to-indigo-500 text-white flex items-center justify-center text-2xl font-bold mr-6">
+              {user.displayName
+                ?.split(" ")
+                .map((word) => word[0])
+                .join("")
+                .slice(0, 2)}
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-slate-800 mb-2">
+                {user.displayName}
+              </h1>
+              <div className="flex items-center text-gray-600 mb-1">
+                <FiMail className="w-4 h-4 mr-2" />
+                <span>{user.email}</span>
+              </div>
+              {user.phoneNumber && (
+                <div className="flex items-center text-gray-600">
+                  <FiPhone className="w-4 h-4 mr-2" />
+                  <span>{user.phoneNumber}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Desktop Stats */}
+          <div className="flex gap-8">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-slate-800">
+                {pets.length}
+              </div>
+              <div className="text-sm text-gray-600">Pets</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-slate-800">
+                {matingRequests.length}
+              </div>
+              <div className="text-sm text-gray-600">Requests</div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Desktop Tab Navigation */}
+      <motion.div
+        className="mb-8"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.2 }}
+      >
+        <div className="bg-white rounded-2xl p-3 shadow-md border border-violet-100">
+          <div className="flex justify-center gap-2">
+            {tabs.map((tab) => (
+              <motion.button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`relative flex items-center px-6 py-3 rounded-xl transition-all duration-300 ${activeTab === tab.id
+                  ? "bg-gradient-to-r from-violet-400 to-indigo-400 text-white shadow-md"
+                  : "text-gray-600 hover:bg-violet-50"
+                  }`}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                {tab.badge > 0 && (
+                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                    <span className="text-xs text-white font-bold">
+                      {tab.badge}
+                    </span>
+                  </div>
+                )}
+                <span className="text-xl mr-3">{tab.icon}</span>
+                <span className="font-medium">{tab.label}</span>
+                {tab.count > 0 && !tab.badge && (
+                  <span className="ml-2 bg-white bg-opacity-20 rounded-full px-2 py-1 text-xs">
+                    {tab.count}
+                  </span>
+                )}
+              </motion.button>
+            ))}
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Desktop Content */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.4 }}
+      >
+        <AnimatePresence mode="wait">
+          {activeTab === "pets" && (
+            <DesktopPetsSection
+              key="pets"
+              pets={pets}
+              onAddPet={handleAddPet}
+              onEditPet={handleEditPet}
+            />
+          )}
+          {activeTab === "requests" && (
+            <DesktopRequestsSection
+              key="requests"
+              requests={matingRequests}
+              onAccept={handleAcceptRequest}
+              onDecline={handleDeclineRequest}
+            />
+          )}
+          {activeTab === "messages" && (
+            <DesktopMessagesSection key="messages" />
+          )}
+        </AnimatePresence>
+      </motion.div>
     </div>
-  );
-};
+  </div>
+);
 
 const Profile = () => {
-  const navigate = useNavigate();
-  const { isMobile } = useResponsive();
+  const { isDesktop } = useResponsive();
   const user = auth.currentUser;
 
-  const [likedResources, setLikedResources] = useState([]);
   const [pets, setPets] = useState([]);
-  const [profileTabValue, setProfileTabValue] = useState(0);
+  const [activeTab, setActiveTab] = useState("pets");
   const [matingRequests, setMatingRequests] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [openPetDialog, setOpenPetDialog] = useState(false);
   const [openVaccinationDialog, setOpenVaccinationDialog] = useState(false);
   const [isSavingVaccination, setIsSavingVaccination] = useState(false);
   const [openMessageDialog, setOpenMessageDialog] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [selectedRequest, setSelectedRequest] = useState(null);
-  const [currentPet, setCurrentPet] = useState({
-    id: "",
-    name: "",
-    type: "dog",
-    breed: "",
-    gender: "",
-    age: "",
-    weight: "",
-    color: "",
-    description: "",
-    image: "",
-    availableForMating: false,
-    availableForAdoption: false,
-    medical: {
-      conditions: [],
-      allergies: [],
-      medications: "",
-    },
-    vaccinations: [],
-    petOwner: user.displayName,
-  });
+  const [currentPet, setCurrentPet] = useState(null);
 
   const [currentVaccination, setCurrentVaccination] = useState({
     name: "",
@@ -116,141 +351,6 @@ const Profile = () => {
     (req) => req.direction === "incoming" && req.status === "pending"
   ).length;
 
-  const fetchLikedResources = useCallback(async () => {
-    if (!user) return;
-    try {
-      const userLikesRef = ref(database, `userLikes/${user.uid}`);
-      const snapshot = await get(userLikesRef);
-
-      if (snapshot.exists()) {
-        const likedResourceIds = Object.keys(snapshot.val());
-        const likedResourcesArray = [];
-
-        for (const resourceId of likedResourceIds) {
-          const resourceRef = ref(database, `resources/${resourceId}`);
-          const resourceSnapshot = await get(resourceRef);
-
-          if (resourceSnapshot.exists()) {
-            const resourceData = resourceSnapshot.val();
-            likedResourcesArray.push({
-              id: resourceId,
-              ...resourceData,
-            });
-          } else {
-            try {
-              const resourceDoc = await getDoc(
-                doc(db, "resources", resourceId)
-              );
-              if (resourceDoc.exists()) {
-                likedResourcesArray.push({
-                  id: resourceId,
-                  ...resourceDoc.data(),
-                });
-              }
-            } catch (err) {
-              console.warn("Could not fetch resource from Firestore:", err);
-            }
-          }
-        }
-
-        setLikedResources(likedResourcesArray);
-      } else {
-        const resourcesCollection = collection(db, "resources");
-        const q = query(resourcesCollection);
-        const querySnapshot = await getDocs(q);
-        const likedResourcesArray = [];
-
-        for (const resourceDoc of querySnapshot.docs) {
-          const likesCollection = collection(
-            db,
-            "resources",
-            resourceDoc.id,
-            "likes"
-          );
-          const likeDocRef = doc(likesCollection, user.uid);
-          const likeDoc = await getDoc(likeDocRef);
-          if (likeDoc.exists()) {
-            const resourceData = resourceDoc.data();
-            likedResourcesArray.push({
-              id: resourceDoc.id,
-              ...resourceData,
-            });
-          }
-        }
-
-        setLikedResources(likedResourcesArray);
-      }
-    } catch (error) {
-      console.error("Error fetching liked resources:", error);
-    }
-  }, [user]);
-
-  const fetchUserComments = useCallback(async () => {
-    if (!user) return;
-
-    try {
-      const userCommentsRef = ref(database, `userComments/${user.uid}`);
-      const snapshot = await get(userCommentsRef);
-
-      if (snapshot.exists()) {
-        const commentsData = snapshot.val();
-        const commentsArray = [];
-
-        for (const resourceId in commentsData) {
-          for (const commentId in commentsData[resourceId]) {
-            const comment = commentsData[resourceId][commentId];
-
-            try {
-              const resourceRef = ref(database, `resources/${resourceId}`);
-              const resourceSnapshot = await get(resourceRef);
-              const resourceName = resourceSnapshot.exists()
-                ? resourceSnapshot.val().name
-                : "Unknown Resource";
-
-              commentsArray.push({
-                id: commentId,
-                resourceId,
-                resourceName,
-                ...comment,
-              });
-            } catch (err) {
-              console.warn("Error fetching resource for comment:", err);
-            }
-          }
-        }
-      } else {
-        const commentsArray = [];
-        const resourcesCollection = collection(db, "resources");
-        const q = query(resourcesCollection);
-        const querySnapshot = await getDocs(q);
-
-        for (const resourceDoc of querySnapshot.docs) {
-          const commentsCollection = collection(
-            db,
-            "resources",
-            resourceDoc.id,
-            "comments"
-          );
-          const userCommentsQuery = query(
-            commentsCollection,
-            where("userId", "==", user.uid)
-          );
-          const commentsSnapshot = await getDocs(userCommentsQuery);
-          commentsSnapshot.forEach((commentDoc) => {
-            commentsArray.push({
-              id: commentDoc.id,
-              resourceId: resourceDoc.id,
-              resourceName: resourceDoc.data().name,
-              ...commentDoc.data(),
-            });
-          });
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching user comments:", error);
-    }
-  }, [user]);
-
   const fetchUserPets = useCallback(async () => {
     if (!user) return;
 
@@ -266,15 +366,8 @@ const Profile = () => {
         }));
 
         setPets(petsArray);
-
-        if (user) {
-          user.pets = petsArray;
-        }
       } else {
         setPets([]);
-        if (user) {
-          user.pets = [];
-        }
       }
     } catch (error) {
       console.error("Error fetching user pets:", error);
@@ -387,10 +480,6 @@ const Profile = () => {
       requests.sort((a, b) => b.createdAt - a.createdAt);
 
       setMatingRequests(requests);
-
-      if (user) {
-        user.matingRequests = requests;
-      }
     } catch (error) {
       console.error("Error fetching mating requests:", error);
     } finally {
@@ -398,15 +487,7 @@ const Profile = () => {
     }
   }, [user]);
 
-  const handleProfileTabChange = (newValue) => {
-    setProfileTabValue(newValue);
-  };
-
-  const handleTabChange = (event, newValue) => {
-    setTabValue(newValue);
-  };
-
-  const handleAddPet = () => {
+  const handleAddPet = useCallback(() => {
     setCurrentPet({
       id: Date.now().toString(),
       name: "",
@@ -430,9 +511,9 @@ const Profile = () => {
     });
     setIsEditMode(false);
     setOpenPetDialog(true);
-  };
+  }, [user]);
 
-  const handleEditPet = (pet, section) => {
+  const handleEditPet = useCallback((pet, section) => {
     setCurrentPet({ ...pet });
     setIsEditMode(true);
     setOpenPetDialog(true);
@@ -440,54 +521,49 @@ const Profile = () => {
     if (section === "vaccinations") {
       setTabValue(2);
     }
-  };
+  }, []);
 
-  const handleSavePet = async () => {
+  const handleSavePet = useCallback(async () => {
     if (!user || !currentPet.name) return;
 
     try {
       const petRef = ref(database, `userPets/${user.uid}/${currentPet.id}`);
+      console.log("currentPet:-  ", currentPet);
       await set(petRef, currentPet);
 
-      if (isEditMode) {
-        setPets(
-          pets.map((pet) => (pet.id === currentPet.id ? currentPet : pet))
-        );
-      } else {
-        setPets([...pets, currentPet]);
-      }
-
-      if (user) {
-        user.pets = isEditMode
-          ? pets.map((pet) => (pet.id === currentPet.id ? currentPet : pet))
-          : [...pets, currentPet];
-      }
+      setPets((prevPets) => {
+        if (isEditMode) {
+          return prevPets.map((pet) =>
+            pet.id === currentPet.id ? currentPet : pet
+          );
+        } else {
+          return [...prevPets, currentPet];
+        }
+      });
 
       setOpenPetDialog(false);
     } catch (error) {
       console.error("Error saving pet:", error);
       alert("Failed to save pet information. Please try again.");
     }
-  };
+  }, [user, currentPet, isEditMode]);
 
-  const handleDeletePet = async (petId) => {
-    try {
-      const petRef = ref(database, `userPets/${user.uid}/${petId}`);
-      await remove(petRef);
+  const handleDeletePet = useCallback(
+    async (petId) => {
+      try {
+        const petRef = ref(database, `userPets/${user.uid}/${petId}`);
+        await remove(petRef);
 
-      const updatedPets = pets.filter((pet) => pet.id !== petId);
-      setPets(updatedPets);
-
-      if (user) {
-        user.pets = updatedPets;
+        setPets((prevPets) => prevPets.filter((pet) => pet.id !== petId));
+      } catch (error) {
+        console.error("Error deleting pet:", error);
+        alert("Failed to delete pet. Please try again.");
       }
-    } catch (error) {
-      console.error("Error deleting pet:", error);
-      alert("Failed to delete pet. Please try again.");
-    }
-  };
+    },
+    [user]
+  );
 
-  const handleAddVaccination = () => {
+  const handleAddVaccination = useCallback(() => {
     setCurrentVaccination({
       name: "",
       date: null,
@@ -496,15 +572,15 @@ const Profile = () => {
     });
     setVaccinationEditIndex(-1);
     setOpenVaccinationDialog(true);
-  };
+  }, []);
 
-  const handleEditVaccination = (vaccination, index) => {
+  const handleEditVaccination = useCallback((vaccination, index) => {
     setCurrentVaccination({ ...vaccination });
     setVaccinationEditIndex(index);
     setOpenVaccinationDialog(true);
-  };
+  }, []);
 
-  const handleSaveVaccination = async () => {
+  const handleSaveVaccination = useCallback(async () => {
     if (!currentVaccination.name || !currentVaccination.date) return;
 
     setIsSavingVaccination(true);
@@ -512,6 +588,11 @@ const Profile = () => {
     try {
       const updatedPet = { ...currentPet };
       updatedPet.vaccinations = updatedPet.vaccinations || [];
+
+
+      console.log("updatedPet.vaccinations", updatedPet.vaccinations);
+      console.log("currentVaccination", currentVaccination)
+
 
       if (vaccinationEditIndex >= 0) {
         updatedPet.vaccinations[vaccinationEditIndex] = currentVaccination;
@@ -526,178 +607,145 @@ const Profile = () => {
     } finally {
       setIsSavingVaccination(false);
     }
-  };
+  }, [currentPet, currentVaccination, vaccinationEditIndex]);
 
-  const handleDeleteVaccination = (index) => {
-    const updatedPet = { ...currentPet };
-    updatedPet.vaccinations.splice(index, 1);
-    setCurrentPet(updatedPet);
-  };
-
-  const handleToggleRequestDropdown = (request, e) => {
-    if (e) e.stopPropagation();
-    setSelectedRequest(request);
-    setShowDropdown((prev) => !prev);
-  };
-
-  const handleAcceptRequest = async () => {
-    if (!selectedRequest) return;
-
-    try {
-      const requestRef = ref(
-        database,
-        `matingRequests/received/${user.uid}/${selectedRequest.id}`
-      );
-      await update(requestRef, {
-        status: "accepted",
-        updatedAt: Date.now(),
-      });
-
-      const senderRequestRef = ref(
-        database,
-        `matingRequests/sent/${selectedRequest.senderId}/${selectedRequest.id}`
-      );
-      await update(senderRequestRef, {
-        status: "accepted",
-        updatedAt: Date.now(),
-      });
-
-      const updatedRequests = matingRequests.map((req) =>
-        req.id === selectedRequest.id
-          ? { ...req, status: "accepted", updatedAt: Date.now() }
-          : req
-      );
-
-      setMatingRequests(updatedRequests);
-
-      if (user) {
-        user.matingRequests = updatedRequests;
-      }
-
-      setShowDropdown(false);
-    } catch (error) {
-      console.error("Error accepting request:", error);
-      alert("Failed to accept request. Please try again.");
-    }
-  };
-
-  const handleDeclineRequest = async () => {
-    if (!selectedRequest) return;
-
-    try {
-      const requestRef = ref(
-        database,
-        `matingRequests/received/${user.uid}/${selectedRequest.id}`
-      );
-      await update(requestRef, {
-        status: "declined",
-        updatedAt: Date.now(),
-      });
-
-      const senderRequestRef = ref(
-        database,
-        `matingRequests/sent/${selectedRequest.senderId}/${selectedRequest.id}`
-      );
-      await update(senderRequestRef, {
-        status: "declined",
-        updatedAt: Date.now(),
-      });
-
-      const updatedRequests = matingRequests.map((req) =>
-        req.id === selectedRequest.id
-          ? { ...req, status: "declined", updatedAt: Date.now() }
-          : req
-      );
-
-      setMatingRequests(updatedRequests);
-
-      if (user) {
-        user.matingRequests = updatedRequests;
-      }
-
-      setShowDropdown(false);
-    } catch (error) {
-      console.error("Error declining request:", error);
-      alert("Failed to decline request. Please try again.");
-    }
-  };
-
-  const handleOpenMessageDialog = (request) => {
-    const conversationId = `mating_${request.id}`;
-
-    const senderPet = pets.find(
-      (pet) =>
-        pet.id ===
-        (request.direction === "incoming"
-          ? request.receiverPetId
-          : request.senderPetId)
-    );
-
-    setCurrentMessage({
-      text: "",
-      recipientId:
-        request.direction === "incoming"
-          ? request.senderId
-          : request.receiverId,
-      recipientName:
-        request.direction === "incoming"
-          ? request.senderName
-          : request.receiverName,
-      petId:
-        request.direction === "incoming"
-          ? request.receiverPetId
-          : request.senderPetId,
-      receiverPetId:
-        request.direction === "incoming"
-          ? request.senderPetId
-          : request.receiverPetId,
-      matingRequestId: request.id,
-      conversationId: conversationId,
-      senderPet: senderPet,
-      receiverPet: {
-        name:
-          request.direction === "incoming"
-            ? request.senderPetName
-            : request.receiverPetName,
-        image:
-          request.direction === "incoming"
-            ? request.senderPetImage
-            : request.receiverPetImage,
-      },
+  const handleDeleteVaccination = useCallback((index) => {
+    setCurrentPet((prevPet) => {
+      const updatedPet = { ...prevPet };
+      updatedPet.vaccinations.splice(index, 1);
+      return updatedPet;
     });
+  }, []);
 
-    setOpenMessageDialog(true);
-  };
+  const handleAcceptRequest = useCallback(
+    async (request) => {
+      try {
+        const requestRef = ref(
+          database,
+          `matingRequests/received/${user.uid}/${request.id}`
+        );
+        await update(requestRef, {
+          status: "accepted",
+          updatedAt: Date.now(),
+        });
 
-  const handleOpenConversationFromList = (conversation) => {
-    setCurrentMessage({
-      text: "",
-      recipientId: conversation.otherParticipantId,
-      recipientName: conversation.otherParticipantName,
-      senderPet: conversation.senderPet,
-      receiverPet: conversation.receiverPet,
-      matingRequestId: conversation.matingRequestId,
-      conversationId: conversation.id,
-    });
+        const senderRequestRef = ref(
+          database,
+          `matingRequests/sent/${request.senderId}/${request.id}`
+        );
+        await update(senderRequestRef, {
+          status: "accepted",
+          updatedAt: Date.now(),
+        });
 
-    setOpenMessageDialog(true);
-  };
+        setMatingRequests((prevRequests) =>
+          prevRequests.map((req) =>
+            req.id === request.id
+              ? { ...req, status: "accepted", updatedAt: Date.now() }
+              : req
+          )
+        );
+      } catch (error) {
+        console.error("Error accepting request:", error);
+        alert("Failed to accept request. Please try again.");
+      }
+    },
+    [user]
+  );
+
+  const handleDeclineRequest = useCallback(
+    async (request) => {
+      try {
+        const requestRef = ref(
+          database,
+          `matingRequests/received/${user.uid}/${request.id}`
+        );
+        await update(requestRef, {
+          status: "declined",
+          updatedAt: Date.now(),
+        });
+
+        const senderRequestRef = ref(
+          database,
+          `matingRequests/sent/${request.senderId}/${request.id}`
+        );
+        await update(senderRequestRef, {
+          status: "declined",
+          updatedAt: Date.now(),
+        });
+
+        setMatingRequests((prevRequests) =>
+          prevRequests.map((req) =>
+            req.id === request.id
+              ? { ...req, status: "declined", updatedAt: Date.now() }
+              : req
+          )
+        );
+      } catch (error) {
+        console.error("Error declining request:", error);
+        alert("Failed to decline request. Please try again.");
+      }
+    },
+    [user]
+  );
+
+  const handleOpenMessageDialog = useCallback(
+    (request) => {
+      const conversationId = `mating_${request.id}`;
+
+      const senderPet = pets.find(
+        (pet) =>
+          pet.id ===
+          (request.direction === "incoming"
+            ? request.receiverPetId
+            : request.senderPetId)
+      );
+
+      setCurrentMessage({
+        text: "",
+        recipientId:
+          request.direction === "incoming"
+            ? request.senderId
+            : request.receiverId,
+        recipientName:
+          request.direction === "incoming"
+            ? request.senderName
+            : request.receiverName,
+        petId:
+          request.direction === "incoming"
+            ? request.receiverPetId
+            : request.senderPetId,
+        receiverPetId:
+          request.direction === "incoming"
+            ? request.senderPetId
+            : request.receiverPetId,
+        matingRequestId: request.id,
+        conversationId: conversationId,
+        senderPet: senderPet,
+        receiverPet: {
+          name:
+            request.direction === "incoming"
+              ? request.senderPetName
+              : request.receiverPetName,
+          image:
+            request.direction === "incoming"
+              ? request.senderPetImage
+              : request.receiverPetImage,
+        },
+      });
+
+      setOpenMessageDialog(true);
+    },
+    [pets]
+  );
 
   useEffect(() => {
     if (user) {
       setIsLoading(true);
 
-      if (user) {
-        user.pets = [];
-        user.matingRequests = [];
-        user.connections = [];
-      }
-
       const promises = [
         fetchUserPets(),
         fetchMatingRequests(),
-        fetchLikedResources(),
-        fetchUserComments(),
       ];
 
       Promise.all(promises)
@@ -708,320 +756,56 @@ const Profile = () => {
           setIsLoading(false);
         });
     }
-  }, [
-    fetchLikedResources,
-    fetchMatingRequests,
-    fetchUserComments,
-    fetchUserPets,
-    user,
-  ]);
+  }, [fetchMatingRequests, fetchUserPets, user]);
+
+  const tabs = [
+    { id: "pets", label: "Pets", icon: "🐾", count: pets.length },
+    {
+      id: "requests",
+      label: "Requests",
+      icon: "💕",
+      count: matingRequests.length,
+      badge: pendingRequestsCount,
+    },
+    { id: "messages", label: "Messages", icon: "💬", count: 0 },
+  ];
+
+
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-lavender-50">
-        <div className="container max-w-7xl mx-auto py-6 px-4">
-          <MeetingDetailsSkeleton />
-        </div>
-      </div>
-    );
+    return <div>Loading...</div>; // Replace with a proper skeleton loader
   }
 
+
   return (
-    <div className="min-h-screen bg-lavender-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
-        {pendingRequestsCount > 0 && (
-          <button
-            onClick={() => handleProfileTabChange(2)}
-            className="bg-pink-100 text-pink-800 px-3 py-1 rounded-full text-sm font-medium flex items-center"
-          >
-            <span className="bg-pink-500 text-white w-5 h-5 rounded-full flex items-center justify-center mr-1.5">
-              {pendingRequestsCount}
-            </span>
-            Pending Requests
-          </button>
-        )}
-      </div>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-        <UserInfo user={user} />
-        <div className="mt-6 mb-2 border-b border-gray-200 overflow-x-auto hide-scrollbar">
-          <div className="flex">
-            <button
-              onClick={() => handleProfileTabChange(0)}
-              className={`px-4 py-3 text-sm font-medium flex items-center border-b-2 transition-colors ${
-                profileTabValue === 0
-                  ? "text-lavender-700 border-lavender-600"
-                  : "text-gray-500 border-transparent hover:text-lavender-600 hover:border-lavender-200"
-              }`}
-            >
-              <FaPaw
-                className={`${
-                  profileTabValue === 0 ? "text-lavender-600" : "text-gray-400"
-                } mr-2`}
-              />
-              My Pets
-            </button>
-            <button
-              onClick={() => handleProfileTabChange(1)}
-              className={`px-4 py-3 text-sm font-medium flex items-center border-b-2 transition-colors ${
-                profileTabValue === 1
-                  ? "text-lavender-700 border-lavender-600"
-                  : "text-gray-500 border-transparent hover:text-lavender-600 hover:border-lavender-200"
-              }`}
-            >
-              <FiHeart
-                className={`${
-                  profileTabValue === 1 ? "text-lavender-600" : "text-gray-400"
-                } mr-2`}
-              />
-              Resources
-            </button>
-            <button
-              onClick={() => handleProfileTabChange(2)}
-              className={`px-4 py-3 text-sm font-medium flex items-center border-b-2 transition-colors ${
-                profileTabValue === 2
-                  ? "text-lavender-700 border-lavender-600"
-                  : "text-gray-500 border-transparent hover:text-lavender-600 hover:border-lavender-200"
-              }`}
-            >
-              <div className="relative mr-2">
-                <FiHeart
-                  className={`${
-                    profileTabValue === 2
-                      ? "text-lavender-600"
-                      : "text-gray-400"
-                  }`}
-                />
-                {pendingRequestsCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
-                )}
-              </div>
-              Mating Requests
-            </button>
-            <button
-              onClick={() => handleProfileTabChange(3)}
-              className={`px-4 py-3 text-sm font-medium flex items-center border-b-2 transition-colors ${
-                profileTabValue === 3
-                  ? "text-lavender-700 border-lavender-600"
-                  : "text-gray-500 border-transparent hover:text-lavender-600 hover:border-lavender-200"
-              }`}
-            >
-              <FiMessageSquare
-                className={`${
-                  profileTabValue === 3 ? "text-lavender-600" : "text-gray-400"
-                } mr-2`}
-              />
-              Messages
-            </button>
-          </div>
-        </div>
-        <TabPanel value={profileTabValue} index={0}>
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold text-lavender-900">My Pets</h2>
-            <button
-              onClick={handleAddPet}
-              className="bg-lavender-600 hover:bg-lavender-700 text-white p-3 rounded-full shadow-md transition-colors"
-            >
-              <FiPlus className="w-5 h-5" />
-            </button>
-          </div>
-          {pets.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {pets.map((pet) => (
-                <PetCard
-                  key={pet.id}
-                  pet={pet}
-                  onEdit={handleEditPet}
-                  onDelete={handleDeletePet}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="bg-white rounded-2xl shadow-sm p-8 text-center border border-lavender-100">
-              <div className="w-20 h-20 bg-lavender-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <FaPaw className="text-lavender-400 w-10 h-10" />
-              </div>
-              <h3 className="text-lg font-semibold text-lavender-900 mb-2">
-                You haven't added any pets yet
-              </h3>
-              <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                Add your pets to discover resources, find mating partners, and
-                track their health information all in one place.
-              </p>
-              <button
-                onClick={handleAddPet}
-                className="px-4 py-2 bg-lavender-600 hover:bg-lavender-700 text-white rounded-lg inline-flex items-center"
-              >
-                <FiPlus className="mr-2" />
-                Add Your First Pet
-              </button>
-            </div>
-          )}
-        </TabPanel>
-        <TabPanel value={profileTabValue} index={1}>
-          <ResourcesList resources={likedResources} navigate={navigate} />
-        </TabPanel>
-        <TabPanel value={profileTabValue} index={2}>
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold text-lavender-900">
-              Mating Requests
-            </h2>
-          </div>
-          {matingRequests.length > 0 ? (
-            <div className="space-y-4">
-              {matingRequests.map((request) => (
-                <div
-                  key={request.id}
-                  className="bg-white rounded-xl shadow-sm border border-lavender-100 p-4"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center">
-                      <div className="w-12 h-12 rounded-full bg-lavender-100 overflow-hidden flex-shrink-0 flex items-center justify-center text-white text-sm font-medium">
-                        {request.direction === "incoming" ? (
-                          request.senderPetImage ? (
-                            <img
-                              src={request.senderPetImage}
-                              alt={request.senderPetName}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <span>{request.senderPetName?.[0] || "P"}</span>
-                          )
-                        ) : request.receiverPetImage ? (
-                          <img
-                            src={request.receiverPetImage}
-                            alt={request.receiverPetName}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <span>{request.receiverPetName?.[0] || "P"}</span>
-                        )}
-                      </div>
-                      <div className="ml-3">
-                        <div className="text-sm text-gray-500">
-                          {request.direction === "incoming"
-                            ? "Request from"
-                            : "Request to"}
-                        </div>
-                        <div className="font-medium text-lavender-900">
-                          {request.direction === "incoming"
-                            ? request.senderName
-                            : request.receiverName}
-                        </div>
-                        <div className="text-sm text-gray-600 mt-1">
-                          {request.direction === "incoming"
-                            ? `${request.senderPetName} (${
-                                request.senderPetBreed || "Unknown breed"
-                              })`
-                            : `${request.receiverPetName} (${
-                                request.receiverPetBreed || "Unknown breed"
-                              })`}{" "}
-                          for your{" "}
-                          {request.direction === "incoming"
-                            ? request.receiverPetName
-                            : request.senderPetName}
-                        </div>
-                        {request.message && (
-                          <div className="mt-2 text-sm text-gray-700 bg-lavender-50 p-2 rounded-md">
-                            "{request.message}"
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <div className="text-xs px-2 py-1 rounded-full font-medium mr-2">
-                        {request.status === "pending" ? (
-                          <span className="text-yellow-700 bg-yellow-100 px-2 py-0.5 rounded-full">
-                            Pending
-                          </span>
-                        ) : request.status === "accepted" ? (
-                          <span className="text-green-700 bg-green-100 px-2 py-0.5 rounded-full">
-                            Accepted
-                          </span>
-                        ) : (
-                          <span className="text-red-700 bg-red-100 px-2 py-0.5 rounded-full">
-                            Declined
-                          </span>
-                        )}
-                      </div>
-                      {request.status === "pending" &&
-                        request.direction === "incoming" && (
-                          <div className="relative">
-                            <button
-                              onClick={(e) =>
-                                handleToggleRequestDropdown(request, e)
-                              }
-                              className="p-2 rounded-full hover:bg-lavender-100 transition-colors"
-                            >
-                              <FiMoreVertical className="w-5 h-5 text-gray-500" />
-                            </button>
-                            {selectedRequest &&
-                              selectedRequest.id === request.id &&
-                              showDropdown && (
-                                <div className="absolute right-0 top-10 bg-white shadow-lg rounded-lg z-10 w-36 py-1 border border-gray-200">
-                                  <button
-                                    onClick={handleAcceptRequest}
-                                    className="w-full px-4 py-2 text-left text-sm hover:bg-lavender-50 flex items-center"
-                                  >
-                                    <FiCheck className="mr-2 text-green-500" />
-                                    Accept
-                                  </button>
-                                  <button
-                                    onClick={handleDeclineRequest}
-                                    className="w-full px-4 py-2 text-left text-sm hover:bg-lavender-50 flex items-center"
-                                  >
-                                    <FiX className="mr-2 text-red-500" />
-                                    Decline
-                                  </button>
-                                </div>
-                              )}
-                          </div>
-                        )}
-                      {request.status === "accepted" && (
-                        <button
-                          onClick={() => handleOpenMessageDialog(request)}
-                          className="p-2 rounded-full hover:bg-lavender-100 transition-colors"
-                        >
-                          <FiMessageSquare className="w-5 h-5 text-lavender-600" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="bg-white rounded-2xl shadow-sm p-8 text-center border border-lavender-100">
-              <div className="w-20 h-20 bg-lavender-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <FiHeart className="text-lavender-400 w-10 h-10" />
-              </div>
-              <h3 className="text-lg font-semibold text-lavender-900 mb-2">
-                No mating requests yet
-              </h3>
-              <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                When you receive mating requests for your pets, or send requests
-                to others, they will appear here.
-              </p>
-              <button
-                onClick={() => navigate("/dashboard")}
-                className="px-4 py-2 bg-lavender-600 hover:bg-lavender-700 text-white rounded-lg inline-flex items-center"
-              >
-                <FiHeart className="mr-2" />
-                Find Matches
-              </button>
-            </div>
-          )}
-        </TabPanel>
-        <TabPanel value={profileTabValue} index={3}>
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold text-lavender-900">Messages</h2>
-          </div>
-          <ConversationsList
-            user={user}
-            pets={pets}
-            onOpenConversation={handleOpenConversationFromList}
-          />
-        </TabPanel>
-      </div>
+    <>
+      {isDesktop ? (
+        <DesktopVersion
+          user={user}
+          pets={pets}
+          matingRequests={matingRequests}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          tabs={tabs}
+          handleAddPet={handleAddPet}
+          handleEditPet={handleEditPet}
+          handleAcceptRequest={handleAcceptRequest}
+          handleDeclineRequest={handleDeclineRequest}
+        />
+      ) : (
+        <MobileVersion
+          user={user}
+          pets={pets}
+          matingRequests={matingRequests}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          tabs={tabs}
+          handleAddPet={handleAddPet}
+          handleEditPet={handleEditPet}
+          handleAcceptRequest={handleAcceptRequest}
+          handleDeclineRequest={handleDeclineRequest}
+        />
+      )}
       {openPetDialog && (
         <PetDialog
           open={openPetDialog}
@@ -1031,11 +815,11 @@ const Profile = () => {
           onSave={handleSavePet}
           isEditMode={isEditMode}
           tabValue={tabValue}
-          onTabChange={handleTabChange}
+          onTabChange={(e, val) => setTabValue(val)}
           onAddVaccination={handleAddVaccination}
           onEditVaccination={handleEditVaccination}
           onDeleteVaccination={handleDeleteVaccination}
-          isMobile={isMobile}
+          isMobile={!isDesktop}
         />
       )}
       {openVaccinationDialog && (
@@ -1046,12 +830,13 @@ const Profile = () => {
           setVaccination={setCurrentVaccination}
           onSave={handleSaveVaccination}
           isEditMode={vaccinationEditIndex >= 0}
-          isMobile={isMobile}
-          petType={currentPet.type}
+          isMobile={!isDesktop}
+          petType={currentPet?.type}
           vaccinationEditIndex={vaccinationEditIndex}
           loading={isSavingVaccination}
         />
       )}
+
       {openMessageDialog && (
         <MessageDialog
           open={openMessageDialog}
@@ -1065,7 +850,7 @@ const Profile = () => {
           tabValue={tabValue}
         />
       )}
-    </div>
+    </>
   );
 };
 

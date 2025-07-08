@@ -5,7 +5,7 @@ import logo from "../../images/logo.png";
 import BottomNavigation from "./BottomNavigation";
 import { get, ref } from "firebase/database";
 import { FiHome, FiUser, FiLogOut, FiMenu, FiX, FiBell } from "react-icons/fi";
-import { FaDog, FaCat, FaFile } from "react-icons/fa";
+import { FaFile } from "react-icons/fa";
 
 const Header = () => {
   const navigate = useNavigate();
@@ -148,7 +148,7 @@ const Header = () => {
 
   return (
     <>
-      <header className="bg-lavender-900 text-lavender-100 shadow-lg sticky top-0 z-50">
+      <header className="bg-lavender-700 text-lavender-100 shadow-lg sticky top-0 z-50">
         <div className="container mx-auto px-4 py-3">
           <div className="flex justify-between items-center">
             <Link
@@ -164,11 +164,9 @@ const Header = () => {
               <NavLink to="/dashboard">
                 <FiHome className="mr-1" /> Home
               </NavLink>
-              <NavLink to="/dog-resources">
-                <FaDog className="mr-1" /> Dogs
-              </NavLink>
-              <NavLink to="/cat-resources">
-                <FaCat className="mr-1" /> Cats
+
+              <NavLink to="/resource">
+                <FiUser className="mr-1" /> Resources
               </NavLink>
               <NavLink to="/profile">
                 <FiUser className="mr-1" /> Profile
@@ -195,20 +193,23 @@ const Header = () => {
                 <FiLogOut className="mr-1" /> Logout
               </button>
             </nav>
-            <div className="md:hidden flex items-center">
-              {pendingRequestsCount > 0 && (
-                <div className="relative mr-4">
-                  <Link to="/profile" className="text-white">
-                    <FiBell size={20} />
+            <div className="md:hidden flex items-center space-x-3">
+              <div className="relative">
+                <Link
+                  to="/profile"
+                  className="text-lavender-200 hover:text-white transition-colors"
+                >
+                  <FiBell size={20} />
+                  {pendingRequestsCount > 0 && (
                     <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
                       {pendingRequestsCount}
                     </span>
-                  </Link>
-                </div>
-              )}
+                  )}
+                </Link>
+              </div>
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="text-lavender-200 hover:text-white focus:outline-none"
+                className="text-lavender-200 hover:text-white focus:outline-none transition-colors"
                 aria-label="Toggle menu"
               >
                 {isMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
@@ -225,17 +226,14 @@ const Header = () => {
               >
                 <FiHome className="mr-2" /> Home
               </MobileNavLink>
-              <MobileNavLink
-                to="/dog-resources"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <FaDog className="mr-2" /> Dog
-              </MobileNavLink>
-              <MobileNavLink
-                to="/cat-resources"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <FaCat className="mr-2" /> Cat
+           
+
+
+
+
+
+              <MobileNavLink to="/resource" onClick={() => setIsMenuOpen(false)}>
+                <FiUser className="mr-2" /> Resources
               </MobileNavLink>
               <MobileNavLink to="/profile" onClick={() => setIsMenuOpen(false)}>
                 <FiUser className="mr-2" /> Profile
@@ -264,11 +262,10 @@ const NavLink = ({ to, children }) => {
   return (
     <Link
       to={to}
-      className={`flex items-center px-3 py-2 rounded-lg transition-colors ${
-        isActive
-          ? "text-white bg-lavender-700"
-          : "text-lavender-200 hover:text-white hover:bg-lavender-700"
-      }`}
+      className={`flex items-center px-3 py-2 rounded-lg transition-colors ${isActive
+        ? "text-white bg-lavender-800"
+        : "text-lavender-200 hover:text-white hover:bg-lavender-700"
+        }`}
     >
       {children}
     </Link>
@@ -282,11 +279,10 @@ const MobileNavLink = ({ to, onClick, children }) => {
     <Link
       to={to}
       onClick={onClick}
-      className={`flex items-center py-2 px-4 rounded-lg transition-colors ${
-        isActive
-          ? "text-white bg-lavender-700"
-          : "text-lavender-200 hover:text-white hover:bg-lavender-700"
-      }`}
+      className={`flex items-center py-2 px-4 rounded-lg transition-colors ${isActive
+        ? "text-white bg-lavender-700"
+        : "text-lavender-200 hover:text-white hover:bg-lavender-700"
+        }`}
     >
       {children}
     </Link>

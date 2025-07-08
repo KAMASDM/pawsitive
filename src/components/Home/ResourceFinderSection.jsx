@@ -140,8 +140,8 @@ const ResourceFinderSection = () => {
               ease: "easeInOut",
               rotate: [0, -5, 5, -5, 0],
               scale: 1.05,
-            }}
-          >
+            }}  
+          > 
             🔍
           </motion.div>
         </div>

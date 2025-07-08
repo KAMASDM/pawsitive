@@ -14,6 +14,7 @@ const PR = ({ children }) => {
     return () => unsubscribe();
   }, []);
 
+  
   if (loading) {
     return (
       <div className="flex flex-col min-h-screen bg-white/97 bg-[radial-gradient(rgba(139,121,195,0.05)_1px,transparent_0)] bg-[length:20px_20px]" />

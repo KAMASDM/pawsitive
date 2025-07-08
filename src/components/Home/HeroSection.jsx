@@ -155,7 +155,7 @@ const HeroSection = () => {
         </motion.div>
       </div>
     </div>
-  );
-};
+  );   
+};          
 
 export default HeroSection;

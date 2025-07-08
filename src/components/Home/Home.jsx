@@ -1,21 +1,20 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { FaSearch, FaHeart, FaDog, FaCat, FaArrowRight, FaStar, FaUsers } from "react-icons/fa";
+import { FaSearch, FaHeart, FaDog, FaCat, FaArrowRight } from "react-icons/fa";
 import { IoIosArrowForward } from "react-icons/io";
 
-// --- STATIC DATA ---
-// Moved outside the components to prevent re-creation on every render.
+
 const quickActions = [
-  { icon: "🚨", title: "Emergency", subtitle: "24/7 Care", description: "Round-the-clock emergency veterinary services", color: "from-purple-300 to-purple-400", route: "/resources/pet_emergency_24_7" },
-  { icon: "🐾", title: "Adopt", subtitle: "Find Pets", description: "Browse verified pets looking for loving homes", color: "from-violet-300 to-violet-400", route: "/adopt-pets" },
+  { icon: "🚨", title: "Emergency", subtitle: "24/7 Care", description: "Round-the-clock emergency veterinary services", color: "from-purple-300 to-purple-400", route: "/resource", state: { category: "all", subCategory: "Health & Wellness" } },
+  { icon: "🐾", title: "Adopt", subtitle: "Find Pets", description: "Browse verified pets looking for loving homes", color: "from-violet-300 to-violet-400", route: "/adopt-pets", },
   { icon: "💕", title: "Mates", subtitle: "Find Partner", description: "Connect with nearby pets for responsible breeding", color: "from-indigo-300 to-indigo-400", route: "/nearby-mates" },
-  { icon: "🏥", title: "Care", subtitle: "Health Services", description: "Complete healthcare and wellness services", color: "from-slate-300 to-slate-400", route: "/resources/care" }
+  { icon: "🏥", title: "Care", subtitle: "Health Services", description: "Complete healthcare and wellness services", color: "from-slate-300 to-slate-400", route: "/resource", state: { category: "all", subCategory: "Nutrition" } }
 ];
 
 const services = [
-  { icon: "🏥", title: "Emergency Care", description: "24/7 veterinary emergency services", details: "Round-the-clock emergency care with certified veterinarians", badge: "24/7", color: "purple", route: "/resources/pet_emergency_24_7", stats: "50+ Vets Available" },
-  { icon: "🐾", title: "Pet Adoption", description: "Find your perfect companion", details: "Verified pets with health checkups and adoption support", badge: "500+", color: "violet", route: "/resources/adoption", stats: "500+ Happy Adoptions" },
+  { icon: "🏥", title: "Emergency Care", description: "24/7 veterinary emergency services", details: "Round-the-clock emergency care with certified veterinarians", badge: "24/7", color: "purple", route: "/resource", stats: "50+ Vets Available", state: { category: "all", subCategory: "Health & Wellness" } },
+  { icon: "🐾", title: "Pet Adoption", description: "Find your perfect companion", details: "Verified pets with health checkups and adoption support", badge: "500+", color: "violet", route: "/resource", stats: "500+ Happy Adoptions", state: { category: "all", subCategory: "Adoption" } },
   { icon: "💕", title: "Pet Mating", description: "Safe breeding services", details: "Health-verified pets with breed matching services", badge: "Verified", color: "indigo", route: "/nearby-mates", stats: "200+ Successful Matches" }
 ];
 
@@ -37,19 +36,17 @@ const featuredStats = [
 ];
 
 
-// --- CHILD COMPONENT: MobileVersion ---
+
 const MobileVersion = ({ activeTab, setActiveTab, showSearchOptions, setShowSearchOptions, handlePetTypeSelect }) => {
   const navigate = useNavigate();
 
   return (
     <div className="relative z-10 p-4 max-w-md mx-auto min-h-screen flex flex-col">
-      {/* Header */}
       <motion.div className="text-center mb-6" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
         <h1 className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent mb-2">Pawppy</h1>
         <p className="text-gray-600 text-sm">Everything your pet needs, simplified</p>
       </motion.div>
 
-      {/* Quick Actions */}
       <motion.div className="mb-6" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}>
         <div className="grid grid-cols-4 gap-3">
           {quickActions.map((action, index) => (
@@ -62,7 +59,6 @@ const MobileVersion = ({ activeTab, setActiveTab, showSearchOptions, setShowSear
         </div>
       </motion.div>
 
-      {/* Search Bar */}
       <motion.div className="mb-6" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}>
         <AnimatePresence mode="wait">
           {!showSearchOptions ? (
@@ -90,7 +86,6 @@ const MobileVersion = ({ activeTab, setActiveTab, showSearchOptions, setShowSear
         </AnimatePresence>
       </motion.div>
 
-      {/* Tab Navigation */}
       <motion.div className="mb-6" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }}>
         <div className="flex bg-white rounded-2xl p-2 shadow-md border border-violet-100">
           {[
@@ -107,13 +102,12 @@ const MobileVersion = ({ activeTab, setActiveTab, showSearchOptions, setShowSear
         </div>
       </motion.div>
 
-      {/* Content Cards */}
       <motion.div className="flex-1" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.4 }}>
         <AnimatePresence mode="wait">
           {activeTab === "services" && (
             <motion.div key="services" className="space-y-3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               {services.map((service, index) => (
-                <motion.div key={index} onClick={() => navigate(service.route)} className="bg-white rounded-2xl p-4 shadow-md border border-violet-100 hover:shadow-lg transition-all duration-300 cursor-pointer h-24 flex items-center" whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.1 }}>
+                <motion.div key={index} onClick={() => navigate(service.route, { state: service.state })} className="bg-white rounded-2xl p-4 shadow-md border border-violet-100 hover:shadow-lg transition-all duration-300 cursor-pointer h-24 flex items-center" whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.1 }}>
                   <div className="flex items-center flex-1">
                     <div className="w-12 h-12 rounded-full bg-gradient-to-r from-violet-400 to-indigo-400 flex items-center justify-center text-white text-xl mr-4 shadow-sm">{service.icon}</div>
                     <div className="flex-1">
@@ -181,7 +175,6 @@ const MobileVersion = ({ activeTab, setActiveTab, showSearchOptions, setShowSear
         </AnimatePresence>
       </motion.div>
 
-      {/* Floating Action Button */}
       <motion.button className="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-r from-violet-400 to-indigo-400 rounded-full shadow-lg flex items-center justify-center text-white hover:from-violet-500 hover:to-indigo-500 transition-all duration-300 z-20" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => setShowSearchOptions(!showSearchOptions)} animate={{ boxShadow: ["0 4px 15px rgba(139, 92, 246, 0.3)", "0 6px 20px rgba(139, 92, 246, 0.4)", "0 4px 15px rgba(139, 92, 246, 0.3)"] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}>
         <FaSearch className="text-lg" />
       </motion.button>
@@ -190,13 +183,11 @@ const MobileVersion = ({ activeTab, setActiveTab, showSearchOptions, setShowSear
 };
 
 
-// --- CHILD COMPONENT: DesktopVersion ---
 const DesktopVersion = ({ showSearchOptions, setShowSearchOptions, handlePetTypeSelect }) => {
   const navigate = useNavigate();
 
   return (
     <div className="relative z-10 min-h-screen">
-      {/* Hero Section */}
       <motion.div className="relative bg-gradient-to-br from-violet-50 via-purple-50 to-indigo-50 py-20 overflow-hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8 }}>
         <div className="absolute inset-0 overflow-hidden">
           <motion.div className="absolute top-20 right-20 w-32 h-32 bg-violet-200 rounded-full opacity-20" animate={{ scale: [1, 1.2, 1], rotate: [0, 180, 360] }} transition={{ duration: 20, repeat: Infinity, ease: "linear" }} />
@@ -205,7 +196,6 @@ const DesktopVersion = ({ showSearchOptions, setShowSearchOptions, handlePetType
 
         <div className="max-w-7xl mx-auto px-8 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            {/* Left Content */}
             <motion.div initial={{ opacity: 0, x: -50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8, delay: 0.2 }}>
               <h1 className="text-5xl lg:text-6xl font-bold mb-6">
                 <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">Pawppy</span><br />
@@ -213,7 +203,6 @@ const DesktopVersion = ({ showSearchOptions, setShowSearchOptions, handlePetType
               </h1>
               <p className="text-xl text-gray-600 mb-8 max-w-lg">Everything your beloved pet needs - from emergency care to finding companions, all in one beautiful platform.</p>
 
-              {/* Search Bar */}
               <div className="mb-8">
                 <AnimatePresence mode="wait">
                   {!showSearchOptions ? (
@@ -239,7 +228,6 @@ const DesktopVersion = ({ showSearchOptions, setShowSearchOptions, handlePetType
                 </AnimatePresence>
               </div>
 
-              {/* Stats */}
               <div className="grid grid-cols-4 gap-6">
                 {featuredStats.map((stat, index) => (
                   <motion.div key={index} className="text-center" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.4 + index * 0.1 }}>
@@ -251,10 +239,9 @@ const DesktopVersion = ({ showSearchOptions, setShowSearchOptions, handlePetType
               </div>
             </motion.div>
 
-            {/* Right Content - Quick Actions Grid */}
             <motion.div className="grid grid-cols-2 gap-6" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8, delay: 0.4 }}>
               {quickActions.map((action, index) => (
-                <motion.div key={index} onClick={() => navigate(action.route)} className={`bg-gradient-to-br ${action.color} text-white p-8 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer text-center`} whileHover={{ scale: 1.05, y: -5 }} whileTap={{ scale: 0.95 }} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.6 + index * 0.1 }}>
+                <motion.div key={index} onClick={() => navigate(action.route, { state: action.state })} className={`bg-gradient-to-br ${action.color} text-white p-8 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer text-center`} whileHover={{ scale: 1.05, y: -5 }} whileTap={{ scale: 0.95 }} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.6 + index * 0.1 }}>
                   <div className="text-4xl mb-4">{action.icon}</div>
                   <h3 className="text-xl font-bold mb-2">{action.title}</h3>
                   <p className="text-sm opacity-90 mb-4">{action.description}</p>
@@ -266,7 +253,6 @@ const DesktopVersion = ({ showSearchOptions, setShowSearchOptions, handlePetType
         </div>
       </motion.div>
 
-      {/* Services Section */}
       <motion.div className="py-20 bg-white" initial={{ opacity: 0, y: 50 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} viewport={{ once: true }}>
         <div className="max-w-7xl mx-auto px-8">
           <div className="text-center mb-16">
@@ -275,7 +261,7 @@ const DesktopVersion = ({ showSearchOptions, setShowSearchOptions, handlePetType
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {services.map((service, index) => (
-              <motion.div key={index} onClick={() => navigate(service.route)} className="bg-white rounded-3xl p-8 shadow-lg border border-violet-100 hover:shadow-xl transition-all duration-300 cursor-pointer group" whileHover={{ scale: 1.03, y: -10 }} whileTap={{ scale: 0.97 }} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: index * 0.2 }} viewport={{ once: true }}>
+              <motion.div key={index} onClick={() => navigate(service.route, { state: service.state })} className="bg-white rounded-3xl p-8 shadow-lg border border-violet-100 hover:shadow-xl transition-all duration-300 cursor-pointer group" whileHover={{ scale: 1.03, y: -10 }} whileTap={{ scale: 0.97 }} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: index * 0.2 }} viewport={{ once: true }}>
                 <div className="w-20 h-20 rounded-full bg-gradient-to-r from-violet-400 to-indigo-400 flex items-center justify-center text-white text-3xl mb-6 mx-auto group-hover:scale-110 transition-transform duration-300">{service.icon}</div>
                 <h3 className="text-2xl font-bold text-slate-800 mb-4 text-center">{service.title}</h3>
                 <p className="text-gray-600 mb-4 text-center">{service.details}</p>
@@ -291,15 +277,12 @@ const DesktopVersion = ({ showSearchOptions, setShowSearchOptions, handlePetType
           </div>
         </div>
       </motion.div>
-
-      {/* ... other desktop sections would follow the same pattern ... */}
     </div>
   );
 };
 
 
-// --- PARENT COMPONENT: Home ---
-// Manages state and renders the correct child component.
+
 const Home = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("services");
@@ -316,8 +299,7 @@ const Home = () => {
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
-  // Use useCallback to memoize the handler function.
-  // This prevents it from being re-created on every render, which is a performance best practice.
+ 
   const handlePetTypeSelect = useCallback((petType) => {
     if (petType === "dog") {
       navigate("/dog-resources");
@@ -329,13 +311,11 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-violet-50 relative overflow-hidden">
-      {/* Floating Background Elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div className="absolute top-10 right-10 w-20 h-20 bg-violet-200 rounded-full opacity-20" animate={{ scale: [1, 1.2, 1], rotate: [0, 180, 360] }} transition={{ duration: 20, repeat: Infinity, ease: "linear" }} />
         <motion.div className="absolute bottom-20 left-5 w-16 h-16 bg-indigo-200 rounded-full opacity-25" animate={{ y: [0, -20, 0], x: [0, 10, 0] }} transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }} />
       </div>
 
-      {/* Render Mobile or Desktop Version and pass the necessary props */}
       {isDesktop
         ? <DesktopVersion
           showSearchOptions={showSearchOptions}

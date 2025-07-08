@@ -9,6 +9,13 @@ const Footer = () => {
     return null;
   }
 
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
+
   return (
     <footer className="bg-lavender-100 text-lavender-700 border-t border-lavender-200 py-6 px-4 sm:px-6 lg:px-8 shadow-soft-md">
       <div className="max-w-7xl mx-auto">
@@ -153,13 +160,14 @@ const Footer = () => {
             &copy; 2025 Pawppy. All rights reserved.
           </p>
           <div className="flex space-x-6">
-            <Link
-              to="#"
-              className="text-lavender-400 hover:text-lavender-600 text-sm"
+            <div
+              className="text-lavender-400 hover:text-lavender-600 text-sm cu"
+              onClick={scrollToTop}
+
             >
               <span className="sr-only">Download App</span>
               <CircleArrowUp className="w-6 h-6" />
-            </Link>
+            </div>
           </div>
         </div>
       </div>

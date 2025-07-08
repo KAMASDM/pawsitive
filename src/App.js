@@ -4,10 +4,6 @@ import Home from "./components/Home/Home";
 import Login from "./components/Login/Login";
 import Header from "./components/Header/Header";
 import Profile from "./components/Profile/Profile";
-import DogResources from "./components/Resources/DogResources";
-import CatResources from "./components/Resources/CatResources";
-import ResourceList from "./components/Resources/ResourceList/ResourceList";
-import ResourceDetail from "./components/Resources/ResourceDetail/ResourceDetail";
 import NotFound from "./components/NotFound/NotFound";
 import NearbyMates from "./components/NearbyMates/NearbyMates";
 import AdoptPet from "./components/AdoptPet/AdoptPet";
@@ -23,8 +19,24 @@ import TermsAndConditions from "./components/TermsAndConditions/TermsAndConditio
 import CookiePolicy from "./components/CookiePolicy/CookiePolicy";
 import Blogs from "./components/Blog/Blogs";
 import BlogDetail from "./components/Blog/BlogDetail";
+import ResourcesPage from "./components/Resources/Resources";
+import { useEffect } from "react";
+
+
+
 
 function App() {
+
+  useEffect(() => {
+    if (!window.google) {
+      const script = document.createElement("script");
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}&libraries=places`;
+      script.async = true;
+      script.defer = true;
+      document.body.appendChild(script);
+    }
+  }, []);
+
   return (
     <div>
       <ScrollToTop />
@@ -41,51 +53,13 @@ function App() {
                 </PR>
               }
             />
-            <Route
-              path="/dog-resources"
-              element={
-                <PR>
-                  <DogResources />
-                </PR>
-              }
-            />
-            <Route
-              path="/resources/:category"
-              element={
-                <PR>
-                  <ResourceList />
-                </PR>
-              }
-            />
-            <Route
-              path="/cat-resources"
-              element={
-                <PR>
-                  <CatResources />
-                </PR>
-              }
-            />
+         
+   
             <Route
               path="/profile"
               element={
                 <PR>
                   <Profile />
-                </PR>
-              }
-            />
-            <Route
-              path="/resource-details/:resourceId"
-              element={
-                <PR>
-                  <ResourceDetail />
-                </PR>
-              }
-            />
-            <Route
-              path="/map/:category"
-              element={
-                <PR>
-                  <ResourceList viewMode="map" />
                 </PR>
               }
             />
@@ -102,6 +76,14 @@ function App() {
               element={
                 <PR>
                   <PetDetail />
+                </PR>
+              }
+            />
+            <Route
+              path="/resource"
+              element={
+                <PR>
+                  <ResourcesPage />
                 </PR>
               }
             />
