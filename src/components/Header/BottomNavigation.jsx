@@ -3,6 +3,9 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { auth } from "../../firebase"; // Ensure this path is correct
 import { FiHome, FiUser, FiLogOut, } from "react-icons/fi";
 import { FaFile } from "react-icons/fa";
+import { BsGrid } from "react-icons/bs";
+
+
 
 const BottomNavigation = () => {
   const location = useLocation();
@@ -16,21 +19,21 @@ const BottomNavigation = () => {
   const menus = [
 
     { name: "Blogs", icon: <FaFile />, path: "/blogs" },
-    { name: "Resource", icon: <FiHome />, path: "/resource" },
+    { name: "Resource", icon: <BsGrid />, path: "/resource" },
     { name: "Home", icon: <FiHome />, path: "/dashboard" },
     { name: "Profile", icon: <FiUser />, path: "/profile" },
     { name: "Logout", icon: <FiLogOut />, path: "/", onClick: handleLogout },
   ];
 
-  const { pathname } = location; 
-  const [activeMenu, setActiveMenu] = useState(2); 
+  const { pathname } = location;
+  const [activeMenu, setActiveMenu] = useState(2);
 
   useEffect(() => {
-    
-    if (pathname === "/dog-resources") {
+
+    if (pathname === "/blogs") {
       setActiveMenu(0);
     }
-    else if (pathname === "/cat-resources") {
+    else if (pathname === "/resource") {
       setActiveMenu(1);
     }
     else if (pathname === "/dashboard") {

@@ -9,7 +9,7 @@ const SkeletonLoader = ({
     return (
       <div className="animate-pulse">
         <div
-          className={`bg-${themeColor}-300 h-32 w-full rounded-t-lg mb-4`}
+          className={`bg-${themeColor}-300 h-full w-full rounded-t-lg mb-4`}
         ></div>
         <div className="bg-gray-200 h-64 w-full mb-6"></div>
         <div className="px-6">

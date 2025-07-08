@@ -73,8 +73,8 @@ const VaccinationDialog = ({
 
   const filteredVaccinations = vaccineSearch.trim()
     ? getVaccinationList().filter((v) =>
-        v.toLowerCase().includes(vaccineSearch.toLowerCase())
-      )
+      v.toLowerCase().includes(vaccineSearch.toLowerCase())
+    )
     : getVaccinationList();
 
   const handleVaccinationSelect = (vaccination) => {
@@ -123,7 +123,7 @@ const VaccinationDialog = ({
     const newDate = e.target.value ? new Date(e.target.value) : null;
     setCurrentVaccination({
       ...currentVaccination,
-      date: newDate,
+      date: newDate.toDateString(),
     });
   };
 
@@ -131,7 +131,7 @@ const VaccinationDialog = ({
     const newDate = e.target.value ? new Date(e.target.value) : null;
     setCurrentVaccination({
       ...currentVaccination,
-      nextDue: newDate,
+      nextDue: newDate.toDateString(),
     });
   };
 
@@ -175,26 +175,23 @@ const VaccinationDialog = ({
                   <button
                     type="button"
                     onClick={() => setVaccineDropdownOpen(!vaccineDropdownOpen)}
-                    className={`w-full px-4 py-2.5 rounded-lg border ${
-                      !petType || !["dog", "cat"].includes(petType)
-                        ? "border-gray-200 bg-gray-100 cursor-not-allowed"
-                        : "border-lavender-200 bg-white hover:border-lavender-400"
-                    } text-left flex items-center justify-between transition-colors`}
+                    className={`w-full px-4 py-2.5 rounded-lg border ${!petType || !["dog", "cat"].includes(petType)
+                      ? "border-gray-200 bg-gray-100 cursor-not-allowed"
+                      : "border-lavender-200 bg-white hover:border-lavender-400"
+                      } text-left flex items-center justify-between transition-colors`}
                     disabled={
                       !petType || !["dog", "cat"].includes(petType) || loading
                     }
                   >
                     <span
-                      className={`${
-                        selectedVaccine ? "text-gray-900" : "text-gray-500"
-                      }`}
+                      className={`${selectedVaccine ? "text-gray-900" : "text-gray-500"
+                        }`}
                     >
                       {selectedVaccine || "Select vaccination type"}
                     </span>
                     <FiChevronDown
-                      className={`text-gray-400 transition-transform ${
-                        vaccineDropdownOpen ? "rotate-180" : ""
-                      }`}
+                      className={`text-gray-400 transition-transform ${vaccineDropdownOpen ? "rotate-180" : ""
+                        }`}
                     />
                   </button>
                   <AnimatePresence>
@@ -225,11 +222,10 @@ const VaccinationDialog = ({
                                 key={vaccine}
                                 type="button"
                                 onClick={() => handleVaccinationSelect(vaccine)}
-                                className={`w-full text-left px-3 py-2 rounded-md text-sm hover:bg-lavender-50 transition-colors ${
-                                  selectedVaccine === vaccine
-                                    ? "bg-lavender-100 text-lavender-900 font-medium"
-                                    : "text-gray-700"
-                                }`}
+                                className={`w-full text-left px-3 py-2 rounded-md text-sm hover:bg-lavender-50 transition-colors ${selectedVaccine === vaccine
+                                  ? "bg-lavender-100 text-lavender-900 font-medium"
+                                  : "text-gray-700"
+                                  }`}
                               >
                                 <div className="flex items-center">
                                   {selectedVaccine === vaccine && (
@@ -247,11 +243,10 @@ const VaccinationDialog = ({
                           <button
                             type="button"
                             onClick={() => handleVaccinationSelect("Other")}
-                            className={`w-full text-left px-3 py-2 rounded-md text-sm mt-2 border-t border-lavender-100 pt-3 hover:bg-lavender-50 transition-colors ${
-                              selectedVaccine === "Other"
-                                ? "bg-lavender-100 text-lavender-900 font-medium"
-                                : "text-gray-700"
-                            }`}
+                            className={`w-full text-left px-3 py-2 rounded-md text-sm mt-2 border-t border-lavender-100 pt-3 hover:bg-lavender-50 transition-colors ${selectedVaccine === "Other"
+                              ? "bg-lavender-100 text-lavender-900 font-medium"
+                              : "text-gray-700"
+                              }`}
                           >
                             <div className="flex items-center">
                               {selectedVaccine === "Other" && (
@@ -359,13 +354,12 @@ const VaccinationDialog = ({
                     !currentVaccination?.date ||
                     loading
                   }
-                  className={`px-4 py-2 rounded-lg flex items-center justify-center min-w-24 ${
-                    !currentVaccination?.name ||
+                  className={`px-4 py-2 rounded-lg flex items-center justify-center min-w-24 ${!currentVaccination?.name ||
                     !currentVaccination?.date ||
                     loading
-                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                      : "bg-lavender-600 hover:bg-lavender-700 text-white"
-                  } transition-colors`}
+                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    : "bg-lavender-600 hover:bg-lavender-700 text-white"
+                    } transition-colors`}
                 >
                   {loading ? (
                     <>

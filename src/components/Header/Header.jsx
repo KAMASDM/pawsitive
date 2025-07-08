@@ -6,6 +6,8 @@ import BottomNavigation from "./BottomNavigation";
 import { get, ref } from "firebase/database";
 import { FiHome, FiUser, FiLogOut, FiMenu, FiX, FiBell } from "react-icons/fi";
 import { FaFile } from "react-icons/fa";
+import { BsGrid } from "react-icons/bs";
+
 
 const Header = () => {
   const navigate = useNavigate();
@@ -166,7 +168,7 @@ const Header = () => {
               </NavLink>
 
               <NavLink to="/resource">
-                <FiUser className="mr-1" /> Resources
+                <BsGrid className="mr-1" /> Resources
               </NavLink>
               <NavLink to="/profile">
                 <FiUser className="mr-1" /> Profile
@@ -226,14 +228,14 @@ const Header = () => {
               >
                 <FiHome className="mr-2" /> Home
               </MobileNavLink>
-           
+
 
 
 
 
 
               <MobileNavLink to="/resource" onClick={() => setIsMenuOpen(false)}>
-                <FiUser className="mr-2" /> Resources
+                <BsGrid className="mr-2" /> Resources
               </MobileNavLink>
               <MobileNavLink to="/profile" onClick={() => setIsMenuOpen(false)}>
                 <FiUser className="mr-2" /> Profile
