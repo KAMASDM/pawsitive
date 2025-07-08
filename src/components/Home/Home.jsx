@@ -299,7 +299,7 @@ const Home = () => {
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
- 
+
   const handlePetTypeSelect = useCallback((petType) => {
     if (petType === "dog") {
       navigate("/dog-resources");
@@ -311,7 +311,7 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-violet-50 relative overflow-hidden">
-       <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div className="absolute top-10 right-10 w-20 h-20 bg-violet-200 rounded-full opacity-20" animate={{ scale: [1, 1.2, 1], rotate: [0, 180, 360] }} transition={{ duration: 20, repeat: Infinity, ease: "linear" }} />
         <motion.div className="absolute bottom-20 left-5 w-16 h-16 bg-indigo-200 rounded-full opacity-25" animate={{ y: [0, -20, 0], x: [0, 10, 0] }} transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }} />
       </div>
