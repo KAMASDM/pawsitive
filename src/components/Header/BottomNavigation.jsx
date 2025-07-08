@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { auth } from "../../firebase";
-import { FiHome, FiUser, FiLogOut } from "react-icons/fi";
-import { FaDog, FaCat, FaFile } from "react-icons/fa";
+import { auth } from "../../firebase"; // Ensure this path is correct
+import { FiHome, FiUser, FiLogOut, } from "react-icons/fi";
+import { FaFile } from "react-icons/fa";
 
 const BottomNavigation = () => {
   const location = useLocation();
@@ -13,80 +13,76 @@ const BottomNavigation = () => {
     navigate("/");
   };
 
-  const isActive = (path) => location.pathname === path;
+  const menus = [
+
+    { name: "Blogs", icon: <FaFile />, path: "/blogs" },
+    { name: "Resource", icon: <FiHome />, path: "/resource" },
+    { name: "Home", icon: <FiHome />, path: "/dashboard" },
+    { name: "Profile", icon: <FiUser />, path: "/profile" },
+    { name: "Logout", icon: <FiLogOut />, path: "/", onClick: handleLogout },
+  ];
+
+  const { pathname } = location; 
+  const [activeMenu, setActiveMenu] = useState(2); 
+
+  useEffect(() => {
+    
+    if (pathname === "/dog-resources") {
+      setActiveMenu(0);
+    }
+    else if (pathname === "/cat-resources") {
+      setActiveMenu(1);
+    }
+    else if (pathname === "/dashboard") {
+      setActiveMenu(2);
+    }
+    else if (pathname === "/profile") {
+      setActiveMenu(3);
+    }
+    else {
+      setActiveMenu(-1);
+    }
+  }, [pathname]);
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-lavender-900 shadow-lg z-50 md:hidden">
-      <div className="grid grid-cols-6 h-16">
-        <Link
-          to="/dashboard"
-          className={`flex flex-col items-center justify-center transition-colors ${
-            isActive("/")
-              ? "text-white bg-lavender-700"
-              : "text-lavender-200 hover:text-white hover:bg-lavender-800"
-          }`}
-          aria-label="Home"
-        >
-          <FiHome className="text-lg" />
-          <span className="text-xs mt-0.5">Home</span>
-        </Link>
-        <Link
-          to="/dog-resources"
-          className={`flex flex-col items-center justify-center transition-colors ${
-            isActive("/dog-resources")
-              ? "text-white bg-lavender-700"
-              : "text-lavender-200 hover:text-white hover:bg-lavender-800"
-          }`}
-          aria-label="Dog Resources"
-        >
-          <FaDog className="text-lg" />
-          <span className="text-xs mt-0.5">Dogs</span>
-        </Link>
-        <Link
-          to="/cat-resources"
-          className={`flex flex-col items-center justify-center transition-colors ${
-            isActive("/cat-resources")
-              ? "text-white bg-lavender-700"
-              : "text-lavender-200 hover:text-white hover:bg-lavender-800"
-          }`}
-          aria-label="Cat Resources"
-        >
-          <FaCat className="text-lg" />
-          <span className="text-xs mt-0.5">Cats</span>
-        </Link>
-        <Link
-          to="/profile"
-          className={`flex flex-col items-center justify-center transition-colors ${
-            isActive("/profile")
-              ? "text-white bg-lavender-700"
-              : "text-lavender-200 hover:text-white hover:bg-lavender-800"
-          }`}
-          aria-label="Profile"
-        >
-          <FiUser className="text-lg" />
-          <span className="text-xs mt-0.5">Profile</span>
-        </Link>
-        <Link
-          to="/blogs"
-          className={`flex flex-col items-center justify-center transition-colors ${
-            isActive("/blogs")
-              ? "text-white bg-lavender-700"
-              : "text-lavender-200 hover:text-white hover:bg-lavender-800"
-          }`}
-          aria-label="Resources"
-        >
-          <FaFile className="text-lg" />
-          <span className="text-xs mt-0.5">Blogs</span>
-        </Link>
-        <button
-          onClick={handleLogout}
-          className="flex flex-col items-center justify-center text-lavender-200 hover:text-white hover:bg-lavender-800 transition-colors"
-          aria-label="Logout"
-        >
-          <FiLogOut className="text-lg" />
-          <span className="text-xs mt-0.5">Logout</span>
-        </button>
-      </div>
+    <div className="fixed bottom-0 left-0 w-full md:hidden h-[70px] z-50">
+      <ul className="w-full flex justify-between items-center bg-lavender-700 text-white h-full shadow-lg">
+        {menus.map((menu, index) => (
+          <li
+            className={`w-full h-full flex items-center justify-center text-center ${activeMenu === index ? "bg-lavender-800" : ""
+              }`}
+            key={index}
+          >
+            <Link
+              onClick={() => {
+                if (menu.name !== "Logout") {
+                  setActiveMenu(index);
+                }
+                menu.onClick && menu.onClick();
+              }}
+              to={menu.path}
+              className={`${activeMenu === index ? "gap-[6px]" : "gap-1"
+                } flex flex-col items-center justify-center text-center h-full w-full`}
+            >
+              <span
+                className={`${activeMenu === index ? "text-2xl" : "text-xl"
+                  }`}
+              >
+                {menu.icon}
+              </span>
+              <span
+                className={`${activeMenu === index
+                  ? "text-sm bg-white text-lavender-600 px-2 mt-1 rounded-sm"
+                  : "text-xs"
+                  }`}
+              >
+                {menu.name}
+              </span>
+            </Link>
+          </li>
+        ))}
+        <div className="indicator"></div>
+      </ul>
     </div>
   );
 };
