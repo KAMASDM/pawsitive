@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
 import { auth, database } from "../../firebase";
-import { ref, set, get, update, remove } from "firebase/database";
+import { ref, set, get, update } from "firebase/database";
 import {
   FiPlus,
   FiMail,
@@ -548,20 +547,20 @@ const Profile = () => {
     }
   }, [user, currentPet, isEditMode]);
 
-  const handleDeletePet = useCallback(
-    async (petId) => {
-      try {
-        const petRef = ref(database, `userPets/${user.uid}/${petId}`);
-        await remove(petRef);
+  // const handleDeletePet = useCallback(
+  //   async (petId) => {
+  //     try {
+  //       const petRef = ref(database, `userPets/${user.uid}/${petId}`);
+  //       await remove(petRef);
 
-        setPets((prevPets) => prevPets.filter((pet) => pet.id !== petId));
-      } catch (error) {
-        console.error("Error deleting pet:", error);
-        alert("Failed to delete pet. Please try again.");
-      }
-    },
-    [user]
-  );
+  //       setPets((prevPets) => prevPets.filter((pet) => pet.id !== petId));
+  //     } catch (error) {
+  //       console.error("Error deleting pet:", error);
+  //       alert("Failed to delete pet. Please try again.");
+  //     }
+  //   },
+  //   [user]
+  // );
 
   const handleAddVaccination = useCallback(() => {
     setCurrentVaccination({
@@ -689,55 +688,55 @@ const Profile = () => {
     [user]
   );
 
-  const handleOpenMessageDialog = useCallback(
-    (request) => {
-      const conversationId = `mating_${request.id}`;
+  // const handleOpenMessageDialog = useCallback(
+  //   (request) => {
+  //     const conversationId = `mating_${request.id}`;
 
-      const senderPet = pets.find(
-        (pet) =>
-          pet.id ===
-          (request.direction === "incoming"
-            ? request.receiverPetId
-            : request.senderPetId)
-      );
+  //     const senderPet = pets.find(
+  //       (pet) =>
+  //         pet.id ===
+  //         (request.direction === "incoming"
+  //           ? request.receiverPetId
+  //           : request.senderPetId)
+  //     );
 
-      setCurrentMessage({
-        text: "",
-        recipientId:
-          request.direction === "incoming"
-            ? request.senderId
-            : request.receiverId,
-        recipientName:
-          request.direction === "incoming"
-            ? request.senderName
-            : request.receiverName,
-        petId:
-          request.direction === "incoming"
-            ? request.receiverPetId
-            : request.senderPetId,
-        receiverPetId:
-          request.direction === "incoming"
-            ? request.senderPetId
-            : request.receiverPetId,
-        matingRequestId: request.id,
-        conversationId: conversationId,
-        senderPet: senderPet,
-        receiverPet: {
-          name:
-            request.direction === "incoming"
-              ? request.senderPetName
-              : request.receiverPetName,
-          image:
-            request.direction === "incoming"
-              ? request.senderPetImage
-              : request.receiverPetImage,
-        },
-      });
+  //     setCurrentMessage({
+  //       text: "",
+  //       recipientId:
+  //         request.direction === "incoming"
+  //           ? request.senderId
+  //           : request.receiverId,
+  //       recipientName:
+  //         request.direction === "incoming"
+  //           ? request.senderName
+  //           : request.receiverName,
+  //       petId:
+  //         request.direction === "incoming"
+  //           ? request.receiverPetId
+  //           : request.senderPetId,
+  //       receiverPetId:
+  //         request.direction === "incoming"
+  //           ? request.senderPetId
+  //           : request.receiverPetId,
+  //       matingRequestId: request.id,
+  //       conversationId: conversationId,
+  //       senderPet: senderPet,
+  //       receiverPet: {
+  //         name:
+  //           request.direction === "incoming"
+  //             ? request.senderPetName
+  //             : request.receiverPetName,
+  //         image:
+  //           request.direction === "incoming"
+  //             ? request.senderPetImage
+  //             : request.receiverPetImage,
+  //       },
+  //     });
 
-      setOpenMessageDialog(true);
-    },
-    [pets]
-  );
+  //     setOpenMessageDialog(true);
+  //   },
+  //   [pets]
+  // );
 
   useEffect(() => {
     if (user) {
@@ -848,6 +847,7 @@ const Profile = () => {
           receiverPet={currentMessage.receiverPet}
           matingRequestId={currentMessage.matingRequestId}
           tabValue={tabValue}
+          setMessage={setCurrentMessage}
         />
       )}
     </>
