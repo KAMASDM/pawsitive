@@ -1,9 +1,8 @@
 import React, { useEffect, useState, useCallback, memo, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
 import { auth, database } from "../../firebase";
 import { ref, set, get, update, remove } from "firebase/database";
-import { FiPlus, FiMail, FiPhone } from "react-icons/fi";
+import { FiMail, FiPhone } from "react-icons/fi";
 import useResponsive from "../../hooks/useResponsive";
 import { FaPlus, FaPaw, FaHeart, FaCommentDots } from "react-icons/fa";
 import {
@@ -14,8 +13,6 @@ import {
   DesktopPetsSection as DesktopPetsSectionComponent,
   RequestsSection as RequestsSectionComponent,
   DesktopRequestsSection as DesktopRequestsSectionComponent,
-  MessagesSection as MessagesSectionComponent,
-  DesktopMessagesSection as DesktopMessagesSectionComponent,
 } from "./components";
 import SkeletonLoader from "../Loaders/SkeletonLoader";
 import ConversationsList from "./components/ConversationsList";
@@ -25,7 +22,6 @@ const PetsSection = memo(PetsSectionComponent);
 const DesktopPetsSection = memo(DesktopPetsSectionComponent);
 const RequestsSection = memo(RequestsSectionComponent);
 const DesktopRequestsSection = memo(DesktopRequestsSectionComponent);
-const MessagesSection = memo(MessagesSectionComponent);
 const ConversationsListSection = memo(ConversationsList);
 
 // --- Child Components for Mobile/Desktop Views ---
@@ -48,7 +44,6 @@ const MobileVersion = ({ user, pets, matingRequests, chats, activeTab, setActive
       <div className="grid grid-cols-3 gap-4 pt-4 border-t border-violet-100">
         <div className="text-center"><div className="text-lg font-bold text-slate-800">{pets.length}</div><div className="text-xs text-gray-600">Pets</div></div>
         <div className="text-center"><div className="text-lg font-bold text-slate-800">{matingRequests.length}</div><div className="text-xs text-gray-600">Requests</div></div>
-        <div className="text-center"><div className="text-lg font-bold text-slate-800">{chats.length}</div><div className="text-xs text-gray-600">Messages</div></div>
       </div>
     </motion.div>
     <motion.button onClick={handleAddPet} className="w-full flex items-center justify-center gap-2 py-3 mb-6 bg-gradient-to-r from-violet-400 to-indigo-400 text-white font-semibold rounded-xl shadow-md transition-all duration-300 hover:shadow-lg" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}><FaPlus />Add a New Pet</motion.button>
@@ -72,7 +67,7 @@ const MobileVersion = ({ user, pets, matingRequests, chats, activeTab, setActive
       <AnimatePresence mode="wait">
         {activeTab === "pets" && (<PetsSection key="pets" pets={pets} onAddPet={handleAddPet} onEditPet={handleEditPet} onDeletePet={handleDeletePet} />)}
         {activeTab === "requests" && (<RequestsSection key="requests" requests={matingRequests} onAccept={handleAcceptRequest} onDecline={handleDeclineRequest} />)}
-        {activeTab === "messages" && <ConversationsListSection key="messages" chats={chats} onOpenConversation={handleOpenMessageDialog} />}
+        {activeTab === "messages" && <ConversationsListSection key="messages" onOpenConversation={handleOpenMessageDialog} />}
       </AnimatePresence>
     </motion.div>
   </div>
@@ -98,11 +93,9 @@ const DesktopVersion = ({ user, pets, matingRequests, chats, activeTab, setActiv
           <div className="flex gap-8">
             <div className="text-center"><div className="text-2xl font-bold text-slate-800">{pets.length}</div><div className="text-sm text-gray-600">Pets</div></div>
             <div className="text-center"><div className="text-2xl font-bold text-slate-800">{matingRequests.length}</div><div className="text-sm text-gray-600">Requests</div></div>
-            <div className="text-center"><div className="text-2xl font-bold text-slate-800">{chats.length}</div><div className="text-sm text-gray-600">Messages</div></div>
           </div>
         </div>
       </motion.div>
-      {/* Desktop Tab Navigation */}
       <motion.div className="mb-8" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}>
         <div className="bg-white rounded-2xl p-3 shadow-md border border-violet-100">
           <div className="flex justify-center gap-2">
@@ -117,12 +110,11 @@ const DesktopVersion = ({ user, pets, matingRequests, chats, activeTab, setActiv
           </div>
         </div>
       </motion.div>
-      {/* Desktop Content */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.4 }}>
         <AnimatePresence mode="wait">
           {activeTab === "pets" && (<DesktopPetsSection key="pets" pets={pets} onAddPet={handleAddPet} onEditPet={handleEditPet} onDeletePet={handleDeletePet} />)}
           {activeTab === "requests" && (<DesktopRequestsSection key="requests" requests={matingRequests} onAccept={handleAcceptRequest} onDecline={handleDeclineRequest} />)}
-          {activeTab === "messages" && (<ConversationsListSection key="messages" chats={chats} onOpenConversation={handleOpenMessageDialog} />)}
+          {activeTab === "messages" && (<ConversationsListSection key="messages" onOpenConversation={handleOpenMessageDialog} />)}
         </AnimatePresence>
       </motion.div>
     </div>
@@ -137,7 +129,6 @@ const Profile = () => {
   const user = auth.currentUser;
 
   const [pets, setPets] = useState([]);
-  const [chats, setChats] = useState([]);
   const [activeTab, setActiveTab] = useState("pets");
   const [matingRequests, setMatingRequests] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -321,13 +312,11 @@ const Profile = () => {
     setOpenMessageDialog(true);
   }, []);
 
-  // --- Initial Data Load ---
   useEffect(() => {
     if (user) {
       setIsLoading(true);
       const loadData = async () => {
         try {
-          // Step 1: Fetch user's pets
           const userPetsRef = ref(database, `userPets/${user.uid}`);
           const snapshot = await get(userPetsRef);
           const fetchedPets = snapshot.exists()
@@ -335,11 +324,9 @@ const Profile = () => {
             : [];
           setPets(fetchedPets);
 
-          // Step 2: Fetch mating requests, passing the freshly fetched pets
           await fetchMatingRequests(fetchedPets);
 
-          // You would also fetch chats here
-          // await fetchChats();
+
 
         } catch (error) {
           console.error("Error loading profile data:", error);
@@ -352,14 +339,14 @@ const Profile = () => {
     } else {
       setIsLoading(false);
     }
-  }, [user, fetchMatingRequests]); // fetchMatingRequests is stable now
+  }, [user, fetchMatingRequests]);
 
   // --- Tab Configuration ---
   const tabs = useMemo(() => [
     { id: "pets", label: "Pets", icon: <FaPaw />, count: pets.length },
     { id: "requests", label: "Requests", icon: <FaHeart />, count: matingRequests.length, badge: pendingRequestsCount },
-    { id: "messages", label: "Messages", icon: <FaCommentDots />, count: chats.length },
-  ], [pets.length, matingRequests.length, chats.length, pendingRequestsCount]);
+    { id: "messages", label: "Messages", icon: <FaCommentDots /> },
+  ], [pets.length, matingRequests.length, pendingRequestsCount]);
 
   if (isLoading) {
     return <SkeletonLoader type="profile" />;
@@ -368,9 +355,9 @@ const Profile = () => {
   return (
     <>
       {isDesktop ? (
-        <DesktopVersion user={user} pets={pets} matingRequests={matingRequests} chats={chats} activeTab={activeTab} setActiveTab={setActiveTab} tabs={tabs} handleAddPet={handleAddPet} handleEditPet={handleEditPet} handleDeletePet={handleDeletePet} handleAcceptRequest={handleAcceptRequest} handleDeclineRequest={handleDeclineRequest} handleOpenMessageDialog={handleOpenMessageDialog} />
+        <DesktopVersion user={user} pets={pets} matingRequests={matingRequests} activeTab={activeTab} setActiveTab={setActiveTab} tabs={tabs} handleAddPet={handleAddPet} handleEditPet={handleEditPet} handleDeletePet={handleDeletePet} handleAcceptRequest={handleAcceptRequest} handleDeclineRequest={handleDeclineRequest} handleOpenMessageDialog={handleOpenMessageDialog} />
       ) : (
-        <MobileVersion user={user} pets={pets} matingRequests={matingRequests} chats={chats} activeTab={activeTab} setActiveTab={setActiveTab} tabs={tabs} handleAddPet={handleAddPet} handleEditPet={handleEditPet} handleDeletePet={handleDeletePet} handleAcceptRequest={handleAcceptRequest} handleDeclineRequest={handleDeclineRequest} handleOpenMessageDialog={handleOpenMessageDialog} />
+        <MobileVersion user={user} pets={pets} matingRequests={matingRequests} activeTab={activeTab} setActiveTab={setActiveTab} tabs={tabs} handleAddPet={handleAddPet} handleEditPet={handleEditPet} handleDeletePet={handleDeletePet} handleAcceptRequest={handleAcceptRequest} handleDeclineRequest={handleDeclineRequest} handleOpenMessageDialog={handleOpenMessageDialog} />
       )}
 
       {openPetDialog && (<PetDialog open={openPetDialog} onClose={() => setOpenPetDialog(false)} pet={currentPet} setPet={setCurrentPet} onSave={handleSavePet} isEditMode={isEditMode} tabValue={tabValue} onTabChange={(e, val) => setTabValue(val)} onAddVaccination={handleAddVaccination} onEditVaccination={handleEditVaccination} onDeleteVaccination={handleDeleteVaccination} isMobile={!isDesktop} />)}

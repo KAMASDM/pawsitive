@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { FiPlus, FiChevronRight } from "react-icons/fi";
+import {  FiChevronRight } from "react-icons/fi";
 import { FaPaw, FaSyringe } from "react-icons/fa";
 import EmptyState from "./EmptyState"; 
 
