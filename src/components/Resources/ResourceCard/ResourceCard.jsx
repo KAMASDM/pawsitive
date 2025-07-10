@@ -35,8 +35,6 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
   const [showHours, setShowHours] = useState(false);
   const [editComment, setEditComment] = useState(null);
   const [commentDialogOpen, setCommentDialogOpen] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-  const [checkedOpenStatus, setCheckedOpenStatus] = useState(false);
   const [userAuthenticated, setUserAuthenticated] = useState(false);
   const [loading, setLoading] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
@@ -68,56 +66,6 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
     return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    if (!resource.hours && !resource.time) {
-      setCheckedOpenStatus(true);
-      return;
-    }
-    const checkIfOpen = () => {
-      const now = new Date();
-      const currentDay = now.toLocaleDateString("en-US", { weekday: "long" });
-      let hoursText = "";
-      if (Array.isArray(resource.hours)) {
-        const todayHours = resource.hours.find((hourStr) =>
-          hourStr.toLowerCase().includes(currentDay.toLowerCase())
-        );
-        hoursText = todayHours || "";
-      } else if (typeof resource.hours === "string") {
-        hoursText = resource.hours;
-      } else if (resource.time) {
-        hoursText = resource.time;
-      }
-      if (!hoursText || hoursText.toLowerCase().includes("closed")) {
-        setIsOpen(false);
-        setCheckedOpenStatus(true);
-        return;
-      }
-      const timeRegex =
-        /(\d{1,2}:\d{2}\s*[APap][Mm])\s*-\s*(\d{1,2}:\d{2}\s*[APap][Mm])/;
-      const match = hoursText.match(timeRegex);
-      if (match) {
-        const openingTime = match[1].trim();
-        const closingTime = match[2].trim();
-        const convertTimeToDate = (timeStr) => {
-          const [time, period] = timeStr.split(/\s+/);
-          const [hours, minutes] = time.split(":");
-          const date = new Date();
-          let hour = parseInt(hours, 10);
-          if (period.toLowerCase() === "pm" && hour < 12) hour += 12;
-          else if (period.toLowerCase() === "am" && hour === 12) hour = 0;
-          date.setHours(hour, parseInt(minutes, 10), 0);
-          return date;
-        };
-        const openTime = convertTimeToDate(openingTime);
-        const closeTime = convertTimeToDate(closingTime);
-        setIsOpen(now >= openTime && now <= closeTime);
-      } else {
-        setIsOpen(false);
-      }
-      setCheckedOpenStatus(true);
-    };
-    checkIfOpen();
-  }, [resource.hours, resource.time]);
 
   const fetchComments = useCallback(async () => {
     if (!resource.place_id) {
@@ -462,12 +410,6 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
             alt={resource.name}
             className="w-full h-full object-cover"
           />
-          {checkedOpenStatus && (
-            <div className="absolute top-2 right-2 bg-white/90 px-2 py-1 rounded-full text-xs font-medium flex items-center">
-              <span className={`w-2 h-2 rounded-full mr-1 ${isOpen ? "bg-green-500 animate-pulse" : "bg-red-500"}`}></span>
-              {isOpen ? "Open" : "Closed"}
-            </div>
-          )}
         </div>
 
         {/* Details Section Below Image */}

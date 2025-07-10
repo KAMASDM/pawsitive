@@ -41,7 +41,7 @@ const MobileVersion = ({ user, pets, matingRequests, chats, activeTab, setActive
         </div>
       </div>
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 pt-4 border-t border-violet-100">
+      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-violet-100">
         <div className="text-center"><div className="text-lg font-bold text-slate-800">{pets.length}</div><div className="text-xs text-gray-600">Pets</div></div>
         <div className="text-center"><div className="text-lg font-bold text-slate-800">{matingRequests.length}</div><div className="text-xs text-gray-600">Requests</div></div>
       </div>
@@ -73,7 +73,7 @@ const MobileVersion = ({ user, pets, matingRequests, chats, activeTab, setActive
   </div>
 );
 
-const DesktopVersion = ({ user, pets, matingRequests, chats, activeTab, setActiveTab, tabs, handleAddPet, handleEditPet, handleDeletePet, handleAcceptRequest, handleDeclineRequest, handleOpenMessageDialog }) => (
+const DesktopVersion = ({ user, pets, matingRequests, activeTab, setActiveTab, tabs, handleAddPet, handleEditPet, handleDeletePet, handleAcceptRequest, handleDeclineRequest, handleOpenMessageDialog }) => (
   <div className="min-h-screen bg-gradient-to-br from-slate-50 to-violet-50 p-8">
     <div className="max-w-7xl mx-auto">
       {/* Header */}
@@ -203,7 +203,7 @@ const Profile = () => {
       id: Date.now().toString(), name: "", type: "dog", breed: "", gender: "", age: "",
       weight: "", color: "", description: "", image: "", availableForMating: false,
       availableForAdoption: false, medical: { conditions: [], allergies: [], medications: "" },
-      vaccinations: [], petOwner: user.displayName,
+      vaccinations: [], petOwner: user.displayName, type: ""
     });
     setIsEditMode(false);
     setOpenPetDialog(true);

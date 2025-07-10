@@ -270,7 +270,6 @@ const ConversationsList = ({ onOpenConversation }) => {
                   variants={item}
                   whileHover={{ backgroundColor: "rgba(124, 58, 237, 0.05)" }}
                   onClick={() => {
-                    alert("On Click in Conversation List....");
                     onOpenConversation(conversation)
                   }}
                   className="p-4 flex items-start cursor-pointer transition-colors"
