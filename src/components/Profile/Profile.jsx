@@ -200,10 +200,10 @@ const Profile = () => {
 
   const handleAddPet = useCallback(() => {
     setCurrentPet({
-      id: Date.now().toString(), name: "", type: "dog", breed: "", gender: "", age: "",
+      id: Date.now().toString(), name: "", type: "", breed: "", gender: "", age: "",
       weight: "", color: "", description: "", image: "", availableForMating: false,
       availableForAdoption: false, medical: { conditions: [], allergies: [], medications: "" },
-      vaccinations: [], petOwner: user.displayName, type: ""
+      vaccinations: [], petOwner: user.displayName, 
     });
     setIsEditMode(false);
     setOpenPetDialog(true);
