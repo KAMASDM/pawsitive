@@ -2,9 +2,10 @@ import React from "react";
 import { motion } from "framer-motion";
 import { FiPlus } from "react-icons/fi";
 import { FaPaw, FaMedkit, FaSyringe } from "react-icons/fa";
-import EmptyState from "./EmptyState"; // Make sure to create this component as well
+import { Link } from "react-router-dom"; // Make sure you're using react-router-dom
+import EmptyState from "./EmptyState"; // Ensure this component exists
 
-const DesktopPetsSection = ({ pets, onAddPet, onEditPet }) => (
+const DesktopPetsSection = ({ pets, onAddPet, onEditPet, onDeletePet }) => (
   <motion.div
     key="pets"
     initial={{ opacity: 0, x: 20 }}
@@ -17,63 +18,84 @@ const DesktopPetsSection = ({ pets, onAddPet, onEditPet }) => (
         {pets.map((pet, index) => (
           <motion.div
             key={pet.id}
-            className="bg-white rounded-2xl overflow-hidden shadow-lg border border-violet-100 cursor-pointer"
-            whileHover={{ scale: 1.05, y: -5 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => onEditPet(pet)}
+            className="bg-white rounded-2xl overflow-hidden shadow-lg border border-violet-100 flex flex-col justify-between"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
           >
-            <div className="h-48 bg-gradient-to-br from-violet-100 to-indigo-100 relative">
-              {pet.image ? (
-                <img
-                  src={pet.image}
-                  alt={pet.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <FaPaw className="text-violet-400 text-3xl" />
-                </div>
-              )}
+            <div className="cursor-pointer">
+              <div className="h-48 bg-gradient-to-br from-violet-100 to-indigo-100 relative">
+                {pet.image ? (
+                  <img
+                    src={pet.image}
+                    alt={pet.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <FaPaw className="text-violet-400 text-3xl" />
+                  </div>
+                )}
 
-              {/* Status badges */}
-              <div className="absolute top-3 left-3 flex flex-col gap-2">
-                {pet.availableForMating && (
-                  <span className="bg-pink-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-                    💕 Mating
-                  </span>
-                )}
-                {pet.availableForAdoption && (
-                  <span className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-                    🏠 Adoption
-                  </span>
-                )}
+                {/* Status badges */}
+                <div className="absolute top-3 left-3 flex flex-col gap-2">
+                  {pet.availableForMating && (
+                    <span className="bg-pink-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                      💕 Mating
+                    </span>
+                  )}
+                  {pet.availableForAdoption && (
+                    <span className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                      🏠 Adoption
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="p-6">
+                <h3 className="text-xl font-bold text-slate-800 mb-2">
+                  {pet.name}
+                </h3>
+                <div className="text-gray-600 mb-3">
+                  {pet.breed} • {pet.gender} • {pet.age}
+                </div>
+                <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                  {pet.description}
+                </p>
+
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center text-gray-500">
+                    <FaSyringe className="w-4 h-4 mr-1" />
+                    {pet.vaccinations?.length || 0} vaccines
+                  </div>
+                  <div className="flex items-center text-gray-500">
+                    <FaMedkit className="w-4 h-4 mr-1" />
+                    {pet.medical?.conditions?.length || 0} conditions
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="p-6">
-              <h3 className="text-xl font-bold text-slate-800 mb-2">
-                {pet.name}
-              </h3>
-              <div className="text-gray-600 mb-3">
-                {pet.breed} • {pet.gender} • {pet.age}
-              </div>
-              <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                {pet.description}
-              </p>
-
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center text-gray-500">
-                  <FaSyringe className="w-4 h-4 mr-1" />
-                  {pet.vaccinations?.length || 0} vaccines
-                </div>
-                <div className="flex items-center text-gray-500">
-                  <FaMedkit className="w-4 h-4 mr-1" />
-                  {pet.medical?.conditions?.length || 0} conditions
-                </div>
-              </div>
+            {/* Action buttons */}
+            <div className="px-6 pb-4 pt-2 mt-auto flex justify-between items-center border-t border-gray-100">
+              <button
+                onClick={() => onEditPet(pet)}
+                className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+              >
+                Edit
+              </button>
+              <button
+                onClick={() => onDeletePet?.(pet.id)}
+                className="text-red-500 hover:text-red-700 text-sm font-medium"
+              >
+                Delete
+              </button>
+              <Link
+                to={`/petDetails/${pet.id}`}
+                className="text-blue-500 hover:text-blue-700 text-sm font-medium"
+              >
+                View
+              </Link>
             </div>
           </motion.div>
         ))}

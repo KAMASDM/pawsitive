@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { auth } from "../../firebase"; // Ensure this path is correct
-import { FiHome, FiUser, FiLogOut, } from "react-icons/fi";
-import { FaFile } from "react-icons/fa";
+import { FiHome, FiUser, FiLogOut } from "react-icons/fi";
+import { MdQuestionAnswer } from "react-icons/md"; // FAQ icon
 import { BsGrid } from "react-icons/bs";
-
-
 
 const BottomNavigation = () => {
   const location = useLocation();
@@ -17,8 +15,7 @@ const BottomNavigation = () => {
   };
 
   const menus = [
-
-    { name: "Blogs", icon: <FaFile />, path: "/blogs" },
+    { name: "FAQ", icon: <MdQuestionAnswer />, path: "/faq" },
     { name: "Resource", icon: <BsGrid />, path: "/resource" },
     { name: "Home", icon: <FiHome />, path: "/dashboard" },
     { name: "Profile", icon: <FiUser />, path: "/profile" },
@@ -26,24 +23,24 @@ const BottomNavigation = () => {
   ];
 
   const { pathname } = location;
-  const [activeMenu, setActiveMenu] = useState(2);
+  const [activeMenu, setActiveMenu] = useState(2); // Default to Home
 
   useEffect(() => {
-
-    if (pathname === "/blogs") {
-      setActiveMenu(0);
-    }
-    else if (pathname === "/resource") {
-      setActiveMenu(1);
-    }
-    else if (pathname === "/dashboard") {
-      setActiveMenu(2);
-    }
-    else if (pathname === "/profile") {
-      setActiveMenu(3);
-    }
-    else {
-      setActiveMenu(-1);
+    switch (pathname) {
+      case "/faq":
+        setActiveMenu(0);
+        break;
+      case "/resource":
+        setActiveMenu(1);
+        break;
+      case "/dashboard":
+        setActiveMenu(2);
+        break;
+      case "/profile":
+        setActiveMenu(3);
+        break;
+      default:
+        setActiveMenu(-1);
     }
   }, [pathname]);
 
@@ -52,9 +49,9 @@ const BottomNavigation = () => {
       <ul className="w-full flex justify-between items-center bg-lavender-700 text-white h-full shadow-lg">
         {menus.map((menu, index) => (
           <li
+            key={index}
             className={`w-full h-full flex items-center justify-center text-center ${activeMenu === index ? "bg-lavender-800" : ""
               }`}
-            key={index}
           >
             <Link
               onClick={() => {
@@ -67,10 +64,7 @@ const BottomNavigation = () => {
               className={`${activeMenu === index ? "gap-[6px]" : "gap-1"
                 } flex flex-col items-center justify-center text-center h-full w-full`}
             >
-              <span
-                className={`${activeMenu === index ? "text-2xl" : "text-xl"
-                  }`}
-              >
+              <span className={activeMenu === index ? "text-2xl" : "text-xl"}>
                 {menu.icon}
               </span>
               <span
@@ -84,7 +78,6 @@ const BottomNavigation = () => {
             </Link>
           </li>
         ))}
-        <div className="indicator"></div>
       </ul>
     </div>
   );

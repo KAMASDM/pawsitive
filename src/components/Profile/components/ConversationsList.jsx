@@ -81,9 +81,9 @@ const ConversationsList = ({ onOpenConversation }) => {
                   receiverPet = otherPetSnapshot.exists()
                     ? { id: request.receiverPetId, ...otherPetSnapshot.val() }
                     : {
-                        name: request.receiverPetName,
-                        image: request.receiverPetImage,
-                      };
+                      name: request.receiverPetName,
+                      image: request.receiverPetImage,
+                    };
                 } else {
                   const receivedRef = ref(
                     database,
@@ -113,9 +113,9 @@ const ConversationsList = ({ onOpenConversation }) => {
                     senderPet = otherPetSnapshot.exists()
                       ? { id: request.senderPetId, ...otherPetSnapshot.val() }
                       : {
-                          name: request.senderPetName,
-                          image: request.senderPetImage,
-                        };
+                        name: request.senderPetName,
+                        image: request.senderPetImage,
+                      };
                   }
                 }
               }
@@ -226,32 +226,29 @@ const ConversationsList = ({ onOpenConversation }) => {
       <div className="p-4 border-b border-lavender-100 flex items-center gap-2">
         <button
           onClick={() => setActiveFilter("all")}
-          className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
-            activeFilter === "all"
-              ? "bg-lavender-600 text-white"
-              : "bg-lavender-50 text-lavender-800 hover:bg-lavender-100"
-          }`}
+          className={`px-3 py-1.5 rounded-full text-sm transition-colors ${activeFilter === "all"
+            ? "bg-lavender-600 text-white"
+            : "bg-lavender-50 text-lavender-800 hover:bg-lavender-100"
+            }`}
         >
           All
         </button>
         <button
           onClick={() => setActiveFilter("mating")}
-          className={`px-3 py-1.5 rounded-full text-sm transition-colors flex items-center ${
-            activeFilter === "mating"
-              ? "bg-pink-500 text-white"
-              : "bg-pink-50 text-pink-800 hover:bg-pink-100"
-          }`}
+          className={`px-3 py-1.5 rounded-full text-sm transition-colors flex items-center ${activeFilter === "mating"
+            ? "bg-pink-500 text-white"
+            : "bg-pink-50 text-pink-800 hover:bg-pink-100"
+            }`}
         >
           <FiHeart className="mr-1 w-3.5 h-3.5" />
           Mating
         </button>
         <button
           onClick={() => setActiveFilter("adoption")}
-          className={`px-3 py-1.5 rounded-full text-sm transition-colors flex items-center ${
-            activeFilter === "adoption"
-              ? "bg-green-500 text-white"
-              : "bg-green-50 text-green-800 hover:bg-green-100"
-          }`}
+          className={`px-3 py-1.5 rounded-full text-sm transition-colors flex items-center ${activeFilter === "adoption"
+            ? "bg-green-500 text-white"
+            : "bg-green-50 text-green-800 hover:bg-green-100"
+            }`}
         >
           <FaPaw className="mr-1 w-3.5 h-3.5" />
           Adoption
@@ -265,82 +262,86 @@ const ConversationsList = ({ onOpenConversation }) => {
       >
         <AnimatePresence>
           {filteredConversations.length > 0 ? (
-            filteredConversations.map((conversation) => (
-              <motion.div
-                key={conversation.id}
-                variants={item}
-                whileHover={{ backgroundColor: "rgba(124, 58, 237, 0.05)" }}
-                onClick={() => onOpenConversation(conversation)}
-                className="p-4 flex items-start cursor-pointer transition-colors"
-              >
-                <div className="relative mr-4 flex-shrink-0">
-                  <div
-                    className={`w-12 h-12 rounded-full overflow-hidden ${getPetBackground(
-                      conversation.senderPet?.type
-                    )}`}
-                  >
-                    {conversation.senderPet?.image ? (
-                      <img
-                        src={conversation.senderPet.image}
-                        alt={conversation.senderPet.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <FaPaw className="text-lavender-600 w-5 h-5" />
-                      </div>
-                    )}
-                  </div>
-                  <div
-                    className={`absolute -bottom-1 -right-1 w-7 h-7 rounded-full border-2 border-white overflow-hidden ${getPetBackground(
-                      conversation.receiverPet?.type
-                    )}`}
-                  >
-                    {conversation.receiverPet?.image ? (
-                      <img
-                        src={conversation.receiverPet.image}
-                        alt={conversation.receiverPet.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <FaPaw className="text-lavender-600 w-3 h-3" />
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-center mb-1">
-                    <h3 className="font-semibold text-lavender-900 truncate">
-                      {conversation.otherParticipantName}
-                    </h3>
-                    <div className="text-xs text-gray-500 flex items-center ml-2 flex-shrink-0">
-                      <FiClock className="w-3 h-3 mr-1" />
-                      {formatLastMessageTime(conversation.lastMessageTime)}
-                    </div>
-                  </div>
-                  <p className="text-sm text-gray-700 truncate mb-1">
-                    {conversation.lastMessage}
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs text-gray-500">
-                      {conversation.senderPet?.name}
-                      {conversation.receiverPet?.name}
+            filteredConversations.map((conversation) => {
+              console.log("Conversations--------", conversation);
+              return (
+                <motion.div
+                  key={conversation.id}
+                  variants={item}
+                  whileHover={{ backgroundColor: "rgba(124, 58, 237, 0.05)" }}
+                  onClick={() => {
+                    alert("On Click in Conversation List....");
+                    onOpenConversation(conversation)
+                  }}
+                  className="p-4 flex items-start cursor-pointer transition-colors"
+                >
+                  <div className="relative mr-4 flex-shrink-0">
+                    <div
+                      className={`w-12 h-12 rounded-full overflow-hidden ${getPetBackground(
+                        conversation.senderPet?.type
+                      )}`}
+                    >
+                      {conversation.senderPet?.image ? (
+                        <img
+                          src={conversation.senderPet.image}
+                          alt={conversation.senderPet.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <FaPaw className="text-lavender-600 w-5 h-5" />
+                        </div>
+                      )}
                     </div>
                     <div
-                      className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${
-                        conversation.type === "mating"
-                          ? "bg-pink-100 text-pink-800"
-                          : "bg-green-100 text-green-800"
-                      }`}
+                      className={`absolute -bottom-1 -right-1 w-7 h-7 rounded-full border-2 border-white overflow-hidden ${getPetBackground(
+                        conversation.receiverPet?.type
+                      )}`}
                     >
-                      {conversation.type === "mating" ? "Mating" : "Adoption"}
+                      {conversation.receiverPet?.image ? (
+                        <img
+                          src={conversation.receiverPet.image}
+                          alt={conversation.receiverPet.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <FaPaw className="text-lavender-600 w-3 h-3" />
+                        </div>
+                      )}
                     </div>
                   </div>
-                </div>
-                <FiChevronRight className="w-5 h-5 text-gray-400 ml-2 flex-shrink-0 self-center" />
-              </motion.div>
-            ))
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-center mb-1">
+                      <h3 className="font-semibold text-lavender-900 truncate">
+                        {conversation.otherParticipantName}
+                      </h3>
+                      <div className="text-xs text-gray-500 flex items-center ml-2 flex-shrink-0">
+                        <FiClock className="w-3 h-3 mr-1" />
+                        {formatLastMessageTime(conversation.lastMessageTime)}
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-700 truncate mb-1">
+                      {conversation.lastMessage}
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <div className="text-xs text-gray-500">
+                        {conversation.senderPet?.name}
+                        {conversation.receiverPet?.name}
+                      </div>
+                      <div
+                        className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${conversation.type === "mating"
+                          ? "bg-pink-100 text-pink-800"
+                          : "bg-green-100 text-green-800"
+                          }`}
+                      >
+                        {conversation.type === "mating" ? "Mating" : "Adoption"}
+                      </div>
+                    </div>
+                  </div>
+                  <FiChevronRight className="w-5 h-5 text-gray-400 ml-2 flex-shrink-0 self-center" />
+                </motion.div>)
+            })
           ) : (
             <motion.div
               initial={{ opacity: 0 }}
@@ -352,8 +353,8 @@ const ConversationsList = ({ onOpenConversation }) => {
                 {activeFilter === "mating"
                   ? "mating"
                   : activeFilter === "adoption"
-                  ? "adoption"
-                  : ""}{" "}
+                    ? "adoption"
+                    : ""}{" "}
                 conversations found.
               </p>
             </motion.div>

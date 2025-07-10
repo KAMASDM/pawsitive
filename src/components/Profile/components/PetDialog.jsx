@@ -210,6 +210,37 @@ const PetDialog = ({
     });
   };
 
+  const calculateAge = (dobString) => {
+    if (!dobString) return "";
+    const dob = new Date(dobString);
+    const today = new Date();
+
+    if (dob > today) return "Invalid Date";
+
+    let years = today.getFullYear() - dob.getFullYear();
+    let months = today.getMonth() - dob.getMonth();
+
+    if (months < 0 || (months === 0 && today.getDate() < dob.getDate())) {
+      years--;
+      months += 12;
+    }
+
+    if (years === 0 && months === 0) {
+      return "Newborn";
+    }
+
+    const yearText = years > 0 ? `${years} ${years > 1 ? "years" : "year"}` : "";
+    const monthText = months > 0 ? `${months} ${months > 1 ? "months" : "month"}` : "";
+
+    return [yearText, monthText].filter(Boolean).join(", ");
+  };
+
+  const handleDateOfBirthChange = (e) => {
+    const dob = e.target.value;
+    const newAge = calculateAge(dob);
+    setCurrentPet({ ...currentPet, dateOfBirth: dob, age: newAge });
+  };
+
   const handleDeleteVaccinationClick = (index) => {
     setVaccinationToDelete(index);
     setShowDeleteConfirmation(true);
@@ -334,48 +365,42 @@ const PetDialog = ({
                 <button
                   onClick={(e) => handleTabChange(e, 0)}
                   disabled={isSaving}
-                  className={`px-6 py-3 text-sm font-medium flex items-center transition-colors ${
-                    tabValue === 0
-                      ? "text-lavender-700 border-b-2 border-lavender-600"
-                      : "text-gray-500 hover:text-lavender-600 hover:bg-lavender-50"
-                  } disabled:opacity-50`}
+                  className={`px-6 py-3 text-sm font-medium flex items-center transition-colors ${tabValue === 0
+                    ? "text-lavender-700 border-b-2 border-lavender-600"
+                    : "text-gray-500 hover:text-lavender-600 hover:bg-lavender-50"
+                    } disabled:opacity-50`}
                 >
                   <FaPaw
-                    className={`${
-                      tabValue === 0 ? "text-lavender-600" : "text-gray-400"
-                    } mr-2`}
+                    className={`${tabValue === 0 ? "text-lavender-600" : "text-gray-400"
+                      } mr-2`}
                   />
                   General Information
                 </button>
                 <button
                   onClick={(e) => handleTabChange(e, 1)}
                   disabled={isSaving}
-                  className={`px-6 py-3 text-sm font-medium flex items-center transition-colors ${
-                    tabValue === 1
-                      ? "text-lavender-700 border-b-2 border-lavender-600"
-                      : "text-gray-500 hover:text-lavender-600 hover:bg-lavender-50"
-                  } disabled:opacity-50`}
+                  className={`px-6 py-3 text-sm font-medium flex items-center transition-colors ${tabValue === 1
+                    ? "text-lavender-700 border-b-2 border-lavender-600"
+                    : "text-gray-500 hover:text-lavender-600 hover:bg-lavender-50"
+                    } disabled:opacity-50`}
                 >
                   <FaNotesMedical
-                    className={`${
-                      tabValue === 1 ? "text-lavender-600" : "text-gray-400"
-                    } mr-2`}
+                    className={`${tabValue === 1 ? "text-lavender-600" : "text-gray-400"
+                      } mr-2`}
                   />
                   Medical Profile
                 </button>
                 <button
                   onClick={(e) => handleTabChange(e, 2)}
                   disabled={isSaving}
-                  className={`px-6 py-3 text-sm font-medium flex items-center transition-colors ${
-                    tabValue === 2
-                      ? "text-lavender-700 border-b-2 border-lavender-600"
-                      : "text-gray-500 hover:text-lavender-600 hover:bg-lavender-50"
-                  } disabled:opacity-50`}
+                  className={`px-6 py-3 text-sm font-medium flex items-center transition-colors ${tabValue === 2
+                    ? "text-lavender-700 border-b-2 border-lavender-600"
+                    : "text-gray-500 hover:text-lavender-600 hover:bg-lavender-50"
+                    } disabled:opacity-50`}
                 >
                   <FaSyringe
-                    className={`${
-                      tabValue === 2 ? "text-lavender-600" : "text-gray-400"
-                    } mr-2`}
+                    className={`${tabValue === 2 ? "text-lavender-600" : "text-gray-400"
+                      } mr-2`}
                   />
                   Vaccination Records
                 </button>
@@ -503,6 +528,18 @@ const PetDialog = ({
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Date of Birth
+                    </label>
+                    <input
+                      type="date"
+                      value={currentPet?.dateOfBirth || ""}
+                      onChange={handleDateOfBirthChange}
+                      className="w-full px-4 py-2.5 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent disabled:opacity-50"
+                      disabled={isSaving}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       Age
                     </label>
                     <input
@@ -511,9 +548,9 @@ const PetDialog = ({
                       onChange={(e) =>
                         setCurrentPet({ ...currentPet, age: e.target.value })
                       }
-                      placeholder="e.g., 2 years"
+                      placeholder={currentPet?.dateOfBirth ? "Calculated from DOB" : "e.g., 2 years"}
                       className="w-full px-4 py-2.5 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent disabled:opacity-50"
-                      disabled={isSaving}
+                      disabled={isSaving || !!currentPet?.dateOfBirth}
                     />
                   </div>
                   <div>
@@ -563,18 +600,16 @@ const PetDialog = ({
                             disabled={isSaving}
                           />
                           <div
-                            className={`w-10 h-5 rounded-full transition-colors ${
-                              currentPet?.availableForMating
-                                ? "bg-pink-500"
-                                : "bg-gray-300"
-                            }`}
+                            className={`w-10 h-5 rounded-full transition-colors ${currentPet?.availableForMating
+                              ? "bg-pink-500"
+                              : "bg-gray-300"
+                              }`}
                           ></div>
                           <div
-                            className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform ${
-                              currentPet?.availableForMating
-                                ? "translate-x-5"
-                                : ""
-                            }`}
+                            className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform ${currentPet?.availableForMating
+                              ? "translate-x-5"
+                              : ""
+                              }`}
                           ></div>
                         </div>
                         <span className="ml-2 text-gray-700">
@@ -598,18 +633,16 @@ const PetDialog = ({
                             disabled={isSaving}
                           />
                           <div
-                            className={`w-10 h-5 rounded-full transition-colors ${
-                              currentPet?.availableForAdoption
-                                ? "bg-green-500"
-                                : "bg-gray-300"
-                            }`}
+                            className={`w-10 h-5 rounded-full transition-colors ${currentPet?.availableForAdoption
+                              ? "bg-green-500"
+                              : "bg-gray-300"
+                              }`}
                           ></div>
                           <div
-                            className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform ${
-                              currentPet?.availableForAdoption
-                                ? "translate-x-5"
-                                : ""
-                            }`}
+                            className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform ${currentPet?.availableForAdoption
+                              ? "translate-x-5"
+                              : ""
+                              }`}
                           ></div>
                         </div>
                         <span className="ml-2 text-gray-700">
@@ -715,19 +748,18 @@ const PetDialog = ({
                         >
                           {vaccine.nextDue && (
                             <div
-                              className={`absolute top-0 right-0 px-3 py-1 text-xs font-medium rounded-bl-xl ${
-                                status === "overdue"
-                                  ? "bg-red-100 text-red-800"
-                                  : status === "due-soon"
+                              className={`absolute top-0 right-0 px-3 py-1 text-xs font-medium rounded-bl-xl ${status === "overdue"
+                                ? "bg-red-100 text-red-800"
+                                : status === "due-soon"
                                   ? "bg-yellow-100 text-yellow-800"
                                   : "bg-green-100 text-green-800"
-                              }`}
+                                }`}
                             >
                               {status === "overdue"
                                 ? "Overdue"
                                 : status === "due-soon"
-                                ? "Due Soon"
-                                : "Up to Date"}
+                                  ? "Due Soon"
+                                  : "Up to Date"}
                             </div>
                           )}
                           <div className="absolute -left-3 -top-3 w-12 h-12 bg-lavender-600 rounded-full p-2 shadow-md">
@@ -825,11 +857,10 @@ const PetDialog = ({
               <button
                 onClick={handleSaveWithSpinner}
                 disabled={!currentPet?.name || isSaving}
-                className={`px-4 py-2 rounded-lg flex items-center transition-colors ${
-                  !currentPet?.name || isSaving
-                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    : "bg-lavender-600 hover:bg-lavender-700 text-white"
-                }`}
+                className={`px-4 py-2 rounded-lg flex items-center transition-colors ${!currentPet?.name || isSaving
+                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  : "bg-lavender-600 hover:bg-lavender-700 text-white"
+                  }`}
               >
                 {isSaving ? (
                   <>
