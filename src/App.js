@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Route, Routes } from "react-router-dom";
 import Home from "./components/Home/Home";
 import Login from "./components/Login/Login";
@@ -17,16 +17,10 @@ import OurTeam from "./components/OurTeam/OurTeam";
 import PrivacyPolicy from "./components/PrivacyPolicy/PrivacyPolicy";
 import TermsAndConditions from "./components/TermsAndConditions/TermsAndConditions";
 import CookiePolicy from "./components/CookiePolicy/CookiePolicy";
-import Blogs from "./components/Blog/Blogs";
-import BlogDetail from "./components/Blog/BlogDetail";
 import ResourcesPage from "./components/Resources/Resources";
-import { useEffect } from "react";
-
-
-
+import FAQ from "./components/FAQ/FAQ";
 
 function App() {
-
   useEffect(() => {
     if (!window.google) {
       const script = document.createElement("script");
@@ -53,8 +47,14 @@ function App() {
                 </PR>
               }
             />
-
-
+            <Route
+              path="/faq"
+              element={
+                <PR>
+                  <FAQ />
+                </PR>
+              }
+            />
             <Route
               path="/profile"
               element={
@@ -116,22 +116,6 @@ function App() {
               element={
                 <PR>
                   <OurTeam />
-                </PR>
-              }
-            />
-            <Route
-              path="/blogs"
-              element={
-                <PR>
-                  <Blogs />
-                </PR>
-              }
-            />
-            <Route
-              path="/blog/:slug"
-              element={
-                <PR>
-                  <BlogDetail />
                 </PR>
               }
             />

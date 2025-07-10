@@ -71,15 +71,7 @@ const PetsSection = ({ pets, onAddPet, onEditPet }) => (
             </div>
           </motion.div>
         ))}
-        <motion.button
-          onClick={onAddPet}
-          className="w-full bg-gradient-to-r from-violet-100 to-indigo-100 border-2 border-dashed border-violet-300 rounded-2xl p-6 text-center hover:from-violet-200 hover:to-indigo-200 transition-all duration-300"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <FiPlus className="w-6 h-6 text-violet-600 mx-auto mb-2" />
-          <span className="text-violet-700 font-medium">Add New Pet</span>
-        </motion.button>
+
       </div>
     ) : (
       <EmptyState

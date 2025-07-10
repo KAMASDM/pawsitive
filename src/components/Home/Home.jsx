@@ -1,31 +1,43 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { FaSearch, FaHeart, FaDog, FaCat, FaArrowRight } from "react-icons/fa";
+import { FaSearch, FaDog, FaCat, FaArrowRight, FaHeart } from "react-icons/fa";
 import { IoIosArrowForward } from "react-icons/io";
+import { FiActivity, FiHeart as FiHeartEmpty, FiUsers, FiShield } from "react-icons/fi";
 
-const quickActions = [
+// --- Mobile-specific data (Unchanged) ---
+const quickActionsMobile = [
   { icon: "🚨", title: "Emergency", subtitle: "24/7 Care", description: "Round-the-clock emergency veterinary services", color: "from-purple-300 to-purple-400", route: "/resource", state: { category: "all", subCategory: "Health & Wellness" } },
   { icon: "🐾", title: "Adopt", subtitle: "Find Pets", description: "Browse verified pets looking for loving homes", color: "from-violet-300 to-violet-400", route: "/adopt-pets" },
   { icon: "💕", title: "Mates", subtitle: "Find Partner", description: "Connect with nearby pets for responsible breeding", color: "from-indigo-300 to-indigo-400", route: "/nearby-mates" },
   { icon: "🏥", title: "Care", subtitle: "Health Services", description: "Complete healthcare and wellness services", color: "from-slate-300 to-slate-400", route: "/resource", state: { category: "all", subCategory: "Nutrition" } }
 ];
-
-const services = [
-  { icon: "🏥", title: "Emergency Care", description: "24/7 veterinary emergency services", details: "Round-the-clock emergency care with certified veterinarians", badge: "24/7", color: "purple", route: "/resource", stats: "50+ Vets Available", state: { category: "all", subCategory: "Health & Wellness" } },
-  { icon: "🐾", title: "Pet Adoption", description: "Find your perfect companion", details: "Verified pets with health checkups and adoption support", badge: "500+", color: "violet", route: "/resource", stats: "500+ Happy Adoptions", state: { category: "all", subCategory: "Adoption" } },
-  { icon: "💕", title: "Pet Mating", description: "Safe breeding services", details: "Health-verified pets with breed matching services", badge: "Verified", color: "indigo", route: "/nearby-mates", stats: "200+ Successful Matches" }
-];
-
 const adoptionCards = [
   { emoji: "🐶", title: "Adopt a Pet", count: "500+ Pets", color: "from-violet-100 to-purple-200", route: "/adopt-pets" },
   { emoji: "💕", title: "Find Mates", count: "200+ Matches", color: "from-indigo-100 to-violet-200", route: "/nearby-mates" }
 ];
-
 const petResources = [
   { emoji: "🐕", title: "Dog Care", services: "150+ Services", color: "from-purple-100 to-violet-200", route: "/dog-resources" },
   { emoji: "🐈", title: "Cat Care", services: "120+ Services", color: "from-indigo-100 to-purple-200", route: "/cat-resources" }
 ];
+// --- End of mobile-specific data ---
+
+
+// --- DATA FOR DESKTOP WITH ORIGINAL CONTENT AND NEW ICONS/DESIGN ---
+const desktopQuickActions = [
+  { icon: FiActivity, title: "Emergency", description: "Round-the-clock emergency veterinary services", route: "/resource", state: { category: "all", subCategory: "Health & Wellness" } },
+  { icon: FiHeartEmpty, title: "Adopt", description: "Browse verified pets looking for loving homes", route: "/adopt-pets" },
+  { icon: FiUsers, title: "Mates", description: "Connect with nearby pets for responsible breeding", route: "/nearby-mates" },
+  { icon: FiShield, title: "Care", description: "Complete healthcare and wellness services", route: "/resource", state: { category: "all", subCategory: "Nutrition" } }
+];
+
+const desktopServices = [
+  { icon: FiActivity, title: "Emergency Care", details: "Round-the-clock emergency care with certified veterinarians", stat: "50+ Vets Available", route: "/resource", state: { category: "all", subCategory: "Health & Wellness" } },
+  { icon: FiHeartEmpty, title: "Pet Adoption", details: "Verified pets with health checkups and adoption support", stat: "500+ Happy Adoptions", route: "/resource", state: { category: "all", subCategory: "Adoption" } },
+  { icon: FiUsers, title: "Pet Mating", details: "Health-verified pets with breed matching services", stat: "200+ Successful Matches", route: "/nearby-mates" }
+];
+// --- END NEW DATA ---
+
 
 const featuredStats = [
   { icon: "👥", number: "10,000+", label: "Pet Owners" },
@@ -34,8 +46,14 @@ const featuredStats = [
   { icon: "⭐", number: "4.9", label: "Rating" }
 ];
 
-const MobileVersion = ({ activeTab, setActiveTab, showSearchOptions, setShowSearchOptions, handlePetTypeSelect }) => {
+
+const MobileVersion = ({ activeTab, setActiveTab, showSearchOptions, setShowSearchOptions }) => {
   const navigate = useNavigate();
+  const servicesMobile = [ // Using a separate services array for mobile to keep its original design
+    { icon: "🏥", title: "Emergency Care", description: "24/7 veterinary emergency services", badge: "24/7", color: "purple", route: "/resource", state: { category: "all", subCategory: "Health & Wellness" } },
+    { icon: "🐾", title: "Pet Adoption", description: "Find your perfect companion", badge: "500+", color: "violet", route: "/resource", state: { category: "all", subCategory: "Adoption" } },
+    { icon: "💕", title: "Pet Mating", description: "Safe breeding services", badge: "Verified", color: "indigo", route: "/nearby-mates" }
+  ];
 
   return (
     <div className="relative z-10 p-4 max-w-md mx-auto min-h-screen flex flex-col">
@@ -46,11 +64,11 @@ const MobileVersion = ({ activeTab, setActiveTab, showSearchOptions, setShowSear
 
       <motion.div className="mb-6" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}>
         <div className="grid grid-cols-4 gap-3">
-          {quickActions.map((action, index) => (
+          {quickActionsMobile.map((action, index) => (
             <motion.button
               key={index}
               onClick={() => navigate(action.route, { state: action.state })}
-              className={`bg-lavender-400 text-white p-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 text-center border border-purple-50`}
+              className="bg-lavender-600 text-white p-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 text-center border border-purple-50"
               whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
               initial={{ opacity: 0, y: 20 }}
@@ -110,7 +128,7 @@ const MobileVersion = ({ activeTab, setActiveTab, showSearchOptions, setShowSear
             { id: "resources", label: "Care", icon: "📚" },
             { id: "mates", label: "Mates", icon: "💕" }
           ].map((tab) => (
-            <motion.button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex-1 flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 ${activeTab === tab.id ? "bg-gradient-to-r from-violet-400 to-indigo-400 text-white shadow-md" : "text-gray-600 hover:bg-violet-50"}`} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <motion.button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex-1 flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 ${activeTab === tab.id ? "bg-lavender-600 text-white shadow-md" : "text-gray-600 hover:bg-violet-50"}`} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <span className="text-lg mb-1">{tab.icon}</span>
               <span className="text-xs font-medium">{tab.label}</span>
             </motion.button>
@@ -122,10 +140,10 @@ const MobileVersion = ({ activeTab, setActiveTab, showSearchOptions, setShowSear
         <AnimatePresence mode="wait">
           {activeTab === "services" && (
             <motion.div key="services" className="space-y-3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-              {services.map((service, index) => (
+              {servicesMobile.map((service, index) => (
                 <motion.div key={index} onClick={() => navigate(service.route, { state: service.state })} className="bg-white rounded-2xl p-4 shadow-md border border-violet-100 hover:shadow-lg transition-all duration-300 cursor-pointer h-24 flex items-center" whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.1 }}>
                   <div className="flex items-center flex-1">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-r from-violet-400 to-indigo-400 flex items-center justify-center text-white text-xl mr-4 shadow-sm">{service.icon}</div>
+                    <div className="w-12 h-12 rounded-full bg-lavender-600 flex items-center justify-center text-white text-xl mr-4 shadow-sm">{service.icon}</div>
                     <div className="flex-1">
                       <h3 className="font-semibold text-slate-800 text-base mb-1">{service.title}</h3>
                       <p className="text-gray-600 text-sm">{service.description}</p>
@@ -144,9 +162,9 @@ const MobileVersion = ({ activeTab, setActiveTab, showSearchOptions, setShowSear
             <motion.div key="adoption" className="grid grid-cols-1 gap-4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               {adoptionCards.map((card, index) => (
                 <motion.div key={index} onClick={() => navigate(card.route)} className="bg-white rounded-2xl overflow-hidden shadow-md border border-violet-100 hover:shadow-lg transition-all duration-300 cursor-pointer h-40" whileHover={{ scale: 1.03, y: -3 }} whileTap={{ scale: 0.97 }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.1 }}>
-                  <div className={`h-24 bg-gradient-to-r ${card.color} flex items-center justify-center relative overflow-hidden`}>
+                  <div className="h-24 bg-lavender-600 flex items-center justify-center relative overflow-hidden">
                     <div className="absolute -right-4 -top-4 w-16 h-16 bg-white rounded-full opacity-20"></div>
-                    <div className="text-4xl">{card.emoji}</div>
+                    <div className="text-4xl text-white">{card.emoji}</div>
                   </div>
                   <div className="p-4 flex justify-between items-center">
                     <div>
@@ -164,9 +182,9 @@ const MobileVersion = ({ activeTab, setActiveTab, showSearchOptions, setShowSear
             <motion.div key="resources" className="grid grid-cols-2 gap-4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               {petResources.map((resource, index) => (
                 <motion.div key={index} onClick={() => navigate(resource.route)} className="bg-white rounded-2xl overflow-hidden shadow-md border border-violet-100 hover:shadow-lg transition-all duration-300 cursor-pointer h-44" whileHover={{ scale: 1.05, y: -5 }} whileTap={{ scale: 0.95 }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.1 }}>
-                  <div className={`h-28 bg-gradient-to-br ${resource.color} flex items-center justify-center relative overflow-hidden`}>
+                  <div className="h-28 bg-lavender-600 flex items-center justify-center relative overflow-hidden">
                     <div className="absolute -right-3 -bottom-3 w-12 h-12 bg-white rounded-full opacity-20"></div>
-                    <div className="text-4xl">{resource.emoji}</div>
+                    <div className="text-4xl text-white">{resource.emoji}</div>
                   </div>
                   <div className="p-3 text-center">
                     <h3 className="font-semibold text-slate-800 text-sm mb-1">{resource.title}</h3>
@@ -182,7 +200,7 @@ const MobileVersion = ({ activeTab, setActiveTab, showSearchOptions, setShowSear
               <motion.div className="text-5xl mb-4" animate={{ scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}>💕</motion.div>
               <h3 className="text-xl font-bold text-slate-800 mb-3">Find Pet Mates</h3>
               <p className="text-gray-600 text-sm mb-6 max-w-xs">Connect with verified pet owners for safe breeding</p>
-              <motion.button onClick={() => navigate('/nearby-mates')} className="bg-gradient-to-r from-violet-400 to-indigo-400 text-white px-6 py-3 rounded-full font-medium hover:from-violet-500 hover:to-indigo-500 transition-all duration-300 shadow-md hover:shadow-lg flex items-center" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <motion.button onClick={() => navigate('/nearby-mates')} className="bg-lavender-600 text-white px-6 py-3 rounded-full font-medium hover:bg-lavender-700 transition-all duration-300 shadow-md hover:shadow-lg flex items-center" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                 <FaHeart className="mr-2" />
                 Find Mates
               </motion.button>
@@ -190,10 +208,6 @@ const MobileVersion = ({ activeTab, setActiveTab, showSearchOptions, setShowSear
           )}
         </AnimatePresence>
       </motion.div>
-
-      <motion.button className="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-r from-violet-400 to-indigo-400 rounded-full shadow-lg flex items-center justify-center text-white hover:from-violet-500 hover:to-indigo-500 transition-all duration-300 z-20" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => setShowSearchOptions(!showSearchOptions)} animate={{ boxShadow: ["0 4px 15px rgba(139, 92, 246, 0.3)", "0 6px 20px rgba(139, 92, 246, 0.4)", "0 4px 15px rgba(139, 92, 246, 0.3)"] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}>
-        <FaSearch className="text-lg" />
-      </motion.button>
     </div>
   );
 };
@@ -254,13 +268,22 @@ const DesktopVersion = ({ showSearchOptions, setShowSearchOptions, handlePetType
               </div>
             </motion.div>
 
+            {/* HERO SECTION WITH UPDATED HOVER EFFECT */}
             <motion.div className="grid grid-cols-2 gap-6" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8, delay: 0.4 }}>
-              {quickActions.map((action, index) => (
-                <motion.div key={index} onClick={() => navigate(action.route, { state: action.state })} className={`bg-gradient-to-br ${action.color} text-white p-8 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer text-center`} whileHover={{ scale: 1.05, y: -5 }} whileTap={{ scale: 0.95 }} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.6 + index * 0.1 }}>
-                  <div className="text-4xl mb-4">{action.icon}</div>
-                  <h3 className="text-xl font-bold mb-2">{action.title}</h3>
-                  <p className="text-sm opacity-90 mb-4">{action.description}</p>
-                  <FaArrowRight className="mx-auto text-lg" />
+              {desktopQuickActions.map((action, index) => (
+                <motion.div
+                  key={index}
+                  onClick={() => navigate(action.route, { state: action.state })}
+                  className="bg-white p-6 rounded-2xl shadow-lg border border-violet-200 cursor-pointer transition-all duration-300 hover:shadow-xl hoverScale hover:-translate-y-1"
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.6 + index * 0.1 }}
+                >
+                  <div className="w-12 h-12 mb-4 rounded-full bg-violet-50 flex items-center justify-center">
+                    <action.icon className="text-violet-600 text-2xl" />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-800 mb-2">{action.title}</h3>
+                  <p className="text-gray-600 text-sm">{action.description}</p>
                 </motion.div>
               ))}
             </motion.div>
@@ -268,6 +291,7 @@ const DesktopVersion = ({ showSearchOptions, setShowSearchOptions, handlePetType
         </div>
       </motion.div>
 
+      {/* FEATURED SERVICES SECTION WITH UPDATED HOVER EFFECT */}
       <motion.div className="py-20 bg-white" initial={{ opacity: 0, y: 50 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} viewport={{ once: true }}>
         <div className="max-w-7xl mx-auto px-8">
           <div className="text-center mb-16">
@@ -275,18 +299,24 @@ const DesktopVersion = ({ showSearchOptions, setShowSearchOptions, handlePetType
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">Comprehensive care and services for your beloved pets, available 24/7 when you need them most.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {services.map((service, index) => (
-              <motion.div key={index} onClick={() => navigate(service.route, { state: service.state })} className="bg-white rounded-3xl p-8 shadow-lg border border-violet-100 hover:shadow-xl transition-all duration-300 cursor-pointer group" whileHover={{ scale: 1.03, y: -10 }} whileTap={{ scale: 0.97 }} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: index * 0.2 }} viewport={{ once: true }}>
-                <div className="w-20 h-20 rounded-full bg-gradient-to-r from-violet-400 to-indigo-400 flex items-center justify-center text-white text-3xl mb-6 mx-auto group-hover:scale-110 transition-transform duration-300">{service.icon}</div>
-                <h3 className="text-2xl font-bold text-slate-800 mb-4 text-center">{service.title}</h3>
-                <p className="text-gray-600 mb-4 text-center">{service.details}</p>
+            {desktopServices.map((service, index) => (
+              <motion.div
+                key={index}
+                onClick={() => navigate(service.route, { state: service.state })}
+                className="bg-white rounded-2xl p-6 shadow-lg border border-violet-200 cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-110"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.2 }}
+                viewport={{ once: true }}
+              >
                 <div className="flex justify-between items-center mb-4">
-                  <span className={`bg-${service.color}-100 text-${service.color}-700 px-3 py-1 rounded-full text-sm font-medium`}>{service.badge}</span>
-                  <span className="text-violet-600 font-medium text-sm">{service.stats}</span>
+                  <div className="w-12 h-12 rounded-full bg-violet-50 flex items-center justify-center">
+                    <service.icon className="text-violet-600 text-2xl" />
+                  </div>
+                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-violet-100 text-violet-800">{service.stat}</span>
                 </div>
-                <div className="text-center">
-                  <FaArrowRight className="text-violet-500 mx-auto group-hover:translate-x-2 transition-transform duration-300" />
-                </div>
+                <h3 className="text-xl font-bold text-slate-800 mt-6 mb-2">{service.title}</h3>
+                <p className="text-gray-600 text-sm">{service.details}</p>
               </motion.div>
             ))}
           </div>
@@ -295,6 +325,7 @@ const DesktopVersion = ({ showSearchOptions, setShowSearchOptions, handlePetType
     </div>
   );
 };
+
 
 const Home = () => {
   const navigate = useNavigate();
