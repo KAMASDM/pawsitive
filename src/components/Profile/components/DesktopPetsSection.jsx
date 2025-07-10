@@ -91,7 +91,7 @@ const DesktopPetsSection = ({ pets, onAddPet, onEditPet, onDeletePet }) => (
                 Delete
               </button>
               <Link
-                to={`/petDetails/${pet.id}`}
+                to={`/pet-detail/${pet.id}`}
                 className="text-blue-500 hover:text-blue-700 text-sm font-medium"
               >
                 View

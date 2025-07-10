@@ -274,10 +274,10 @@ const DesktopVersion = ({ showSearchOptions, setShowSearchOptions, handlePetType
                 <motion.div
                   key={index}
                   onClick={() => navigate(action.route, { state: action.state })}
-                  className="bg-white p-6 rounded-2xl shadow-lg border border-violet-200 cursor-pointer transition-all duration-300 hover:shadow-xl hoverScale hover:-translate-y-1"
+                  className="bg-white p-6 rounded-2xl shadow-lg border border-violet-200 cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
                   initial={{ opacity: 0, y: 30 }}
+                  whileHover={{ scale: 1.08 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.6 + index * 0.1 }}
                 >
                   <div className="w-12 h-12 mb-4 rounded-full bg-violet-50 flex items-center justify-center">
                     <action.icon className="text-violet-600 text-2xl" />
@@ -298,24 +298,30 @@ const DesktopVersion = ({ showSearchOptions, setShowSearchOptions, handlePetType
             <h2 className="text-4xl font-bold text-slate-800 mb-4">Our Featured Services</h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">Comprehensive care and services for your beloved pets, available 24/7 when you need them most.</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 overflow-visible">
             {desktopServices.map((service, index) => (
               <motion.div
                 key={index}
                 onClick={() => navigate(service.route, { state: service.state })}
-                className="bg-white rounded-2xl p-6 shadow-lg border border-violet-200 cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-110"
+                className="relative bg-white rounded-2xl p-6 shadow-lg border border-violet-200 cursor-pointer z-0 hover:z-10 transition-all duration-300"
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.2 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.97 }}
+                transition={{ duration: 0.1, ease: "easeOut" }}
                 viewport={{ once: true }}
               >
                 <div className="flex justify-between items-center mb-4">
                   <div className="w-12 h-12 rounded-full bg-violet-50 flex items-center justify-center">
                     <service.icon className="text-violet-600 text-2xl" />
                   </div>
-                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-violet-100 text-violet-800">{service.stat}</span>
+                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-violet-100 text-violet-800">
+                    {service.stat}
+                  </span>
                 </div>
-                <h3 className="text-xl font-bold text-slate-800 mt-6 mb-2">{service.title}</h3>
+                <h3 className="text-xl font-bold text-slate-800 mt-6 mb-2">
+                  {service.title}
+                </h3>
                 <p className="text-gray-600 text-sm">{service.details}</p>
               </motion.div>
             ))}

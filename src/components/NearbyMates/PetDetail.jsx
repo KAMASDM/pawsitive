@@ -321,7 +321,7 @@ const PetDetail = () => {
               <div className="flex items-center">
                 <Scale className="text-lavender-600 mr-2" />
                 <span>
-                  {pet.weight ? `${pet.weight} kg` : "Unknown weight"}
+                  {pet.weight ? `${pet.weight} ` : "Unknown weight"}
                 </span>
               </div>
               {pet.color && (
@@ -423,13 +423,12 @@ const PetDetail = () => {
                       requestStatus !== null && requestStatus !== "accepted"
                     }
                     className={`flex items-center px-4 py-2 rounded-lg transition-colors text-sm font-medium
-                                            ${
-                                              requestStatus === "pending"
-                                                ? "bg-yellow-500 text-white hover:bg-yellow-600"
-                                                : requestStatus === "accepted"
-                                                ? "bg-green-500 text-white hover:bg-green-600"
-                                                : "bg-lavender-600 hover:bg-lavender-700 text-white"
-                                            }
+                                            ${requestStatus === "pending"
+                        ? "bg-yellow-500 text-white hover:bg-yellow-600"
+                        : requestStatus === "accepted"
+                          ? "bg-green-500 text-white hover:bg-green-600"
+                          : "bg-lavender-600 hover:bg-lavender-700 text-white"
+                      }
                                         `}
                   >
                     {requestStatus === "pending" ? (
