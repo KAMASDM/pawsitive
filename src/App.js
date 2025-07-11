@@ -36,7 +36,7 @@ function App() {
       <ScrollToTop />
       <div className="min-h-screen bg-lavender-50 flex flex-col">
         <Header />
-        <main className="flex-grow mb-3 sm:mb-0">
+        <main className="flex-grow mb-12 sm:mb-0">
           <Routes>
             <Route path="/" element={<Login />} />
             <Route

@@ -1,9 +1,16 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { FiPlus } from "react-icons/fi";
-import { FaPaw, FaMedkit, FaSyringe } from "react-icons/fa";
-import { Link } from "react-router-dom"; // Make sure you're using react-router-dom
-import EmptyState from "./EmptyState"; // Ensure this component exists
+import { FiPlus, FiEdit, FiTrash2, FiEye } from "react-icons/fi";
+import {
+  FaPaw,
+  FaMedkit,
+  FaSyringe,
+  FaVenusMars,
+  FaBirthdayCake,
+  FaDog,
+} from "react-icons/fa";
+import { Link } from "react-router-dom";
+import EmptyState from "./EmptyState";
 
 const DesktopPetsSection = ({ pets, onAddPet, onEditPet, onDeletePet }) => (
   <motion.div
@@ -56,9 +63,23 @@ const DesktopPetsSection = ({ pets, onAddPet, onEditPet, onDeletePet }) => (
                 <h3 className="text-xl font-bold text-slate-800 mb-2">
                   {pet.name}
                 </h3>
-                <div className="text-gray-600 mb-3">
-                  {pet.breed} • {pet.gender} • {pet.age}
+
+                {/* Pet Info with Icons */}
+                <div className="text-gray-600 mb-3 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <FaDog className="text-violet-500 w-4 h-4" />
+                    <span>{pet.breed}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <FaVenusMars className="text-pink-500 w-4 h-4" />
+                    <span>{pet.gender}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <FaBirthdayCake className="text-yellow-500 w-4 h-4" />
+                    <span>{pet.age}</span>
+                  </div>
                 </div>
+
                 <p className="text-sm text-gray-600 mb-4 line-clamp-2">
                   {pet.description}
                 </p>
@@ -76,24 +97,27 @@ const DesktopPetsSection = ({ pets, onAddPet, onEditPet, onDeletePet }) => (
               </div>
             </div>
 
-            {/* Action buttons */}
+            {/* Action buttons with icons */}
             <div className="px-6 pb-4 pt-2 mt-auto flex justify-between items-center border-t border-gray-100">
               <button
                 onClick={() => onEditPet(pet)}
-                className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+                className="flex items-center gap-1 text-indigo-600 hover:text-indigo-800 text-sm font-medium"
               >
+                <FiEdit className="w-4 h-4" />
                 Edit
               </button>
               <button
                 onClick={() => onDeletePet?.(pet.id)}
-                className="text-red-500 hover:text-red-700 text-sm font-medium"
+                className="flex items-center gap-1 text-red-500 hover:text-red-700 text-sm font-medium"
               >
+                <FiTrash2 className="w-4 h-4" />
                 Delete
               </button>
               <Link
                 to={`/pet-detail/${pet.id}`}
-                className="text-blue-500 hover:text-blue-700 text-sm font-medium"
+                className="flex items-center gap-1 text-blue-500 hover:text-blue-700 text-sm font-medium"
               >
+                <FiEye className="w-4 h-4" />
                 View
               </Link>
             </div>

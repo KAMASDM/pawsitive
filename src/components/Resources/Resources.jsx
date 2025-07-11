@@ -197,7 +197,17 @@ const ResourcesPage = () => {
     const categoryColor = currentCategory?.color || "from-violet-400 to-indigo-500";
     const Pagination = () => (<div className="flex flex-col sm:flex-row items-center justify-between gap-4 w-full"><div className="flex items-center gap-2"><span className="text-sm text-gray-600">Items per page:</span><select value={resourcesPerPage} onChange={(e) => { setResourcesPerPage(Number(e.target.value)); setCurrentPage(1); }} className="bg-violet-50 border border-violet-200 text-violet-700 text-sm rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-violet-400"><option value="6">6</option><option value="10">10</option><option value="15">15</option><option value="20">20</option></select></div><div className="flex items-center gap-2"><button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className={`p-2 rounded-lg ${currentPage === 1 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-violet-100 text-violet-700 hover:bg-violet-200'}`}><FaChevronLeft /></button>{Array.from({ length: Math.min(5, totalPages) }, (_, i) => { let pageNum; if (totalPages <= 5) { pageNum = i + 1; } else if (currentPage <= 3) { pageNum = i + 1; } else if (currentPage >= totalPages - 2) { pageNum = totalPages - 4 + i; } else { pageNum = currentPage - 2 + i; } return (<button key={pageNum} onClick={() => setCurrentPage(pageNum)} className={`w-10 h-10 rounded-lg flex items-center justify-center ${currentPage === pageNum ? `bg-gradient-to-r ${categoryColor} text-white shadow-md` : 'bg-violet-100 text-violet-700 hover:bg-violet-200'}`}>{pageNum}</button>); })}<button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0} className={`p-2 rounded-lg ${(currentPage === totalPages || totalPages === 0) ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-violet-100 text-violet-700 hover:bg-violet-200'}`}><FaChevronRight /></button></div></div>);
 
-    if (isLocationLoading) { return (<div className="min-h-screen bg-gradient-to-br from-slate-50 to-violet-50 flex items-center justify-center"><div className="text-center p-8 bg-white/80 backdrop-blur-md rounded-2xl shadow-lg"><div className="flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600 mr-3"></div><p className="text-violet-700 font-medium">Getting your location...</p></div></div></div>); }
+    if (isLocationLoading) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 to-violet-50 flex items-center justify-center">
+                <div className="flex items-center justify-center flex-col">
+                    {/* <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600 mr-3"></div> */}
+                    <img src="PawPrints.gif" alt="Animation Fix" width={"200px"} />
+                    <p className="text-violet-700 font-medium">Loading resources...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-violet-50 py-8 px-4 sm:px-6 lg:px-8">
@@ -295,7 +305,14 @@ const ResourcesPage = () => {
                 </p>
 
                 {/* Content Area */}
-                {loading && (<div className="text-center p-8"><div className="flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600 mr-3"></div><p className="text-violet-700 font-medium">Loading resources...</p></div></div>)}
+                {loading && (
+                    <div className="text-center p-8">
+                        <div className="flex items-center justify-center flex-col">
+                            {/* <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600 mr-3"></div> */}
+                            <img src="PawPrints.gif" alt="Animation Fix" width={"200px"} />
+                            <p className="text-violet-700 font-medium">Loading resources...</p>
+                        </div>
+                    </div>)}
                 {error && (<div className="bg-red-50 border border-red-200 text-red-700 p-6 text-center shadow-lg rounded-2xl"><div className="text-5xl mb-3">😥</div><h3 className="text-xl font-bold text-red-800 mb-2">Oops! Something went wrong.</h3><p className="text-red-600">{error}</p></div>)}
                 {!loading && !error && (
                     <>

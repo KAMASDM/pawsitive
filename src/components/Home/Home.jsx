@@ -17,8 +17,8 @@ const adoptionCards = [
   { emoji: "💕", title: "Find Mates", count: "200+ Matches", color: "from-indigo-100 to-violet-200", route: "/nearby-mates" }
 ];
 const petResources = [
-  { emoji: "🐕", title: "Dog Care", services: "150+ Services", color: "from-purple-100 to-violet-200", route: "/dog-resources" },
-  { emoji: "🐈", title: "Cat Care", services: "120+ Services", color: "from-indigo-100 to-purple-200", route: "/cat-resources" }
+  { emoji: "🐕", title: "Dog Care", services: "150+ Services", color: "from-purple-100 to-violet-200", route: "/resource", state: { category: "dog", subCategory: "Health & Wellness" } },
+  { emoji: "🐈", title: "Cat Care", services: "120+ Services", color: "from-indigo-100 to-purple-200", route: "/resource", state: { category: "cat", subCategory: "Health & Wellness" } }
 ];
 // --- End of mobile-specific data ---
 
@@ -181,7 +181,7 @@ const MobileVersion = ({ activeTab, setActiveTab, showSearchOptions, setShowSear
           {activeTab === "resources" && (
             <motion.div key="resources" className="grid grid-cols-2 gap-4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               {petResources.map((resource, index) => (
-                <motion.div key={index} onClick={() => navigate(resource.route)} className="bg-white rounded-2xl overflow-hidden shadow-md border border-violet-100 hover:shadow-lg transition-all duration-300 cursor-pointer h-44" whileHover={{ scale: 1.05, y: -5 }} whileTap={{ scale: 0.95 }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.1 }}>
+                <motion.div key={index} onClick={() => navigate(resource.route, { state: resource.state })} className="bg-white rounded-2xl overflow-hidden shadow-md border border-violet-100 hover:shadow-lg transition-all duration-300 cursor-pointer h-44" whileHover={{ scale: 1.05, y: -5 }} whileTap={{ scale: 0.95 }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.1 }}>
                   <div className="h-28 bg-lavender-600 flex items-center justify-center relative overflow-hidden">
                     <div className="absolute -right-3 -bottom-3 w-12 h-12 bg-white rounded-full opacity-20"></div>
                     <div className="text-4xl text-white">{resource.emoji}</div>

@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback, memo, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { auth, database } from "../../firebase";
 import { ref, set, get, update, remove } from "firebase/database";
+import { useNavigate } from "react-router-dom";
 import { FiMail, FiPhone } from "react-icons/fi";
 import useResponsive from "../../hooks/useResponsive";
 import { FaPlus, FaPaw, FaHeart, FaCommentDots } from "react-icons/fa";
@@ -73,7 +74,7 @@ const MobileVersion = ({ user, pets, matingRequests, chats, activeTab, setActive
   </div>
 );
 
-const DesktopVersion = ({ user, pets, matingRequests, activeTab, setActiveTab, tabs, handleAddPet, handleEditPet, handleDeletePet, handleAcceptRequest, handleDeclineRequest, handleOpenMessageDialog }) => (
+const DesktopVersion = ({ user, pets, matingRequests, activeTab, setActiveTab, tabs, handleAddPet, handleEditPet, handleDeletePet, handleAcceptRequest, handleDeclineRequest, handleOpenMessageDialog, navigate }) => (
   <div className="min-h-screen bg-gradient-to-br from-slate-50 to-violet-50 p-8">
     <div className="max-w-7xl mx-auto">
       {/* Header */}
@@ -98,15 +99,58 @@ const DesktopVersion = ({ user, pets, matingRequests, activeTab, setActiveTab, t
       </motion.div>
       <motion.div className="mb-8" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}>
         <div className="bg-white rounded-2xl p-3 shadow-md border border-violet-100">
-          <div className="flex justify-center gap-2">
-            {tabs.map((tab) => (
-              <motion.button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`relative flex items-center px-6 py-3 rounded-xl transition-all duration-300 ${activeTab === tab.id ? "bg-gradient-to-r from-violet-400 to-indigo-400 text-white shadow-md" : "text-gray-600 hover:bg-violet-50"}`} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                {tab.badge > 0 && (<div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center"><span className="text-xs text-white font-bold">{tab.badge}</span></div>)}
-                <span className="text-xl mr-3">{tab.icon}</span>
-                <span className="font-medium">{tab.label}</span>
-                {tab.count > 0 && !tab.badge && (<span className="ml-2 bg-white bg-opacity-20 rounded-full px-2 py-1 text-xs">{tab.count}</span>)}
+          <div className="flex justify-between items-center flex-wrap gap-4">
+            {/* Tabs on the left */}
+            <div className="flex flex-wrap gap-2">
+              {tabs.map((tab) => (
+                <motion.button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`relative flex items-center px-6 py-3 rounded-xl transition-all duration-300 ${activeTab === tab.id
+                    ? "bg-gradient-to-r from-violet-400 to-indigo-400 text-white shadow-md"
+                    : "text-gray-600 hover:bg-violet-50"
+                    }`}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  {tab.badge > 0 && (
+                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                      <span className="text-xs text-white font-bold">{tab.badge}</span>
+                    </div>
+                  )}
+                  <span className="text-xl mr-3">{tab.icon}</span>
+                  <span className="font-medium">{tab.label}</span>
+                  {tab.count > 0 && !tab.badge && (
+                    <span className="ml-2 bg-white bg-opacity-20 rounded-full px-2 py-1 text-xs">
+                      {tab.count}
+                    </span>
+                  )}
+                </motion.button>
+              ))}
+            </div>
+
+            {/* Action buttons on the right - UPDATED DESIGN */}
+            <div className="flex gap-4">
+              <motion.button
+                onClick={() => navigate("/nearby-mates")}
+                className="flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-violet-400 to-indigo-400 text-white font-semibold shadow-md transition-all duration-300 hover:shadow-lg hover:brightness-110"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <FaHeart />
+                Find Mates
               </motion.button>
-            ))}
+
+              <motion.button
+                onClick={() => navigate("/adopt-pets")}
+                className="flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-teal-400 to-cyan-500 text-white font-semibold shadow-md transition-all duration-300 hover:shadow-lg hover:brightness-110"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <FaPaw />
+                Adopt Pet
+              </motion.button>
+            </div>
           </div>
         </div>
       </motion.div>
@@ -127,7 +171,7 @@ const DesktopVersion = ({ user, pets, matingRequests, activeTab, setActiveTab, t
 const Profile = () => {
   const { isDesktop } = useResponsive();
   const user = auth.currentUser;
-
+  const navigate = useNavigate();
   const [pets, setPets] = useState([]);
   const [activeTab, setActiveTab] = useState("pets");
   const [matingRequests, setMatingRequests] = useState([]);
@@ -203,7 +247,7 @@ const Profile = () => {
       id: Date.now().toString(), name: "", type: "", breed: "", gender: "", age: "",
       weight: "", color: "", description: "", image: "", availableForMating: false,
       availableForAdoption: false, medical: { conditions: [], allergies: [], medications: "" },
-      vaccinations: [], petOwner: user.displayName, 
+      vaccinations: [], petOwner: user.displayName,
     });
     setIsEditMode(false);
     setOpenPetDialog(true);
@@ -355,7 +399,7 @@ const Profile = () => {
   return (
     <>
       {isDesktop ? (
-        <DesktopVersion user={user} pets={pets} matingRequests={matingRequests} activeTab={activeTab} setActiveTab={setActiveTab} tabs={tabs} handleAddPet={handleAddPet} handleEditPet={handleEditPet} handleDeletePet={handleDeletePet} handleAcceptRequest={handleAcceptRequest} handleDeclineRequest={handleDeclineRequest} handleOpenMessageDialog={handleOpenMessageDialog} />
+        <DesktopVersion user={user} pets={pets} navigate={navigate} matingRequests={matingRequests} activeTab={activeTab} setActiveTab={setActiveTab} tabs={tabs} handleAddPet={handleAddPet} handleEditPet={handleEditPet} handleDeletePet={handleDeletePet} handleAcceptRequest={handleAcceptRequest} handleDeclineRequest={handleDeclineRequest} handleOpenMessageDialog={handleOpenMessageDialog} />
       ) : (
         <MobileVersion user={user} pets={pets} matingRequests={matingRequests} activeTab={activeTab} setActiveTab={setActiveTab} tabs={tabs} handleAddPet={handleAddPet} handleEditPet={handleEditPet} handleDeletePet={handleDeletePet} handleAcceptRequest={handleAcceptRequest} handleDeclineRequest={handleDeclineRequest} handleOpenMessageDialog={handleOpenMessageDialog} />
       )}
