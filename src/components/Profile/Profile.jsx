@@ -30,7 +30,7 @@ const ConversationsListSection = memo(ConversationsList);
 const MobileVersion = ({ user, pets, matingRequests, chats, activeTab, setActiveTab, tabs, handleAddPet, handleEditPet, handleDeletePet, handleAcceptRequest, handleDeclineRequest, handleOpenMessageDialog }) => (
   <div className="min-h-screen bg-gradient-to-br from-slate-50 to-violet-50 p-4">
     {/* User Profile Header */}
-    <motion.div className="bg-white rounded-2xl p-6 shadow-md border border-violet-100 mb-6" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+    <motion.div className="bg-white/80 backdrop-blur-lg rounded-2xl p-6 shadow-lg border border-violet-100 mb-6" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
       <div className="flex items-center mb-4">
         <div className="w-16 h-16 rounded-full bg-gradient-to-br from-violet-400 to-indigo-500 text-white flex items-center justify-center text-xl font-bold mr-4">
           {user.displayName?.split(" ").map((word) => word[0]).join("").slice(0, 2)}
@@ -50,7 +50,7 @@ const MobileVersion = ({ user, pets, matingRequests, chats, activeTab, setActive
     <motion.button onClick={handleAddPet} className="w-full flex items-center justify-center gap-2 py-3 mb-6 bg-gradient-to-r from-violet-400 to-indigo-400 text-white font-semibold rounded-xl shadow-md transition-all duration-300 hover:shadow-lg" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}><FaPlus />Add a New Pet</motion.button>
     {/* Tab Navigation */}
     <motion.div className="mb-6" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}>
-      <div className="bg-white rounded-2xl p-2 shadow-md border border-violet-100">
+      <div className="bg-white/75 backdrop-blur-md rounded-2xl p-2 shadow-lg border border-violet-100">
         <div className="grid grid-cols-3 gap-1">
           {tabs.map((tab) => (
             <motion.button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`relative flex flex-col items-center p-3 rounded-xl transition-all duration-300 ${activeTab === tab.id ? "bg-gradient-to-r from-violet-400 to-indigo-400 text-white shadow-md" : "text-gray-600 hover:bg-violet-50"}`} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>

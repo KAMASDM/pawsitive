@@ -1,5 +1,5 @@
 import React from "react";
- import { motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { FaPaw } from "react-icons/fa";
 import EmptyState from "./EmptyState";
 import { FiEdit, FiTrash2, FiEye } from "react-icons/fi";
@@ -7,8 +7,6 @@ import { FiEdit, FiTrash2, FiEye } from "react-icons/fi";
 import { Link } from "react-router-dom";
 
 const PetsSection = ({ pets, onAddPet, onEditPet, onDeletePet }) => {
- 
-
   return (
     <motion.div
       key="pets"
@@ -18,18 +16,18 @@ const PetsSection = ({ pets, onAddPet, onEditPet, onDeletePet }) => {
       transition={{ duration: 0.3 }}
     >
       {pets.length > 0 ? (
-        <div className="space-y-4">
+        <div className="space-y-4 pb-4">
           {pets.map((pet, index) => (
             <motion.div
               key={pet.id}
-              className="bg-white rounded-2xl overflow-hidden shadow-md border border-violet-100 relative"
+              className="bg-white rounded-2xl overflow-hidden shadow-md border border-violet-300 relative"
               whileHover={{ scale: 1.02, y: -2 }}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
             >
               <div className="flex">
-                <div className="w-24 h-24 bg-gradient-to-br from-violet-100 to-indigo-100 flex-shrink-0">
+                <div className="w-24 h-auto bg-gradient-to-br from-violet-100 to-indigo-100 flex-shrink-0">
                   {pet.image ? (
                     <img
                       src={pet.image}
@@ -63,27 +61,24 @@ const PetsSection = ({ pets, onAddPet, onEditPet, onDeletePet }) => {
                   <div className="text-sm text-gray-600 mb-2">
                     {pet.breed} • {pet.gender} • {pet.age}
                   </div>
-                  <div className=" mt-auto flex gap-2 items-center justify-end  border-gray-100">
+                  <div className="mt-auto flex gap-2 items-center justify-end border-gray-100">
                     <button
                       onClick={() => onEditPet(pet)}
                       className="flex items-center gap-1 text-indigo-600 hover:text-indigo-800 text-sm font-medium"
                     >
                       <FiEdit className="w-4 h-4" />
-
                     </button>
                     <button
                       onClick={() => onDeletePet?.(pet.id)}
                       className="flex items-center gap-1 text-red-500 hover:text-red-700 text-sm font-medium"
                     >
                       <FiTrash2 className="w-4 h-4" />
-
                     </button>
                     <Link
                       to={`/pet-detail/${pet.id}`}
                       className="flex items-center gap-1 text-blue-500 hover:text-blue-700 text-sm font-medium"
                     >
                       <FiEye className="w-4 h-4" />
-
                     </Link>
                   </div>
                 </div>
