@@ -14,7 +14,55 @@ import {
 import { MdOutlineLocalHospital, MdFastfood, MdMiscellaneousServices, MdShoppingCart } from "react-icons/md";
 import { FaHotel, FaCut, FaHeart } from "react-icons/fa";
 import ResourceCard from "./ResourceCard/ResourceCard";
-import { useLocation } from "react-router-dom";
+import SkeletonResourceCard from "./SkeletonResourceCard";
+import { useLocation, useNavigate } from "react-router-dom";
+
+// --- CACHE UTILITIES ---
+const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
+
+const getCacheKey = (category, subCategory, lat, lng) => {
+    const roundedLat = Math.round(lat * 100) / 100;
+    const roundedLng = Math.round(lng * 100) / 100;
+    return `pawppy_resources_${category}_${subCategory}_${roundedLat}_${roundedLng}`;
+};
+
+const getCachedResources = (cacheKey) => {
+    try {
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+            const { data, timestamp } = JSON.parse(cached);
+            if (Date.now() - timestamp < CACHE_DURATION) {
+                console.log('✅ Cache hit:', cacheKey);
+                return data;
+            } else {
+                console.log('⏰ Cache expired:', cacheKey);
+                localStorage.removeItem(cacheKey);
+            }
+        }
+    } catch (e) {
+        console.error('Cache read error:', e);
+    }
+    return null;
+};
+
+const setCachedResources = (cacheKey, data) => {
+    try {
+        localStorage.setItem(cacheKey, JSON.stringify({
+            data,
+            timestamp: Date.now()
+        }));
+        console.log('💾 Cached resources:', cacheKey, data.length, 'items');
+    } catch (e) {
+        console.error('Cache write error:', e);
+        // Clear old cache if storage is full
+        if (e.name === 'QuotaExceededError') {
+            const keys = Object.keys(localStorage);
+            keys.filter(k => k.startsWith('pawppy_resources_'))
+                .slice(0, Math.floor(keys.length / 2))
+                .forEach(k => localStorage.removeItem(k));
+        }
+    }
+};
 
 // --- CONSTANTS MOVED OUTSIDE THE COMPONENT ---
 
@@ -70,6 +118,7 @@ const categoryKeywords = {
 
 const ResourcesPage = () => {
     const location = useLocation();
+    const navigate = useNavigate();
     const { category, subCategory } = location.state || {};
 
     // State management
@@ -77,7 +126,6 @@ const ResourcesPage = () => {
     const [activeSubCategory, setActiveSubCategory] = useState(subCategory || "Health & Wellness");
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
-    const [selectedResource, setSelectedResource] = useState(null);
     const [resources, setResources] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -86,6 +134,11 @@ const ResourcesPage = () => {
     const [sortBy, setSortBy] = useState("default"); // 'default', 'distance', 'rating'
     const [resourcesPerPage, setResourcesPerPage] = useState(6);
     const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false); // New combined state for mobile accordion
+    const [quickFilters, setQuickFilters] = useState({
+        openNow: false,
+        highRated: false,
+        nearby: false
+    });
 
     const isInitialMount = useRef(true);
 
@@ -127,13 +180,43 @@ const ResourcesPage = () => {
     }, [userLocation]);
     const fetchPlaces = useCallback(async (keywords) => {
         if (!userLocation || !window.google || keywords.length === 0) return [];
-        const map = new window.google.maps.Map(document.createElement('div')); const service = new window.google.maps.places.PlacesService(map); const allResults = new Map();
-        for (const keyword of keywords) {
-            const request = { location: new window.google.maps.LatLng(userLocation.lat, userLocation.lng), radius: 10000, keyword };
-            const results = await new Promise((resolve) => service.nearbySearch(request, (r, s) => resolve(s === 'OK' ? r : [])));
-            results.forEach(p => p && p.place_id && !allResults.has(p.place_id) && allResults.set(p.place_id, p));
-        }
-        const detailPromises = Array.from(allResults.values()).map(place => fetchPlaceDetails(service, place));
+        
+        const map = new window.google.maps.Map(document.createElement('div'));
+        const service = new window.google.maps.places.PlacesService(map);
+        
+        console.log('🚀 Starting PARALLEL search for', keywords.length, 'keywords');
+        const startTime = Date.now();
+        
+        // PARALLEL API CALLS - All at once instead of sequential
+        const searchPromises = keywords.map(keyword =>
+            new Promise((resolve) => {
+                const request = {
+                    location: new window.google.maps.LatLng(userLocation.lat, userLocation.lng),
+                    radius: 10000,
+                    keyword
+                };
+                service.nearbySearch(request, (results, status) => {
+                    resolve(status === 'OK' ? results : []);
+                });
+            })
+        );
+        
+        const allResultsArrays = await Promise.all(searchPromises);
+        const allResults = new Map();
+        
+        allResultsArrays.forEach(results => {
+            results.forEach(place => {
+                if (place && place.place_id && !allResults.has(place.place_id)) {
+                    allResults.set(place.place_id, place);
+                }
+            });
+        });
+        
+        console.log('✅ Found', allResults.size, 'unique places in', Date.now() - startTime, 'ms');
+        
+        const detailPromises = Array.from(allResults.values())
+            .map(place => fetchPlaceDetails(service, place));
+        
         return (await Promise.all(detailPromises)).filter(Boolean);
     }, [userLocation, fetchPlaceDetails]);
     const getResourceSubCategory = useCallback((resource) => {
@@ -148,23 +231,67 @@ const ResourcesPage = () => {
         let isMounted = true;
         const fetchAllResources = async () => {
             if (!userLocation || !window.google) return;
-            setLoading(true); setError(null);
+            
+            // Generate cache key
+            const cacheKey = getCacheKey(
+                activeMainCategory,
+                activeSubCategory,
+                userLocation.lat,
+                userLocation.lng
+            );
+            
+            // Check cache first
+            const cached = getCachedResources(cacheKey);
+            if (cached) {
+                setResources(cached);
+                setLoading(false);
+                return;
+            }
+            
+            setLoading(true);
+            setError(null);
+            
             try {
-                const sourceSubCats = activeMainCategory === 'all' ? [...subCategories.dog, ...subCategories.cat, ...subCategories.general] : (subCategories[activeMainCategory] || []);
+                const sourceSubCats = activeMainCategory === 'all' 
+                    ? [...subCategories.dog, ...subCategories.cat, ...subCategories.general] 
+                    : (subCategories[activeMainCategory] || []);
+                
                 let keywordsToSearch;
-                if (activeSubCategory === "all") { keywordsToSearch = sourceSubCats.flatMap(subCat => categoryKeywords[subCat.id] || [subCat.mapsType]); }
-                else { const matchingSubCats = sourceSubCats.filter(sc => sc.name === activeSubCategory); keywordsToSearch = matchingSubCats.flatMap(subCat => categoryKeywords[subCat.id] || [subCat.mapsType]); }
+                if (activeSubCategory === "all") {
+                    keywordsToSearch = sourceSubCats.flatMap(subCat => 
+                        categoryKeywords[subCat.id] || [subCat.mapsType]
+                    );
+                } else {
+                    const matchingSubCats = sourceSubCats.filter(sc => sc.name === activeSubCategory);
+                    keywordsToSearch = matchingSubCats.flatMap(subCat => 
+                        categoryKeywords[subCat.id] || [subCat.mapsType]
+                    );
+                }
+                
                 const uniqueKeywords = [...new Set(keywordsToSearch.filter(Boolean))];
+                
                 if (uniqueKeywords.length > 0) {
                     const results = await fetchPlaces(uniqueKeywords);
                     if (isMounted) {
-                        const augmented = results.map(res => ({ ...res, subCategory: getResourceSubCategory(res) }));
+                        const augmented = results.map(res => ({
+                            ...res,
+                            subCategory: getResourceSubCategory(res)
+                        }));
                         const uniqueResults = new Map(augmented.map(p => [p.place_id, p]));
-                        setResources(Array.from(uniqueResults.values()));
+                        const finalResults = Array.from(uniqueResults.values());
+                        
+                        setResources(finalResults);
+                        setCachedResources(cacheKey, finalResults); // Cache it!
                     }
-                } else { if (isMounted) setResources([]); }
-            } catch (err) { console.error("Fetching error:", err); if (isMounted) setError("An unexpected error occurred while fetching resources."); }
-            finally { if (isMounted) setLoading(false); }
+                } else {
+                    if (isMounted) setResources([]);
+                }
+            } catch (err) {
+                console.error("Fetching error:", err);
+                if (isMounted) setError("An unexpected error occurred while fetching resources.");
+            } finally {
+                if (isMounted) setLoading(false);
+            }
         };
         fetchAllResources();
         return () => { isMounted = false; };
@@ -176,11 +303,30 @@ const ResourcesPage = () => {
         } return subCategories[activeMainCategory] || [];
     }, [activeMainCategory]);
     const processedResources = useMemo(() => {
-        let filtered = resources.filter(resource => { return !searchTerm || resource.name?.toLowerCase().includes(searchTerm.toLowerCase()) || resource.vicinity?.toLowerCase().includes(searchTerm.toLowerCase()); });
-        if (sortBy === 'distance') { filtered.sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity)); }
-        else if (sortBy === 'rating') { filtered.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0)); }
+        let filtered = resources.filter(resource => {
+            return !searchTerm || 
+                resource.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                resource.vicinity?.toLowerCase().includes(searchTerm.toLowerCase());
+        });
+        
+        // Apply quick filters
+        if (quickFilters.openNow) {
+            filtered = filtered.filter(r => r.isOpen === true);
+        }
+        if (quickFilters.highRated) {
+            filtered = filtered.filter(r => r.rating >= 4);
+        }
+        if (quickFilters.nearby) {
+            filtered = filtered.filter(r => r.distance <= 5);
+        }
+        
+        if (sortBy === 'distance') {
+            filtered.sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity));
+        } else if (sortBy === 'rating') {
+            filtered.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
+        }
         return filtered;
-    }, [resources, searchTerm, sortBy]);
+    }, [resources, searchTerm, sortBy, quickFilters]);
     const totalPages = Math.ceil(processedResources.length / resourcesPerPage);
     const currentResources = processedResources.slice((currentPage - 1) * resourcesPerPage, currentPage * resourcesPerPage);
     useEffect(() => {
@@ -188,10 +334,7 @@ const ResourcesPage = () => {
         else { setActiveSubCategory("all"); setCurrentPage(1); setIsMobileFilterOpen(false); }
     }, [activeMainCategory]);
     useEffect(() => { setCurrentPage(1); }, [searchTerm, sortBy, activeSubCategory]);
-    useEffect(() => {
-        const handleClickOutside = (event) => { if (selectedResource && !event.target.closest('.modal-content')) { setSelectedResource(null); } };
-        document.addEventListener('mousedown', handleClickOutside); return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [selectedResource]);
+    
     const currentCategory = mainCategories.find(cat => cat.id === activeMainCategory);
     const headerBackground = currentCategory?.background;
     const categoryColor = currentCategory?.color || "from-violet-400 to-indigo-500";
@@ -234,7 +377,29 @@ const ResourcesPage = () => {
                     </div>
                 </motion.div>
 
-
+                {/* Quick Filters */}
+                <motion.div className="mb-4 p-4 bg-white/80 backdrop-blur-md rounded-2xl shadow-lg border border-violet-100" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0, transition: { delay: 0.35 } }}>
+                    <div className="flex flex-wrap gap-2 items-center">
+                        <span className="text-sm font-semibold text-violet-700 mr-2">Quick Filters:</span>
+                        <button onClick={() => setQuickFilters(prev => ({ ...prev, openNow: !prev.openNow }))} className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-2 ${quickFilters.openNow ? 'bg-gradient-to-r from-violet-500 to-indigo-500 text-white shadow-lg transform scale-105' : 'bg-violet-50 text-violet-700 hover:bg-violet-100 border border-violet-200'}`}>
+                            🟢 Open Now
+                        </button>
+                        <button onClick={() => setQuickFilters(prev => ({ ...prev, highRated: !prev.highRated }))} className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-2 ${quickFilters.highRated ? 'bg-gradient-to-r from-violet-500 to-indigo-500 text-white shadow-lg transform scale-105' : 'bg-violet-50 text-violet-700 hover:bg-violet-100 border border-violet-200'}`}>
+                            ⭐ 4+ Stars
+                        </button>
+                        <button onClick={() => setQuickFilters(prev => ({ ...prev, nearby: !prev.nearby }))} className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-2 ${quickFilters.nearby ? 'bg-gradient-to-r from-violet-500 to-indigo-500 text-white shadow-lg transform scale-105' : 'bg-violet-50 text-violet-700 hover:bg-violet-100 border border-violet-200'}`}>
+                            📍 Within 5km
+                        </button>
+                        {(quickFilters.openNow || quickFilters.highRated || quickFilters.nearby) && (
+                            <button onClick={() => setQuickFilters({ openNow: false, highRated: false, nearby: false })} className="px-4 py-2 rounded-full text-sm font-medium bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 transition-all duration-300 flex items-center gap-2">
+                                🔄 Reset Filters
+                            </button>
+                        )}
+                        <span className="ml-auto text-sm text-violet-600 font-medium">
+                            {processedResources.length} {processedResources.length === 1 ? 'result' : 'results'}
+                        </span>
+                    </div>
+                </motion.div>
 
                 {/* Subcategories and Filters */}
                 <motion.div className="mb-8 p-4 sm:p-6 bg-white/80 backdrop-blur-md rounded-2xl shadow-lg border border-violet-100" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0, transition: { delay: 0.4 } }}>
@@ -306,13 +471,14 @@ const ResourcesPage = () => {
 
                 {/* Content Area */}
                 {loading && (
-                    <div className="text-center p-8">
-                        <div className="flex items-center justify-center flex-col">
-                            {/* <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600 mr-3"></div> */}
-                            <img src="PawPrints.gif" alt="Animation Fix" width={"200px"} />
-                            <p className="text-violet-700 font-medium">Loading resources...</p>
-                        </div>
-                    </div>)}
+                    <motion.div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                        {[...Array(6)].map((_, index) => (
+                            <motion.div key={`skeleton-${index}`} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
+                                <SkeletonResourceCard />
+                            </motion.div>
+                        ))}
+                    </motion.div>
+                )}
                 {error && (<div className="bg-red-50 border border-red-200 text-red-700 p-6 text-center shadow-lg rounded-2xl"><div className="text-5xl mb-3">😥</div><h3 className="text-xl font-bold text-red-800 mb-2">Oops! Something went wrong.</h3><p className="text-red-600">{error}</p></div>)}
                 {!loading && !error && (
                     <>
@@ -321,7 +487,34 @@ const ResourcesPage = () => {
                                 <motion.div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                                     {currentResources.map((resource, index) => (
                                         <motion.div key={resource.place_id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
-                                            <ResourceCard resource={resource} onClick={() => setSelectedResource(resource)} userLocation={userLocation} />
+                                            <ResourceCard 
+                                                resource={resource} 
+                                                onClick={() => {
+                                                    // Serialize resource data to avoid cloning issues with geometry functions
+                                                    const serializedResource = {
+                                                        place_id: resource.place_id,
+                                                        name: resource.name,
+                                                        formatted_address: resource.formatted_address,
+                                                        vicinity: resource.vicinity,
+                                                        rating: resource.rating,
+                                                        user_ratings_total: resource.user_ratings_total,
+                                                        types: resource.types,
+                                                        photoUrl: resource.photoUrl,
+                                                        geometry: resource.geometry?.location ? {
+                                                            location: {
+                                                                lat: typeof resource.geometry.location.lat === 'function' 
+                                                                    ? resource.geometry.location.lat() 
+                                                                    : resource.geometry.location.lat,
+                                                                lng: typeof resource.geometry.location.lng === 'function' 
+                                                                    ? resource.geometry.location.lng() 
+                                                                    : resource.geometry.location.lng
+                                                            }
+                                                        } : null
+                                                    };
+                                                    navigate(`/resources/${resource.place_id}`, { state: { resource: serializedResource } });
+                                                }} 
+                                                userLocation={userLocation} 
+                                            />
                                         </motion.div>
                                     ))}
                                 </motion.div>
@@ -343,19 +536,6 @@ const ResourcesPage = () => {
                     </>
                 )}
             </div>
-
-            {/* Modal */}
-            <AnimatePresence>
-                {selectedResource && (
-                    <motion.div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                        <div className="bg-white p-6 rounded-lg shadow-xl max-w-lg w-full modal-content">
-                            <h2 className="text-2xl font-bold mb-4">{selectedResource.name}</h2>
-                            <p>{selectedResource.formatted_address}</p>
-                            <button onClick={() => setSelectedResource(null)} className="mt-4 px-4 py-2 bg-violet-600 text-white rounded-lg">Close</button>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
         </div>
     );
 };

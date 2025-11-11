@@ -18,9 +18,14 @@ import PrivacyPolicy from "./components/PrivacyPolicy/PrivacyPolicy";
 import TermsAndConditions from "./components/TermsAndConditions/TermsAndConditions";
 import CookiePolicy from "./components/CookiePolicy/CookiePolicy";
 import ResourcesPage from "./components/Resources/Resources";
+import ResourceDetail from "./components/Resources/ResourceDetail";
 import FAQ from "./components/FAQ/FAQ";
+import { useVaccinationReminder } from "./hooks/useVaccinationReminder";
 
 function App() {
+  // Initialize vaccination reminder checker
+  useVaccinationReminder();
+  
   useEffect(() => {
     if (!window.google) {
       const script = document.createElement("script");
@@ -84,6 +89,14 @@ function App() {
               element={
                 <PR>
                   <ResourcesPage />
+                </PR>
+              }
+            />
+            <Route
+              path="/resources/:id"
+              element={
+                <PR>
+                  <ResourceDetail />
                 </PR>
               }
             />

@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth, signInWithPopup, googleProvider } from "../../firebase";
+import { ref, get, set } from "firebase/database";
+import { database } from "../../firebase";
+import { sendWelcomeEmail, requestNotificationPermission } from "../../services/notificationService";
 import logo from "../../images/logo.png";
 import { FaGoogle, FaDownload, FaStar } from "react-icons/fa";
 
@@ -12,7 +15,59 @@ const Login = () => {
 
   const handleGoogleLogin = async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+      
+      // Check if this is a new user
+      const userRef = ref(database, `users/${user.uid}`);
+      const snapshot = await get(userRef);
+      
+      if (!snapshot.exists()) {
+        // New user - create profile
+        const userData = {
+          uid: user.uid,
+          displayName: user.displayName,
+          email: user.email,
+          photoURL: user.photoURL,
+          createdAt: Date.now(),
+          notificationPreferences: {
+            email: {
+              matingRequests: true,
+              adoptionInquiries: true,
+              messages: true,
+              vaccinations: true,
+              nearbyMates: true,
+            },
+            push: {
+              matingRequests: true,
+              adoptionInquiries: true,
+              messages: true,
+              vaccinations: true,
+              nearbyMates: true,
+            },
+          },
+        };
+        
+        await set(userRef, userData);
+        
+        // Request notification permission
+        requestNotificationPermission(user.uid).catch(err =>
+          console.log('Notification permission not granted:', err)
+        );
+      }
+      
+      // Send welcome email on every login
+      const userData = {
+        uid: user.uid,
+        displayName: user.displayName,
+        email: user.email,
+        photoURL: user.photoURL,
+      };
+      
+      sendWelcomeEmail(userData).catch(err => 
+        console.error('Failed to send welcome email:', err)
+      );
+      
       navigate("/dashboard");
     } catch (error) {
       console.error("Error during sign in:", error);

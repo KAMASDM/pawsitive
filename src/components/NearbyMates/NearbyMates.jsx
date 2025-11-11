@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ref, get, set } from "firebase/database";
 import { database, auth } from "../../firebase";
+import { sendMatingRequestNotification } from "../../services/notificationService";
 import {
   FiArrowLeft,
   FiMapPin,
@@ -229,6 +230,9 @@ const NearbyMates = () => {
         senderName: user.displayName,
         senderPetId: selectedUserPet.id,
         senderPetName: selectedUserPet.name,
+        senderPetBreed: selectedUserPet.breed,
+        senderPetGender: selectedUserPet.gender,
+        senderPetAge: selectedUserPet.age,
         receiverId: selectedPet.userId,
         receiverPetId: selectedPet.id,
         receiverPetName: selectedPet.name,
@@ -247,6 +251,9 @@ const NearbyMates = () => {
         senderName: user.displayName,
         senderPetId: selectedUserPet.id,
         senderPetName: selectedUserPet.name,
+        senderPetBreed: selectedUserPet.breed,
+        senderPetGender: selectedUserPet.gender,
+        senderPetAge: selectedUserPet.age,
         receiverId: selectedPet.userId,
         receiverPetId: selectedPet.id,
         receiverPetName: selectedPet.name,
@@ -255,6 +262,34 @@ const NearbyMates = () => {
         createdAt: Date.now(),
         direction: "outgoing",
       });
+      
+      // Get receiver's data and send notification
+      const receiverRef = ref(database, `users/${selectedPet.userId}`);
+      const receiverSnapshot = await get(receiverRef);
+      
+      if (receiverSnapshot.exists()) {
+        const receiverData = receiverSnapshot.val();
+        const senderData = {
+          uid: user.uid,
+          displayName: user.displayName,
+          email: user.email,
+        };
+        
+        const notificationData = {
+          id: requestId,
+          senderPetName: selectedUserPet.name,
+          senderPetBreed: selectedUserPet.breed,
+          senderPetGender: selectedUserPet.gender,
+          senderPetAge: selectedUserPet.age,
+          receiverPetName: selectedPet.name,
+          message: requestData.message,
+        };
+        
+        // Send email and push notification
+        sendMatingRequestNotification(receiverData, senderData, notificationData)
+          .catch(err => console.error('Failed to send mating request notification:', err));
+      }
+      
       setShowRequestModal(false);
     } catch (error) {
       console.error("Error sending mating request:", error);

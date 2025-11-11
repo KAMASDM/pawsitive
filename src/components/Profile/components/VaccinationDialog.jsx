@@ -171,6 +171,12 @@ const VaccinationDialog = ({
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Vaccination Type
                 </label>
+                {(!petType || !["dog", "cat"].includes(petType)) && (
+                  <p className="text-xs text-amber-600 mb-2 flex items-center gap-1">
+                    <span>⚠️</span>
+                    <span>Please select your pet type (dog or cat) in the Basic Info tab first</span>
+                  </p>
+                )}
                 <div className="relative">
                   <button
                     type="button"

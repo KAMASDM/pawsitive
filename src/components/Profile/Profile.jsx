@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { FiMail, FiPhone } from "react-icons/fi";
 import useResponsive from "../../hooks/useResponsive";
 import { FaPlus, FaPaw, FaHeart, FaCommentDots } from "react-icons/fa";
+import { sendMatingRequestAcceptedNotification } from "../../services/notificationService";
 import {
   PetDialog,
   VaccinationDialog,
@@ -66,7 +67,7 @@ const MobileVersion = ({ user, pets, matingRequests, chats, activeTab, setActive
     {/* Content */}
     <motion.div className="min-h-[400px]" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}>
       <AnimatePresence mode="wait">
-        {activeTab === "pets" && (<PetsSection key="pets" pets={pets} onAddPet={handleAddPet} onEditPet={handleEditPet} onDeletePet={handleDeletePet} />)}
+        {activeTab === "pets" && (<PetsSection key="pets" pets={pets} onAddPet={handleAddPet} onEditPet={handleEditPet} onDeletePet={handleDeletePet} onToggleAvailability={handleToggleAvailability} />)}
         {activeTab === "requests" && (<RequestsSection key="requests" requests={matingRequests} onAccept={handleAcceptRequest} onDecline={handleDeclineRequest} />)}
         {activeTab === "messages" && <ConversationsListSection key="messages" onOpenConversation={handleOpenMessageDialog} />}
       </AnimatePresence>
@@ -156,7 +157,7 @@ const DesktopVersion = ({ user, pets, matingRequests, activeTab, setActiveTab, t
       </motion.div>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.4 }}>
         <AnimatePresence mode="wait">
-          {activeTab === "pets" && (<DesktopPetsSection key="pets" pets={pets} onAddPet={handleAddPet} onEditPet={handleEditPet} onDeletePet={handleDeletePet} />)}
+          {activeTab === "pets" && (<DesktopPetsSection key="pets" pets={pets} onAddPet={handleAddPet} onEditPet={handleEditPet} onDeletePet={handleDeletePet} onToggleAvailability={handleToggleAvailability} />)}
           {activeTab === "requests" && (<DesktopRequestsSection key="requests" requests={matingRequests} onAccept={handleAcceptRequest} onDecline={handleDeclineRequest} />)}
           {activeTab === "messages" && (<ConversationsListSection key="messages" onOpenConversation={handleOpenMessageDialog} />)}
         </AnimatePresence>
@@ -277,9 +278,24 @@ const Profile = () => {
     try {
       const petRef = ref(database, `userPets/${user.uid}/${petId}`);
       await remove(petRef);
-      setPets(prev => prev.filter(pet => pet.id !== petId));
+      setPets(prev => prev.filter(p => p.id !== petId));
     } catch (error) {
       console.error("Error deleting pet:", error);
+    }
+  }, [user]);
+
+  const handleToggleAvailability = useCallback(async (pet, type) => {
+    if (!user) return;
+    try {
+      const updatedPet = {
+        ...pet,
+        [type]: !pet[type]
+      };
+      const petRef = ref(database, `userPets/${user.uid}/${pet.id}`);
+      await set(petRef, updatedPet);
+      setPets(prev => prev.map(p => p.id === pet.id ? updatedPet : p));
+    } catch (error) {
+      console.error("Error toggling availability:", error);
     }
   }, [user]);
 
@@ -335,6 +351,24 @@ const Profile = () => {
       await update(ref(database), updates);
 
       setMatingRequests(prev => prev.map(req => req.id === request.id ? { ...req, status } : req));
+      
+      // Send notification if request is accepted
+      if (status === "accepted") {
+        const senderRef = ref(database, `users/${request.senderId}`);
+        const senderSnapshot = await get(senderRef);
+        
+        if (senderSnapshot.exists()) {
+          const senderData = senderSnapshot.val();
+          const receiverData = {
+            uid: user.uid,
+            displayName: user.displayName,
+            email: user.email,
+          };
+          
+          sendMatingRequestAcceptedNotification(senderData, receiverData, request)
+            .catch(err => console.error('Failed to send acceptance notification:', err));
+        }
+      }
     } catch (error) {
       console.error(`Error updating request to ${status}:`, error);
     }

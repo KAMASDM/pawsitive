@@ -29,7 +29,7 @@ import {
 } from "react-icons/fi";
 
 
-const ResourceCard = ({ resource, onResourceUpdated }) => {
+const ResourceCard = ({ resource, onResourceUpdated, onClick, userLocation }) => {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [showHours, setShowHours] = useState(false);
@@ -402,6 +402,7 @@ const ResourceCard = ({ resource, onResourceUpdated }) => {
         className="bg-white h-full rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden flex flex-col"
         whileHover={{ scale: 1.02, y: -2 }}
         whileTap={{ scale: 0.98 }}
+        onClick={onClick}
       >
         {/* Image Section at Top */}
         <div className="h-32 sm:h-48 w-full bg-gradient-to-br from-violet-50 to-indigo-50 overflow-hidden relative">

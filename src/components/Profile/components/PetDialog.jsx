@@ -9,11 +9,12 @@ import {
   FiTrash2,
   FiCheck,
 } from "react-icons/fi";
-import { FaPaw, FaSyringe, FaNotesMedical } from "react-icons/fa";
+import { FaPaw, FaSyringe, FaNotesMedical, FaDog, FaCat, FaFish, FaDove, FaHorse } from "react-icons/fa";
 import AllergiesSelect from "./AllergiesSelect";
 import BreedSelect from "./BreedSelect";
 import MedicalConditionsSelect from "./MedicalConditionsSelect";
 
+// TabPanel component for tab content
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
 
@@ -36,6 +37,61 @@ function TabPanel(props) {
         </motion.div>
       )}
     </div>
+  );
+}
+
+// Card selection component for pet types
+function PetTypeCard({ type, icon: Icon, selected, onSelect, disabled }) {
+  return (
+    <motion.button
+      type="button"
+      onClick={onSelect}
+      disabled={disabled}
+      whileHover={{ scale: disabled ? 1 : 1.02 }}
+      whileTap={{ scale: disabled ? 1 : 0.98 }}
+      className={`p-4 sm:p-6 rounded-xl border-2 transition-all relative ${
+        selected
+          ? "border-violet-600 bg-violet-50 shadow-lg"
+          : "border-gray-200 bg-white hover:border-violet-300 hover:shadow-md"
+      } ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+    >
+      {selected && (
+        <div className="absolute top-2 right-2 w-6 h-6 bg-violet-600 rounded-full flex items-center justify-center">
+          <FiCheck className="text-white w-4 h-4" />
+        </div>
+      )}
+      <Icon className={`w-8 h-8 sm:w-12 sm:h-12 mx-auto mb-2 ${selected ? "text-violet-600" : "text-gray-400"}`} />
+      <p className={`font-semibold text-sm sm:text-base ${selected ? "text-violet-700" : "text-gray-700"}`}>
+        {type}
+      </p>
+    </motion.button>
+  );
+}
+
+// Card selection component for gender
+function GenderCard({ gender, selected, onSelect, disabled }) {
+  return (
+    <motion.button
+      type="button"
+      onClick={onSelect}
+      disabled={disabled}
+      whileHover={{ scale: disabled ? 1 : 1.02 }}
+      whileTap={{ scale: disabled ? 1 : 0.98 }}
+      className={`p-4 rounded-xl border-2 transition-all relative ${
+        selected
+          ? "border-violet-600 bg-violet-50 shadow-lg"
+          : "border-gray-200 bg-white hover:border-violet-300 hover:shadow-md"
+      } ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+    >
+      {selected && (
+        <div className="absolute top-2 right-2 w-5 h-5 bg-violet-600 rounded-full flex items-center justify-center">
+          <FiCheck className="text-white w-3 h-3" />
+        </div>
+      )}
+      <p className={`font-semibold text-sm sm:text-base ${selected ? "text-violet-700" : "text-gray-700"}`}>
+        {gender}
+      </p>
+    </motion.button>
   );
 }
 
@@ -360,7 +416,7 @@ const PetDialog = ({
                 <FiX className="w-5 h-5" />
               </button>
             </div>
-            <div className="border-b border-lavender-100">
+            <div className="border-b border-lavender-100 bg-white relative z-10">
               <div className="flex">
                 <button
                   onClick={(e) => handleTabChange(e, 0)}
@@ -473,30 +529,47 @@ const PetDialog = ({
                       disabled={isSaving}
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Pet Type
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      Pet Type <span className="text-red-500">*</span>
                     </label>
-                    <select
-                      value={currentPet?.type || ""}
-                      onChange={(e) =>
-                        setCurrentPet({
-                          ...currentPet,
-                          type: e.target.value,
-                          breed: "",
-                        })
-                      }
-                      className="w-full px-4 py-2.5 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent bg-white disabled:opacity-50"
-                      disabled={isSaving}
-                    >
-                      <option value="">Select pet type</option>
-                      <option value="dog">Dog</option>
-                      <option value="cat">Cat</option>
-                      <option value="bird">Bird</option>
-                      <option value="fish">Fish</option>
-                      <option value="rabbit">Rabbit</option>
-                      <option value="other">Other</option>
-                    </select>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                      <PetTypeCard
+                        type="Dog"
+                        icon={FaDog}
+                        selected={currentPet?.type === "dog"}
+                        onSelect={() => setCurrentPet({ ...currentPet, type: "dog", breed: "" })}
+                        disabled={isSaving}
+                      />
+                      <PetTypeCard
+                        type="Cat"
+                        icon={FaCat}
+                        selected={currentPet?.type === "cat"}
+                        onSelect={() => setCurrentPet({ ...currentPet, type: "cat", breed: "" })}
+                        disabled={isSaving}
+                      />
+                      <PetTypeCard
+                        type="Bird"
+                        icon={FaDove}
+                        selected={currentPet?.type === "bird"}
+                        onSelect={() => setCurrentPet({ ...currentPet, type: "bird", breed: "" })}
+                        disabled={isSaving}
+                      />
+                      <PetTypeCard
+                        type="Fish"
+                        icon={FaFish}
+                        selected={currentPet?.type === "fish"}
+                        onSelect={() => setCurrentPet({ ...currentPet, type: "fish", breed: "" })}
+                        disabled={isSaving}
+                      />
+                      <PetTypeCard
+                        type="Horse"
+                        icon={FaHorse}
+                        selected={currentPet?.type === "horse"}
+                        onSelect={() => setCurrentPet({ ...currentPet, type: "horse", breed: "" })}
+                        disabled={isSaving}
+                      />
+                    </div>
                   </div>
                   <div>
                     <BreedSelect
@@ -509,22 +582,29 @@ const PetDialog = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
                       Gender
                     </label>
-                    <select
-                      value={currentPet?.gender || ""}
-                      onChange={(e) =>
-                        setCurrentPet({ ...currentPet, gender: e.target.value })
-                      }
-                      className="w-full px-4 py-2.5 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent bg-white disabled:opacity-50"
-                      disabled={isSaving}
-                    >
-                      <option value="">Select gender</option>
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                      <option value="Unknown">Unknown</option>
-                    </select>
+                    <div className="grid grid-cols-3 gap-3">
+                      <GenderCard
+                        gender="Male"
+                        selected={currentPet?.gender === "Male"}
+                        onSelect={() => setCurrentPet({ ...currentPet, gender: "Male" })}
+                        disabled={isSaving}
+                      />
+                      <GenderCard
+                        gender="Female"
+                        selected={currentPet?.gender === "Female"}
+                        onSelect={() => setCurrentPet({ ...currentPet, gender: "Female" })}
+                        disabled={isSaving}
+                      />
+                      <GenderCard
+                        gender="Unknown"
+                        selected={currentPet?.gender === "Unknown"}
+                        onSelect={() => setCurrentPet({ ...currentPet, gender: "Unknown" })}
+                        disabled={isSaving}
+                      />
+                    </div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">

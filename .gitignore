@@ -1,5 +1,65 @@
-node_modules
-.env
-build
+# Dependencies
+node_modules/
+/.pnp
+.pnp.js
 
-functions
+# Testing
+/coverage
+
+# Production
+/build
+/dist
+
+# Environment Variables (CRITICAL - Never commit these!)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*.local
+
+# Firebase
+.firebase/
+.firebaserc
+firebase-debug.log
+firebase-debug.*.log
+firestore-debug.log
+ui-debug.log
+*.log
+
+# Firebase Functions
+functions/node_modules/
+functions/.env
+functions/lib/
+functions/dist/
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.history/
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pglite-debug.log
+lerna-debug.log*
+
+# Misc
+.cache/
+*.tsbuildinfo
+.eslintcache
+
+# Service Account Keys (CRITICAL - Never commit!)
+*-service-account.json
+serviceAccountKey.json
+credentials.json
+google-credentials.json
+
+# API Keys (backup safety)
+*-api-key.json
+*-config.json

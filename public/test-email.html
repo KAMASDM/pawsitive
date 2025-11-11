@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pawppy Email Test</title>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #f3f0f9 0%, #e9e4f8 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      margin: 0;
+    }
+    .container {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 10px 40px rgba(139, 119, 195, 0.2);
+      padding: 40px;
+      max-width: 600px;
+      width: 100%;
+    }
+    h1 {
+      color: #8b77c3;
+      text-align: center;
+      margin: 0 0 10px 0;
+      font-size: 32px;
+    }
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 30px;
+    }
+    .info-box {
+      background: #f3f0f9;
+      border-radius: 10px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .info-box h3 {
+      color: #8b77c3;
+      margin-top: 0;
+    }
+    .info-box ul {
+      margin: 10px 0;
+      padding-left: 20px;
+    }
+    .info-box li {
+      margin: 8px 0;
+      color: #333;
+    }
+    button {
+      background: linear-gradient(135deg, #8b77c3, #a78bfa);
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      width: 100%;
+      margin: 20px 0;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(139, 119, 195, 0.4);
+    }
+    button:active {
+      transform: translateY(0);
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    #status {
+      padding: 15px;
+      border-radius: 10px;
+      margin: 20px 0;
+      display: none;
+      text-align: center;
+      font-weight: 500;
+    }
+    .success {
+      background: #d1fae5;
+      color: #065f46;
+      border: 2px solid #10b981;
+    }
+    .error {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 2px solid #ef4444;
+    }
+    .loading {
+      background: #fef3c7;
+      color: #92400e;
+      border: 2px solid #f59e0b;
+    }
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(0,0,0,0.1);
+      border-radius: 50%;
+      border-top-color: #8b77c3;
+      animation: spin 1s linear infinite;
+      margin-right: 10px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🐾 Pawppy Email Test</h1>
+    <p class="subtitle">Test the email notification system</p>
+    
+    <div class="info-box">
+      <h3>📧 Email Configuration</h3>
+      <ul>
+        <li><strong>Service ID:</strong> service_zdt4u0q</li>
+        <li><strong>Template ID:</strong> template_pe8gs6o</li>
+        <li><strong>Recipient:</strong> anantsoftcomputing@gmail.com</li>
+      </ul>
+    </div>
+    
+    <button id="sendBtn" onclick="sendTestEmail()">
+      Send Test Email
+    </button>
+    
+    <div id="status"></div>
+  </div>
+
+  <script>
+    // Initialize EmailJS
+    emailjs.init('9Ic6G_vwTk3Wl8Szu');
+
+    function showStatus(message, type) {
+      const statusDiv = document.getElementById('status');
+      statusDiv.textContent = message;
+      statusDiv.className = type;
+      statusDiv.style.display = 'block';
+    }
+
+    async function sendTestEmail() {
+      const btn = document.getElementById('sendBtn');
+      btn.disabled = true;
+      
+      showStatus('Sending email...', 'loading');
+      
+      const templateParams = {
+        name: "Anant",
+        to_email: "anantsoftcomputing@gmail.com",
+        message: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f3ff;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f3ff; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+          
+          <!-- Header -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #8b77c3 0%, #a78bfa 100%); padding: 40px 30px; text-align: center;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 32px; font-weight: bold;">🐾 Test Email from Pawppy</h1>
+              <p style="color: #f3f0f9; margin: 10px 0 0 0; font-size: 16px;">Email System Test</p>
+            </td>
+          </tr>
+          
+          <!-- Content -->
+          <tr>
+            <td style="padding: 40px 30px;">
+              <p style="font-size: 18px; color: #333333; margin: 0 0 20px 0;">Hi Anant,</p>
+              <p style="font-size: 16px; color: #555555; margin: 0 0 30px 0; line-height: 1.8;">
+                This is a test email from the Pawppy notification system. If you're reading this, the email integration is working correctly! 🎉
+              </p>
+              
+              <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #f3f0f9 0%, #e9d5ff 100%); border-radius: 12px; margin-bottom: 30px;">
+                <tr>
+                  <td style="padding: 25px; text-align: center;">
+                    <h2 style="color: #8b77c3; margin: 0 0 15px 0; font-size: 20px;">✅ Email Features</h2>
+                    <p style="margin: 0; color: #4a3a6b; font-size: 15px; line-height: 1.8;">
+                      ✨ Beautiful HTML Templates<br/>
+                      🎨 Branded Design with Pawppy Colors<br/>
+                      📱 Mobile-Responsive Layout<br/>
+                      🔔 Welcome, Mating Request, Acceptance & Vaccination Reminders
+                    </p>
+                  </td>
+                </tr>
+              </table>
+              
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="padding: 20px 0;">
+                    <a href="https://pawppy.in" style="background: linear-gradient(135deg, #8b77c3 0%, #a78bfa 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 30px; font-size: 16px; font-weight: bold; display: inline-block; box-shadow: 0 4px 12px rgba(139, 119, 195, 0.3);">
+                      Visit Pawppy →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+              <p style="margin: 0 0 10px 0; color: #6b7280; font-size: 14px;">
+                <strong>Pawppy</strong> - Connecting Pet Parents Worldwide
+              </p>
+              <p style="margin: 0; color: #9ca3af; font-size: 12px;">
+                © 2025 Pawppy. All rights reserved.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+        `
+      };
+
+      try {
+        console.log('Sending email with params:', templateParams);
+        
+        const response = await emailjs.send(
+          'service_zdt4u0q',
+          'template_pe8gs6o',
+          templateParams
+        );
+        
+        console.log('✅ Success!', response);
+        showStatus('✅ Email sent successfully! Check anantsoftcomputing@gmail.com', 'success');
+      } catch (error) {
+        console.error('❌ Error:', error);
+        showStatus(`❌ Failed to send email: ${error.text || error.message}`, 'error');
+      } finally {
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>

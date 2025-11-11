@@ -4,6 +4,8 @@ export { default as PetDialog } from './PetDialog';
 export { default as MatingRequestDialog } from './MatingRequestDialog';
 export { default as VaccinationDialog } from './VaccinationDialog';
 export { default as VaccinationSelect } from './VaccinationSelect';
+export { default as MedicationSelect } from './MedicationSelect';
+export { default as MedicationScheduleDialog } from './MedicationScheduleDialog';
 export { default as ResourcesList } from './ResourcesList';
 export { default as CommentsList } from './CommentsList';
 export { default as AllergiesSelect } from './AllergiesSelect';
