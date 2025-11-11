@@ -28,7 +28,7 @@ const ConversationsListSection = memo(ConversationsList);
 
 // --- Child Components for Mobile/Desktop Views ---
 
-const MobileVersion = ({ user, pets, matingRequests, chats, activeTab, setActiveTab, tabs, handleAddPet, handleEditPet, handleDeletePet, handleAcceptRequest, handleDeclineRequest, handleOpenMessageDialog }) => (
+const MobileVersion = ({ user, pets, matingRequests, chats, activeTab, setActiveTab, tabs, handleAddPet, handleEditPet, handleDeletePet, handleToggleAvailability, handleAcceptRequest, handleDeclineRequest, handleOpenMessageDialog }) => (
   <div className="min-h-screen bg-gradient-to-br from-slate-50 to-violet-50 p-4">
     {/* User Profile Header */}
     <motion.div className="bg-white/80 backdrop-blur-lg rounded-2xl p-6 shadow-lg border border-violet-100 mb-6" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
@@ -75,7 +75,7 @@ const MobileVersion = ({ user, pets, matingRequests, chats, activeTab, setActive
   </div>
 );
 
-const DesktopVersion = ({ user, pets, matingRequests, activeTab, setActiveTab, tabs, handleAddPet, handleEditPet, handleDeletePet, handleAcceptRequest, handleDeclineRequest, handleOpenMessageDialog, navigate }) => (
+const DesktopVersion = ({ user, pets, matingRequests, activeTab, setActiveTab, tabs, handleAddPet, handleEditPet, handleDeletePet, handleToggleAvailability, handleAcceptRequest, handleDeclineRequest, handleOpenMessageDialog, navigate }) => (
   <div className="min-h-screen bg-gradient-to-br from-slate-50 to-violet-50 p-8">
     <div className="max-w-7xl mx-auto">
       {/* Header */}
@@ -433,9 +433,9 @@ const Profile = () => {
   return (
     <>
       {isDesktop ? (
-        <DesktopVersion user={user} pets={pets} navigate={navigate} matingRequests={matingRequests} activeTab={activeTab} setActiveTab={setActiveTab} tabs={tabs} handleAddPet={handleAddPet} handleEditPet={handleEditPet} handleDeletePet={handleDeletePet} handleAcceptRequest={handleAcceptRequest} handleDeclineRequest={handleDeclineRequest} handleOpenMessageDialog={handleOpenMessageDialog} />
+        <DesktopVersion user={user} pets={pets} navigate={navigate} matingRequests={matingRequests} activeTab={activeTab} setActiveTab={setActiveTab} tabs={tabs} handleAddPet={handleAddPet} handleEditPet={handleEditPet} handleDeletePet={handleDeletePet} handleToggleAvailability={handleToggleAvailability} handleAcceptRequest={handleAcceptRequest} handleDeclineRequest={handleDeclineRequest} handleOpenMessageDialog={handleOpenMessageDialog} />
       ) : (
-        <MobileVersion user={user} pets={pets} matingRequests={matingRequests} activeTab={activeTab} setActiveTab={setActiveTab} tabs={tabs} handleAddPet={handleAddPet} handleEditPet={handleEditPet} handleDeletePet={handleDeletePet} handleAcceptRequest={handleAcceptRequest} handleDeclineRequest={handleDeclineRequest} handleOpenMessageDialog={handleOpenMessageDialog} />
+        <MobileVersion user={user} pets={pets} matingRequests={matingRequests} activeTab={activeTab} setActiveTab={setActiveTab} tabs={tabs} handleAddPet={handleAddPet} handleEditPet={handleEditPet} handleDeletePet={handleDeletePet} handleToggleAvailability={handleToggleAvailability} handleAcceptRequest={handleAcceptRequest} handleDeclineRequest={handleDeclineRequest} handleOpenMessageDialog={handleOpenMessageDialog} />
       )}
 
       {openPetDialog && (<PetDialog open={openPetDialog} onClose={() => setOpenPetDialog(false)} pet={currentPet} setPet={setCurrentPet} onSave={handleSavePet} isEditMode={isEditMode} tabValue={tabValue} onTabChange={(e, val) => setTabValue(val)} onAddVaccination={handleAddVaccination} onEditVaccination={handleEditVaccination} onDeleteVaccination={handleDeleteVaccination} isMobile={!isDesktop} />)}

@@ -8,11 +8,14 @@ import {
   FiEdit2,
   FiTrash2,
   FiCheck,
+  FiClock,
 } from "react-icons/fi";
-import { FaPaw, FaSyringe, FaNotesMedical, FaDog, FaCat, FaFish, FaDove, FaHorse } from "react-icons/fa";
+import { FaPaw, FaSyringe, FaNotesMedical, FaDog, FaCat, FaFish, FaDove, FaHorse, FaPills } from "react-icons/fa";
 import AllergiesSelect from "./AllergiesSelect";
 import BreedSelect from "./BreedSelect";
 import MedicalConditionsSelect from "./MedicalConditionsSelect";
+import MedicationSelect from "./MedicationSelect";
+import MedicationScheduleDialog from "./MedicationScheduleDialog";
 
 // TabPanel component for tab content
 function TabPanel(props) {
@@ -31,7 +34,7 @@ function TabPanel(props) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="p-6"
+          className="p-4 sm:p-6"
         >
           {children}
         </motion.div>
@@ -119,8 +122,14 @@ const PetDialog = ({
   const [otherBreed, setOtherBreed] = useState("");
   const [otherConditions, setOtherConditions] = useState("");
   const [otherAllergies, setOtherAllergies] = useState("");
+  
+  // Medication scheduling states
+  const [openMedicationSchedule, setOpenMedicationSchedule] = useState(false);
+  const [currentMedication, setCurrentMedication] = useState(null);
+  const [medicationEditIndex, setMedicationEditIndex] = useState(-1);
 
   const vaccinations = currentPet?.vaccinations || [];
+  const medicationSchedules = currentPet?.medical?.medicationSchedules || [];
 
   useEffect(() => {
     if (currentPet) {
@@ -264,6 +273,66 @@ const PetDialog = ({
         otherAllergies: value,
       },
     });
+  };
+
+  // Medication handlers
+  const handleMedicationsChange = (medications) => {
+    setCurrentPet({
+      ...currentPet,
+      medical: {
+        ...currentPet.medical,
+        medications: medications,
+      },
+    });
+  };
+
+  const handleAddMedicationSchedule = () => {
+    setCurrentMedication({
+      name: "",
+      dosage: "",
+      frequency: "daily",
+      timeOfDay: "",
+      startDate: new Date().toISOString().split('T')[0],
+      endDate: "",
+      reminderEnabled: true,
+      notes: "",
+    });
+    setMedicationEditIndex(-1);
+    setOpenMedicationSchedule(true);
+  };
+
+  const handleEditMedicationSchedule = (schedule, index) => {
+    setCurrentMedication(schedule);
+    setMedicationEditIndex(index);
+    setOpenMedicationSchedule(true);
+  };
+
+  const handleSaveMedicationSchedule = (schedule) => {
+    const updatedSchedules = medicationEditIndex >= 0
+      ? medicationSchedules.map((s, i) => i === medicationEditIndex ? schedule : s)
+      : [...medicationSchedules, schedule];
+
+    setCurrentPet({
+      ...currentPet,
+      medical: {
+        ...currentPet.medical,
+        medicationSchedules: updatedSchedules,
+      },
+    });
+    setOpenMedicationSchedule(false);
+  };
+
+  const handleDeleteMedicationSchedule = (index) => {
+    if (window.confirm("Are you sure you want to delete this medication schedule?")) {
+      const updatedSchedules = medicationSchedules.filter((_, i) => i !== index);
+      setCurrentPet({
+        ...currentPet,
+        medical: {
+          ...currentPet.medical,
+          medicationSchedules: updatedSchedules,
+        },
+      });
+    }
   };
 
   const calculateAge = (dobString) => {
@@ -416,49 +485,52 @@ const PetDialog = ({
                 <FiX className="w-5 h-5" />
               </button>
             </div>
-            <div className="border-b border-lavender-100 bg-white relative z-10">
-              <div className="flex">
+            <div className="border-b border-lavender-100 bg-white relative z-10 overflow-x-auto scrollbar-hide">
+              <div className="flex min-w-max">
                 <button
                   onClick={(e) => handleTabChange(e, 0)}
                   disabled={isSaving}
-                  className={`px-6 py-3 text-sm font-medium flex items-center transition-colors ${tabValue === 0
+                  className={`px-4 sm:px-6 py-3 text-xs sm:text-sm font-medium flex items-center transition-colors whitespace-nowrap ${tabValue === 0
                     ? "text-lavender-700 border-b-2 border-lavender-600"
                     : "text-gray-500 hover:text-lavender-600 hover:bg-lavender-50"
                     } disabled:opacity-50`}
                 >
                   <FaPaw
                     className={`${tabValue === 0 ? "text-lavender-600" : "text-gray-400"
-                      } mr-2`}
+                      } mr-1.5 sm:mr-2 w-3.5 h-3.5 sm:w-4 sm:h-4`}
                   />
-                  General Information
+                  <span className="hidden sm:inline">General Information</span>
+                  <span className="sm:hidden">General</span>
                 </button>
                 <button
                   onClick={(e) => handleTabChange(e, 1)}
                   disabled={isSaving}
-                  className={`px-6 py-3 text-sm font-medium flex items-center transition-colors ${tabValue === 1
+                  className={`px-4 sm:px-6 py-3 text-xs sm:text-sm font-medium flex items-center transition-colors whitespace-nowrap ${tabValue === 1
                     ? "text-lavender-700 border-b-2 border-lavender-600"
                     : "text-gray-500 hover:text-lavender-600 hover:bg-lavender-50"
                     } disabled:opacity-50`}
                 >
                   <FaNotesMedical
                     className={`${tabValue === 1 ? "text-lavender-600" : "text-gray-400"
-                      } mr-2`}
+                      } mr-1.5 sm:mr-2 w-3.5 h-3.5 sm:w-4 sm:h-4`}
                   />
-                  Medical Profile
+                  <span className="hidden sm:inline">Medical Profile</span>
+                  <span className="sm:hidden">Medical</span>
                 </button>
                 <button
                   onClick={(e) => handleTabChange(e, 2)}
                   disabled={isSaving}
-                  className={`px-6 py-3 text-sm font-medium flex items-center transition-colors ${tabValue === 2
+                  className={`px-4 sm:px-6 py-3 text-xs sm:text-sm font-medium flex items-center transition-colors whitespace-nowrap ${tabValue === 2
                     ? "text-lavender-700 border-b-2 border-lavender-600"
                     : "text-gray-500 hover:text-lavender-600 hover:bg-lavender-50"
                     } disabled:opacity-50`}
                 >
                   <FaSyringe
                     className={`${tabValue === 2 ? "text-lavender-600" : "text-gray-400"
-                      } mr-2`}
+                      } mr-1.5 sm:mr-2 w-3.5 h-3.5 sm:w-4 sm:h-4`}
                   />
-                  Vaccination Records
+                  <span className="hidden sm:inline">Vaccination Records</span>
+                  <span className="sm:hidden">Vaccines</span>
                 </button>
               </div>
             </div>
@@ -779,22 +851,113 @@ const PetDialog = ({
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Medications
                   </label>
-                  <textarea
-                    value={currentPet?.medical?.medications || ""}
-                    onChange={(e) =>
-                      setCurrentPet({
-                        ...currentPet,
-                        medical: {
-                          ...currentPet.medical,
-                          medications: e.target.value,
-                        },
-                      })
-                    }
-                    placeholder="Current medications and dosage"
-                    className="w-full px-4 py-2.5 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent resize-none disabled:opacity-50"
-                    rows={3}
+                  <MedicationSelect
+                    petType={currentPet?.type}
+                    value={currentPet?.medical?.medications || []}
+                    onChange={handleMedicationsChange}
                     disabled={isSaving}
-                  ></textarea>
+                  />
+                </div>
+
+                {/* Medication Schedules */}
+                <div className="mt-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 mb-4">
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                        <FaPills className="text-violet-600 w-4 h-4" />
+                        Medication Schedules
+                      </h3>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        Set dosage and reminders for each medication
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAddMedicationSchedule}
+                      disabled={isSaving}
+                      className="w-full sm:w-auto px-3 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg inline-flex items-center justify-center text-sm transition-colors disabled:opacity-50 font-medium"
+                    >
+                      <FiPlus className="mr-1.5" />
+                      Add Schedule
+                    </button>
+                  </div>
+
+                  {medicationSchedules.length > 0 ? (
+                    <div className="space-y-3">
+                      {medicationSchedules.map((schedule, index) => (
+                        <motion.div
+                          key={index}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="bg-white border border-violet-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-all"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start sm:items-center gap-2 mb-2 flex-wrap">
+                                <FaPills className="text-violet-600 w-4 h-4 flex-shrink-0 mt-0.5 sm:mt-0" />
+                                <h4 className="font-semibold text-gray-900 text-sm sm:text-base break-words">{schedule.name}</h4>
+                                {schedule.reminderEnabled && (
+                                  <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full flex items-center gap-1">
+                                    <FiClock className="w-3 h-3" />
+                                    Reminders On
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-xs sm:text-sm text-gray-600 space-y-1">
+                                <p><strong>Dosage:</strong> {schedule.dosage}</p>
+                                <p><strong>Frequency:</strong> {schedule.frequency.replace(/-/g, " ").replace(/\b\w/g, l => l.toUpperCase())}</p>
+                                {schedule.frequency !== "as-needed" && (
+                                  <p><strong>Time:</strong> {schedule.timeOfDay}</p>
+                                )}
+                                <p>
+                                  <strong>Period:</strong> {new Date(schedule.startDate).toLocaleDateString()}
+                                  {schedule.endDate && ` - ${new Date(schedule.endDate).toLocaleDateString()}`}
+                                  {!schedule.endDate && " - Ongoing"}
+                                </p>
+                                {schedule.notes && (
+                                  <p className="mt-2 text-xs italic border-t border-gray-100 pt-2 break-words">
+                                    {schedule.notes}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex sm:flex-row flex-col gap-1.5 sm:gap-2 flex-shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => handleEditMedicationSchedule(schedule, index)}
+                                disabled={isSaving}
+                                className="p-2 text-violet-600 hover:bg-violet-50 rounded-md transition-colors disabled:opacity-50"
+                              >
+                                <FiEdit2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteMedicationSchedule(index)}
+                                disabled={isSaving}
+                                className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50"
+                              >
+                                <FiTrash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 sm:py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+                      <FaPills className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-3" />
+                      <p className="text-sm sm:text-base text-gray-600 mb-3">No medication schedules yet</p>
+                      <button
+                        type="button"
+                        onClick={handleAddMedicationSchedule}
+                        disabled={isSaving}
+                        className="w-full sm:w-auto px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg inline-flex items-center justify-center transition-colors disabled:opacity-50 font-medium"
+                      >
+                        <FiPlus className="mr-1.5" />
+                        Add First Schedule
+                      </button>
+                    </div>
+                  )}
                 </div>
               </TabPanel>
               <TabPanel value={tabValue} index={2}>
@@ -926,18 +1089,18 @@ const PetDialog = ({
                 )}
               </TabPanel>
             </div>
-            <div className="border-t border-lavender-100 p-4 flex justify-end gap-3 bg-gray-50 rounded-b-2xl">
+            <div className="border-t border-lavender-100 p-3 sm:p-4 flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 bg-gray-50 rounded-b-2xl">
               <button
                 onClick={onClose}
                 disabled={isSaving}
-                className="px-4 py-2 border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 rounded-lg transition-colors disabled:opacity-50"
+                className="w-full sm:w-auto px-4 py-2.5 sm:py-2 border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 rounded-lg transition-colors disabled:opacity-50 font-medium"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveWithSpinner}
                 disabled={!currentPet?.name || isSaving}
-                className={`px-4 py-2 rounded-lg flex items-center transition-colors ${!currentPet?.name || isSaving
+                className={`w-full sm:w-auto px-4 py-2.5 sm:py-2 rounded-lg flex items-center justify-center transition-colors font-medium ${!currentPet?.name || isSaving
                   ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                   : "bg-lavender-600 hover:bg-lavender-700 text-white"
                   }`}
@@ -977,6 +1140,14 @@ const PetDialog = ({
           </motion.div>
         </div>
       )}
+      
+      {/* Medication Schedule Dialog */}
+      <MedicationScheduleDialog
+        open={openMedicationSchedule}
+        onClose={() => setOpenMedicationSchedule(false)}
+        medication={currentMedication}
+        onSave={handleSaveMedicationSchedule}
+      />
     </AnimatePresence>
   );
 };
