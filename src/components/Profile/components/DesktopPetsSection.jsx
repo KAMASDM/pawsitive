@@ -203,7 +203,7 @@ const DesktopPetsSection = ({ pets, onAddPet, onEditPet, onDeletePet, onToggleAv
                   <span>Edit</span>
                 </motion.button>
                 <Link
-                  to={`/pet-detail/${pet.id}`}
+                  to={pet.slug ? `/pet/${pet.slug}` : `/pet-detail/${pet.id}`}
                   className="flex items-center justify-center gap-1 px-3 py-2.5 bg-violet-100 hover:bg-violet-200 text-violet-700 rounded-lg font-medium transition-all duration-200 text-sm"
                 >
                   <FiEye className="w-4 h-4" />

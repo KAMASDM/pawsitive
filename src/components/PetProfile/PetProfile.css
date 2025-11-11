@@ -1,0 +1,52 @@
+/* Custom scrollbar for events timeline */
+.pet-events-timeline::-webkit-scrollbar {
+  width: 6px;
+}
+
+.pet-events-timeline::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.pet-events-timeline::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 10px;
+}
+
+.pet-events-timeline::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Smooth animations for post cards */
+.post-card-enter {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.post-card-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms, transform 300ms;
+}
+
+/* Grid hover effects */
+.post-grid-item {
+  position: relative;
+  overflow: hidden;
+}
+
+.post-grid-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(167, 139, 250, 0.1) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.post-grid-item:hover::before {
+  opacity: 1;
+}

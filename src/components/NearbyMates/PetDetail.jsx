@@ -44,44 +44,58 @@ const PetDetail = () => {
         return;
       }
       try {
-        const allUserPetsRef = ref(database, "userPets");
-        const snapshot = await get(allUserPetsRef);
-        if (snapshot.exists()) {
-          const allUserPets = snapshot.val();
-          let foundPet = null;
-          Object.entries(allUserPets).forEach(([userId, pets]) => {
-            if (pets[petId]) {
-              foundPet = { ...pets[petId], id: petId, userId };
-            }
-          });
-          if (foundPet) {
-            setPet(foundPet);
-            if (user && user.uid) {
-              const userPetsRef = ref(database, `userPets/${user.uid}`);
-              const userPetsSnapshot = await get(userPetsRef);
-              if (userPetsSnapshot.exists()) {
-                const petsData = userPetsSnapshot.val();
-                const petsArray = Object.keys(petsData).map((id) => ({
-                  id,
-                  ...petsData[id],
-                }));
-                const compatiblePets = petsArray.filter(
-                  (userPet) =>
-                    userPet.type === foundPet.type &&
-                    userPet.gender !== foundPet.gender
-                );
-                setUserPets(compatiblePets);
-                if (compatiblePets.length > 0) {
-                  setSelectedUserPet(compatiblePets[0]);
-                }
-              }
-              checkRequestStatus(user.uid, foundPet.userId, foundPet.id);
-            }
-          } else {
-            setError("Pet not found");
+        // Check if this petId is actually a slug, try to get from petSlugs first
+        const slugRef = ref(database, `petSlugs/${petId}`);
+        const slugSnapshot = await get(slugRef);
+        
+        let foundPet = null;
+        let ownerId = null;
+        
+        if (slugSnapshot.exists()) {
+          // It's a slug, get the actual pet location
+          const slugData = slugSnapshot.val();
+          ownerId = slugData.userId;
+          const actualPetId = slugData.petId;
+          
+          const petRef = ref(database, `userPets/${ownerId}/${actualPetId}`);
+          const petSnapshot = await get(petRef);
+          
+          if (petSnapshot.exists()) {
+            foundPet = { ...petSnapshot.val(), id: actualPetId, userId: ownerId };
           }
         } else {
-          setError("No pets found in the database");
+          // Not a slug, try direct pet lookup - we need to find which user owns this pet
+          // Since we can't read all userPets, redirect to the slug-based URL if available
+          setError("Please use the View button from the pet card or the pet's public profile link");
+          setLoading(false);
+          return;
+        }
+        
+        if (foundPet) {
+          setPet(foundPet);
+          if (user && user.uid) {
+            const userPetsRef = ref(database, `userPets/${user.uid}`);
+            const userPetsSnapshot = await get(userPetsRef);
+            if (userPetsSnapshot.exists()) {
+              const petsData = userPetsSnapshot.val();
+              const petsArray = Object.keys(petsData).map((id) => ({
+                id,
+                ...petsData[id],
+              }));
+              const compatiblePets = petsArray.filter(
+                (userPet) =>
+                  userPet.type === foundPet.type &&
+                  userPet.gender !== foundPet.gender
+              );
+              setUserPets(compatiblePets);
+              if (compatiblePets.length > 0) {
+                setSelectedUserPet(compatiblePets[0]);
+              }
+            }
+            checkRequestStatus(user.uid, foundPet.userId, foundPet.id);
+          }
+        } else {
+          setError("Pet not found");
         }
       } catch (err) {
         console.error("Error fetching pet details:", err);

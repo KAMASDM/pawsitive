@@ -264,25 +264,77 @@ const Profile = () => {
   const handleSavePet = useCallback(async () => {
     if (!user || !currentPet.name) return;
     try {
+      console.log('Saving pet:', currentPet);
+      
+      // Generate slug from pet name and pet ID for uniqueness
+      const baseSlug = currentPet.name
+        .toLowerCase()
+        .trim()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+      
+      // Use pet ID suffix to ensure uniqueness (e.g., harry-abc123)
+      const petIdSuffix = currentPet.id.slice(-6);
+      const slug = isEditMode && currentPet.slug ? currentPet.slug : `${baseSlug}-${petIdSuffix}`;
+      console.log('Generated slug:', slug);
+      
+      // Add slug and privacy settings to pet data
+      const petDataWithSlug = {
+        ...currentPet,
+        slug,
+        userId: user.uid,
+        privacy: currentPet.privacy || {
+          isPrivate: false,
+          commentsDisabled: false
+        }
+      };
+      
+      console.log('Saving pet data:', petDataWithSlug);
       const petRef = ref(database, `userPets/${user.uid}/${currentPet.id}`);
-      await set(petRef, currentPet);
-      setPets(prev => isEditMode ? prev.map(p => p.id === currentPet.id ? currentPet : p) : [...prev, currentPet]);
+      await set(petRef, petDataWithSlug);
+      console.log('Pet saved successfully to database');
+      
+      // Save slug index for public access
+      const slugIndexRef = ref(database, `petSlugs/${slug}`);
+      await set(slugIndexRef, {
+        userId: user.uid,
+        petId: currentPet.id,
+        petName: currentPet.name,
+        isPrivate: petDataWithSlug.privacy.isPrivate
+      });
+      console.log('Slug index saved:', slug);
+      
+      setPets(prev => isEditMode ? prev.map(p => p.id === currentPet.id ? petDataWithSlug : p) : [...prev, petDataWithSlug]);
       setOpenPetDialog(false);
     } catch (error) {
       console.error("Error saving pet:", error);
+      alert(`Failed to save pet: ${error.message}`);
     }
   }, [user, currentPet, isEditMode]);
 
   const handleDeletePet = useCallback(async (petId) => {
     if (!user || !window.confirm("Are you sure you want to delete this pet? This action cannot be undone.")) return;
     try {
+      // Find the pet to get its slug
+      const pet = pets.find(p => p.id === petId);
+      
+      // Delete the pet
       const petRef = ref(database, `userPets/${user.uid}/${petId}`);
       await remove(petRef);
+      
+      // Delete the slug index if it exists
+      if (pet?.slug) {
+        const slugRef = ref(database, `petSlugs/${pet.slug}`);
+        await remove(slugRef);
+      }
+      
       setPets(prev => prev.filter(p => p.id !== petId));
     } catch (error) {
       console.error("Error deleting pet:", error);
     }
-  }, [user]);
+  }, [user, pets]);
 
   const handleToggleAvailability = useCallback(async (pet, type) => {
     if (!user) return;

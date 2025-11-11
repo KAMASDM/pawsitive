@@ -8,6 +8,7 @@ import NotFound from "./components/NotFound/NotFound";
 import NearbyMates from "./components/NearbyMates/NearbyMates";
 import AdoptPet from "./components/AdoptPet/AdoptPet";
 import PetDetail from "./components/NearbyMates/PetDetail";
+import PetProfile from "./components/PetProfile/PetProfile";
 import PR from "./components/PR/PR";
 import ScrollToTop from "./UI/ScrollToTop";
 import Footer from "./components/Footer/Footer";
@@ -83,6 +84,10 @@ function App() {
                   <PetDetail />
                 </PR>
               }
+            />
+            <Route
+              path="/pet/:slug"
+              element={<PetProfile />}
             />
             <Route
               path="/resource"

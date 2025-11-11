@@ -166,7 +166,7 @@ const PetsSection = ({ pets, onAddPet, onEditPet, onDeletePet, onToggleAvailabil
                       <span>Edit</span>
                     </button>
                   <Link
-                    to={`/pet-detail/${pet.id}`}
+                    to={pet.slug ? `/pet/${pet.slug}` : `/pet-detail/${pet.id}`}
                     className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-violet-100 hover:bg-violet-200 text-violet-700 rounded-lg font-medium transition-all duration-200 text-sm"
                   >
                     <FiEye className="w-3.5 h-3.5" />

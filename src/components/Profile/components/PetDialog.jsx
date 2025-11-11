@@ -9,6 +9,10 @@ import {
   FiTrash2,
   FiCheck,
   FiClock,
+  FiLock,
+  FiUnlock,
+  FiMessageCircle,
+  FiShare2,
 } from "react-icons/fi";
 import { FaPaw, FaSyringe, FaNotesMedical, FaDog, FaCat, FaFish, FaDove, FaHorse, FaPills } from "react-icons/fa";
 import AllergiesSelect from "./AllergiesSelect";
@@ -128,6 +132,11 @@ const PetDialog = ({
   const [currentMedication, setCurrentMedication] = useState(null);
   const [medicationEditIndex, setMedicationEditIndex] = useState(-1);
 
+  // Validation states
+  const [validationErrors, setValidationErrors] = useState({});
+  const [touched, setTouched] = useState({});
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+
   const vaccinations = currentPet?.vaccinations || [];
   const medicationSchedules = currentPet?.medical?.medicationSchedules || [];
 
@@ -163,10 +172,93 @@ const PetDialog = ({
     }
   }, [currentPet, currentPet?.id, setCurrentPet]);
 
+  // Validation logic
+  const validateField = (fieldName, value) => {
+    const errors = {};
+    
+    switch (fieldName) {
+      case 'name':
+        if (!value || value.trim() === '') {
+          errors.name = 'Pet name is required';
+        } else if (value.length < 2) {
+          errors.name = 'Name must be at least 2 characters';
+        } else if (value.length > 30) {
+          errors.name = 'Name must be less than 30 characters';
+        }
+        break;
+      case 'type':
+        if (!value) {
+          errors.type = 'Please select a pet type';
+        }
+        break;
+      case 'breed':
+        if (currentPet?.type && !value) {
+          errors.breed = 'Please select a breed';
+        }
+        break;
+      case 'dateOfBirth':
+        if (value) {
+          const birthDate = new Date(value);
+          const today = new Date();
+          if (birthDate > today) {
+            errors.dateOfBirth = 'Birth date cannot be in the future';
+          }
+        }
+        break;
+      default:
+        break;
+    }
+    
+    return errors;
+  };
+
+  const handleFieldBlur = (fieldName) => {
+    setTouched({ ...touched, [fieldName]: true });
+    const errors = validateField(fieldName, currentPet?.[fieldName]);
+    setValidationErrors({ ...validationErrors, ...errors });
+  };
+
+  const handleFieldChange = (fieldName, value) => {
+    setCurrentPet({ ...currentPet, [fieldName]: value });
+    
+    if (touched[fieldName]) {
+      const errors = validateField(fieldName, value);
+      setValidationErrors(prev => {
+        const newErrors = { ...prev };
+        if (Object.keys(errors).length === 0) {
+          delete newErrors[fieldName];
+        } else {
+          Object.assign(newErrors, errors);
+        }
+        return newErrors;
+      });
+    }
+  };
+
   const handleSaveWithSpinner = async () => {
+    // Clear previous validation errors
+    setValidationErrors({});
+    setTouched({});
+    
+    // Validate required fields
+    const nameErrors = validateField('name', currentPet?.name);
+    const typeErrors = validateField('type', currentPet?.type);
+    const breedErrors = validateField('breed', currentPet?.breed);
+    const dobErrors = validateField('dateOfBirth', currentPet?.dateOfBirth);
+    
+    const allErrors = { ...nameErrors, ...typeErrors, ...breedErrors, ...dobErrors };
+    
+    if (Object.keys(allErrors).length > 0) {
+      setValidationErrors(allErrors);
+      setTouched({ name: true, type: true, breed: true, dateOfBirth: true });
+      return;
+    }
+    
     setIsSaving(true);
     try {
       await onSave();
+      setShowSuccessMessage(true);
+      setTimeout(() => setShowSuccessMessage(false), 3000);
     } finally {
       setIsSaving(false);
     }
@@ -471,6 +563,24 @@ const PetDialog = ({
             transition={{ duration: 0.3 }}
             className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col"
           >
+            {/* Success Message */}
+            <AnimatePresence>
+              {showSuccessMessage && (
+                <motion.div
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50"
+                >
+                  <div className="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2">
+                    <FiCheck className="w-5 h-5" />
+                    <span className="font-medium">Pet saved successfully!</span>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <div className="px-6 py-4 bg-gradient-to-r from-lavender-600 to-purple-600 text-white rounded-t-2xl flex justify-between items-center">
               <h2 className="text-xl font-bold">
                 {isEditMode
@@ -532,6 +642,21 @@ const PetDialog = ({
                   <span className="hidden sm:inline">Vaccination Records</span>
                   <span className="sm:hidden">Vaccines</span>
                 </button>
+                <button
+                  onClick={(e) => handleTabChange(e, 3)}
+                  disabled={isSaving}
+                  className={`px-4 sm:px-6 py-3 text-xs sm:text-sm font-medium flex items-center transition-colors whitespace-nowrap ${tabValue === 3
+                    ? "text-lavender-700 border-b-2 border-lavender-600"
+                    : "text-gray-500 hover:text-lavender-600 hover:bg-lavender-50"
+                    } disabled:opacity-50`}
+                >
+                  <FiLock
+                    className={`${tabValue === 3 ? "text-lavender-600" : "text-gray-400"
+                      } mr-1.5 sm:mr-2 w-3.5 h-3.5 sm:w-4 sm:h-4`}
+                  />
+                  <span className="hidden sm:inline">Privacy & Sharing</span>
+                  <span className="sm:hidden">Privacy</span>
+                </button>
               </div>
             </div>
             <div className="flex-1 overflow-y-auto">
@@ -592,14 +717,20 @@ const PetDialog = ({
                     <input
                       type="text"
                       value={currentPet?.name || ""}
-                      onChange={(e) =>
-                        setCurrentPet({ ...currentPet, name: e.target.value })
-                      }
+                      onChange={(e) => handleFieldChange('name', e.target.value)}
+                      onBlur={() => handleFieldBlur('name')}
                       placeholder="Enter pet name"
-                      className="w-full px-4 py-2.5 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent disabled:opacity-50"
+                      className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent disabled:opacity-50 ${
+                        validationErrors.name && touched.name
+                          ? 'border-red-500 focus:ring-red-500'
+                          : 'border-lavender-200 focus:ring-lavender-500'
+                      }`}
                       required
                       disabled={isSaving}
                     />
+                    {validationErrors.name && touched.name && (
+                      <p className="mt-1 text-sm text-red-600">{validationErrors.name}</p>
+                    )}
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-3">
@@ -610,48 +741,72 @@ const PetDialog = ({
                         type="Dog"
                         icon={FaDog}
                         selected={currentPet?.type === "dog"}
-                        onSelect={() => setCurrentPet({ ...currentPet, type: "dog", breed: "" })}
+                        onSelect={() => {
+                          handleFieldChange('type', 'dog');
+                          setCurrentPet({ ...currentPet, type: "dog", breed: "" });
+                        }}
                         disabled={isSaving}
                       />
                       <PetTypeCard
                         type="Cat"
                         icon={FaCat}
                         selected={currentPet?.type === "cat"}
-                        onSelect={() => setCurrentPet({ ...currentPet, type: "cat", breed: "" })}
+                        onSelect={() => {
+                          handleFieldChange('type', 'cat');
+                          setCurrentPet({ ...currentPet, type: "cat", breed: "" });
+                        }}
                         disabled={isSaving}
                       />
                       <PetTypeCard
                         type="Bird"
                         icon={FaDove}
                         selected={currentPet?.type === "bird"}
-                        onSelect={() => setCurrentPet({ ...currentPet, type: "bird", breed: "" })}
+                        onSelect={() => {
+                          handleFieldChange('type', 'bird');
+                          setCurrentPet({ ...currentPet, type: "bird", breed: "" });
+                        }}
                         disabled={isSaving}
                       />
                       <PetTypeCard
                         type="Fish"
                         icon={FaFish}
                         selected={currentPet?.type === "fish"}
-                        onSelect={() => setCurrentPet({ ...currentPet, type: "fish", breed: "" })}
+                        onSelect={() => {
+                          handleFieldChange('type', 'fish');
+                          setCurrentPet({ ...currentPet, type: "fish", breed: "" });
+                        }}
                         disabled={isSaving}
                       />
                       <PetTypeCard
                         type="Horse"
                         icon={FaHorse}
                         selected={currentPet?.type === "horse"}
-                        onSelect={() => setCurrentPet({ ...currentPet, type: "horse", breed: "" })}
+                        onSelect={() => {
+                          handleFieldChange('type', 'horse');
+                          setCurrentPet({ ...currentPet, type: "horse", breed: "" });
+                        }}
                         disabled={isSaving}
                       />
                     </div>
+                    {validationErrors.type && touched.type && (
+                      <p className="mt-2 text-sm text-red-600">{validationErrors.type}</p>
+                    )}
                   </div>
                   <div>
                     <BreedSelect
                       petType={currentPet?.type}
                       value={currentPet?.breed || ""}
-                      onChange={handleBreedChange}
+                      onChange={(e) => {
+                        handleBreedChange(e);
+                        handleFieldChange('breed', e.target.value);
+                      }}
                       otherValue={otherBreed}
                       onOtherChange={handleOtherBreedChange}
                       disabled={isSaving}
                     />
+                    {validationErrors.breed && touched.breed && (
+                      <p className="mt-1 text-sm text-red-600">{validationErrors.breed}</p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-3">
@@ -685,10 +840,21 @@ const PetDialog = ({
                     <input
                       type="date"
                       value={currentPet?.dateOfBirth || ""}
-                      onChange={handleDateOfBirthChange}
-                      className="w-full px-4 py-2.5 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent disabled:opacity-50"
+                      onChange={(e) => {
+                        handleDateOfBirthChange(e);
+                        handleFieldChange('dateOfBirth', e.target.value);
+                      }}
+                      onBlur={() => handleFieldBlur('dateOfBirth')}
+                      className={`w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent disabled:opacity-50 ${
+                        validationErrors.dateOfBirth && touched.dateOfBirth
+                          ? 'border-red-500 focus:ring-red-500'
+                          : 'border-lavender-200 focus:ring-lavender-500'
+                      }`}
                       disabled={isSaving}
                     />
+                    {validationErrors.dateOfBirth && touched.dateOfBirth && (
+                      <p className="mt-1 text-sm text-red-600">{validationErrors.dateOfBirth}</p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1087,6 +1253,126 @@ const PetDialog = ({
                     </button>
                   </div>
                 )}
+              </TabPanel>
+
+              {/* Privacy & Sharing Tab */}
+              <TabPanel value={tabValue} index={3}>
+                <div className="grid grid-cols-1 gap-6">
+                  <div className="bg-gradient-to-r from-violet-50 to-purple-50 rounded-xl p-6 border border-violet-200">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                      <FiShare2 className="w-5 h-5 text-violet-600 mr-2" />
+                      Public Profile Settings
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Control how {currentPet?.name || 'your pet'}'s profile is shared and who can interact with it.
+                    </p>
+
+                    {/* Profile Visibility */}
+                    <div className="bg-white rounded-lg p-4 mb-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center mb-2">
+                            {currentPet?.privacy?.isPrivate ? (
+                              <FiLock className="w-5 h-5 text-red-500 mr-2" />
+                            ) : (
+                              <FiUnlock className="w-5 h-5 text-green-500 mr-2" />
+                            )}
+                            <h4 className="font-semibold text-gray-900">
+                              Profile Visibility
+                            </h4>
+                          </div>
+                          <p className="text-sm text-gray-600">
+                            {currentPet?.privacy?.isPrivate
+                              ? 'Only you can see this profile'
+                              : 'Anyone with the link can view this profile'}
+                          </p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer ml-4">
+                          <input
+                            type="checkbox"
+                            checked={currentPet?.privacy?.isPrivate || false}
+                            onChange={(e) =>
+                              setCurrentPet({
+                                ...currentPet,
+                                privacy: {
+                                  ...currentPet?.privacy,
+                                  isPrivate: e.target.checked
+                                }
+                              })
+                            }
+                            disabled={isSaving}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-violet-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Comments */}
+                    <div className="bg-white rounded-lg p-4 mb-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center mb-2">
+                            <FiMessageCircle className="w-5 h-5 text-violet-600 mr-2" />
+                            <h4 className="font-semibold text-gray-900">
+                              Comments
+                            </h4>
+                          </div>
+                          <p className="text-sm text-gray-600">
+                            {currentPet?.privacy?.commentsDisabled
+                              ? 'Comments are disabled on posts'
+                              : 'Users can comment on posts'}
+                          </p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer ml-4">
+                          <input
+                            type="checkbox"
+                            checked={currentPet?.privacy?.commentsDisabled || false}
+                            onChange={(e) =>
+                              setCurrentPet({
+                                ...currentPet,
+                                privacy: {
+                                  ...currentPet?.privacy,
+                                  commentsDisabled: e.target.checked
+                                }
+                              })
+                            }
+                            disabled={isSaving}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-violet-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-600"></div>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Share Link Preview */}
+                    {currentPet?.slug && (
+                      <div className="bg-white rounded-lg p-4">
+                        <h4 className="font-semibold text-gray-900 mb-2 text-sm">Profile Link</h4>
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="text"
+                            value={`${window.location.origin}/pet/${currentPet.slug}`}
+                            readOnly
+                            className="flex-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm text-gray-700"
+                          />
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(`${window.location.origin}/pet/${currentPet.slug}`);
+                              alert('Link copied to clipboard!');
+                            }}
+                            className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors text-sm"
+                          >
+                            Copy
+                          </button>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2">
+                          Share this link to showcase {currentPet?.name}'s profile!
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </TabPanel>
             </div>
             <div className="border-t border-lavender-100 p-3 sm:p-4 flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 bg-gray-50 rounded-b-2xl">

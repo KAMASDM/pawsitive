@@ -1,0 +1,87 @@
+{
+  "rules": {
+    "users": {
+      "$userId": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.uid == $userId"
+      }
+    },
+    "petSlugs": {
+      "$slug": {
+        ".read": "true",
+        ".write": "auth != null"
+      }
+    },
+    "userPets": {
+      "$userId": {
+        ".read": "auth != null && (auth.uid == $userId || root.child('userPets').child($userId).exists())",
+        "$petId": {
+          ".read": "auth != null || data.child('privacy').child('isPrivate').val() != true",
+          ".write": "auth != null && auth.uid == $userId"
+        }
+      }
+    },
+    "petPosts": {
+      "$petId": {
+        ".read": "true",
+        ".write": "auth != null",
+        "$postId": {
+          ".validate": "newData.hasChildren(['mediaUrl', 'mediaType', 'timestamp'])"
+        }
+      }
+    },
+    "petEvents": {
+      "$petId": {
+        ".read": "true",
+        ".write": "auth != null",
+        "$eventId": {
+          ".validate": "newData.hasChildren(['title', 'date', 'type', 'timestamp'])"
+        }
+      }
+    },
+    "petProfiles": {
+      "$petId": {
+        ".read": "true",
+        ".write": "auth != null"
+      }
+    },
+    "matingRequests": {
+      "sent": {
+        "$userId": {
+          ".read": "auth != null && auth.uid == $userId",
+          ".write": "auth != null && auth.uid == $userId"
+        }
+      },
+      "received": {
+        "$userId": {
+          ".read": "auth != null && auth.uid == $userId",
+          ".write": "auth != null && auth.uid == $userId"
+        }
+      }
+    },
+    "adoptionRequests": {
+      "$requestId": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "userResources": {
+      "$userId": {
+        ".read": "auth != null && auth.uid == $userId",
+        ".write": "auth != null && auth.uid == $userId"
+      }
+    },
+    "conversations": {
+      "$conversationId": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "comments": {
+      "$resourceId": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    }
+  }
+}
