@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FiHeart, FiMessageCircle, FiShare2, FiLock, FiCalendar, FiClock, FiGrid, FiList } from 'react-icons/fi';
+import { FiShare2, FiLock, FiCalendar } from 'react-icons/fi';
 import { FaBirthdayCake, FaPaw } from 'react-icons/fa';
 import { ref, get, onValue, off } from 'firebase/database';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -109,7 +108,7 @@ const PetProfile = () => {
 
         // Listen to posts
         const postsRef = ref(database, `petPosts/${petId}`);
-        const unsubscribePosts = onValue(postsRef, (snapshot) => {
+        onValue(postsRef, (snapshot) => {
           if (snapshot.exists()) {
             const postsData = [];
             snapshot.forEach((childSnapshot) => {
@@ -128,7 +127,7 @@ const PetProfile = () => {
 
         // Listen to events
         const eventsRef = ref(database, `petEvents/${petId}`);
-        const unsubscribeEvents = onValue(eventsRef, (snapshot) => {
+        onValue(eventsRef, (snapshot) => {
           if (snapshot.exists()) {
             const eventsData = [];
             snapshot.forEach((childSnapshot) => {

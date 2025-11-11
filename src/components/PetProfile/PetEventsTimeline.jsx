@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { FiCalendar, FiPlus, FiEdit2, FiTrash2, FiClock } from 'react-icons/fi';
+import { FiCalendar, FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import { FaBirthdayCake, FaPaw, FaHeart, FaStar } from 'react-icons/fa';
 import CreateEventModal from './CreateEventModal';
 import { ref, remove } from 'firebase/database';

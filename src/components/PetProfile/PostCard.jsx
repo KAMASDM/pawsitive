@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiHeart, FiMessageCircle, FiX, FiSend, FiMoreVertical, FiEdit2, FiTrash2 } from 'react-icons/fi';
+import { FiHeart, FiMessageCircle, FiX, FiSend, FiMoreVertical, FiTrash2 } from 'react-icons/fi';
 import { FaHeart } from 'react-icons/fa';
 import { ref, update, push, remove, get } from 'firebase/database';
 import { database } from '../../firebase';

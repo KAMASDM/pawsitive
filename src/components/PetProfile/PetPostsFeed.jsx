@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FiHeart, FiMessageCircle, FiGrid, FiList, FiPlus, FiMoreVertical, FiEdit2, FiTrash2 } from 'react-icons/fi';
+import { motion } from 'framer-motion';
+import { FiHeart, FiMessageCircle, FiGrid, FiList, FiPlus } from 'react-icons/fi';
 import { FaBirthdayCake, FaPaw } from 'react-icons/fa';
 import PostCard from './PostCard';
 import CreatePostModal from './CreatePostModal';
