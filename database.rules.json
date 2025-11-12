@@ -2,7 +2,7 @@
   "rules": {
     "users": {
       "$userId": {
-        ".read": "auth != null",
+        ".read": "true",
         ".write": "auth != null && auth.uid == $userId"
       }
     },
@@ -14,9 +14,9 @@
     },
     "userPets": {
       "$userId": {
-        ".read": "auth != null && (auth.uid == $userId || root.child('userPets').child($userId).exists())",
+        ".read": "auth != null && auth.uid == $userId",
         "$petId": {
-          ".read": "auth != null || data.child('privacy').child('isPrivate').val() != true",
+          ".read": "true",
           ".write": "auth != null && auth.uid == $userId"
         }
       }

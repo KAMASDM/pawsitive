@@ -277,7 +277,8 @@ const Profile = () => {
       
       // Use pet ID suffix to ensure uniqueness (e.g., harry-abc123)
       const petIdSuffix = currentPet.id.slice(-6);
-      const slug = isEditMode && currentPet.slug ? currentPet.slug : `${baseSlug}-${petIdSuffix}`;
+      // Always regenerate slug to ensure it has the correct format
+      const slug = `${baseSlug}-${petIdSuffix}`;
       console.log('Generated slug:', slug);
       
       // Add slug and privacy settings to pet data
@@ -296,7 +297,14 @@ const Profile = () => {
       await set(petRef, petDataWithSlug);
       console.log('Pet saved successfully to database');
       
-      // Save slug index for public access
+      // Delete old slug index if it exists and is different
+      if (isEditMode && currentPet.slug && currentPet.slug !== slug) {
+        const oldSlugRef = ref(database, `petSlugs/${currentPet.slug}`);
+        await remove(oldSlugRef);
+        console.log('Removed old slug index:', currentPet.slug);
+      }
+      
+      // Save new slug index for public access
       const slugIndexRef = ref(database, `petSlugs/${slug}`);
       await set(slugIndexRef, {
         userId: user.uid,

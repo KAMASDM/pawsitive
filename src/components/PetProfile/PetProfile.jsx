@@ -51,6 +51,11 @@ const PetProfile = () => {
         const slugRef = ref(database, `petSlugs/${slug}`);
         const slugSnapshot = await get(slugRef);
         
+        console.log('Slug snapshot exists:', slugSnapshot.exists());
+        if (slugSnapshot.exists()) {
+          console.log('Slug data:', slugSnapshot.val());
+        }
+        
         let petData = null;
         let ownerId = null;
         let petId = null;
@@ -60,14 +65,22 @@ const PetProfile = () => {
           ownerId = slugData.userId;
           petId = slugData.petId;
           
+          console.log('Fetching pet from userPets:', ownerId, petId);
+          
           // Get the pet data
           const petRef = ref(database, `userPets/${ownerId}/${petId}`);
           const petSnapshot = await get(petRef);
           
+          console.log('Pet snapshot exists:', petSnapshot.exists());
+          
           if (petSnapshot.exists()) {
             petData = { id: petSnapshot.key, ...petSnapshot.val() };
             console.log('Found matching pet!', petData);
+          } else {
+            console.error('Pet not found at path:', `userPets/${ownerId}/${petId}`);
           }
+        } else {
+          console.error('Slug not found in petSlugs index:', slug);
         }
         
         if (!petData) {
