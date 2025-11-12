@@ -164,6 +164,7 @@ const PetProfile = () => {
           }
         });
 
+        console.log('PetProfile: Setting loading to false');
         setLoading(false);
 
         // Cleanup listeners
