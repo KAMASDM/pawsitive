@@ -14,9 +14,8 @@
     },
     "userPets": {
       "$userId": {
-        ".read": "auth != null && auth.uid == $userId",
+        ".read": "true",
         "$petId": {
-          ".read": "true",
           ".write": "auth != null && auth.uid == $userId"
         }
       }
@@ -72,8 +71,8 @@
       }
     },
     "conversations": {
+      ".read": "auth != null",
       "$conversationId": {
-        ".read": "auth != null",
         ".write": "auth != null"
       }
     },

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ref, onValue, off, get } from "firebase/database";
+import { ref, onValue, get } from "firebase/database";
 import { database, auth } from "../../../firebase";
 import {
   FiMessageSquare,
@@ -18,18 +18,36 @@ const ConversationsList = ({ onOpenConversation }) => {
   const user = auth.currentUser;
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      console.log("ConversationsList: No user logged in");
+      setLoading(false);
+      return;
+    }
     
     console.log("ConversationsList: Setting up listener for user:", user.uid);
     const conversationsRef = ref(database, "conversations");
     const handleConversationsSnapshot = async (snapshot) => {
       console.log("ConversationsList: Snapshot received, exists:", snapshot.exists());
-      if (snapshot.exists()) {
-        const conversationsData = snapshot.val();
-        const relevantConversations = [];
+      
+      if (!snapshot.exists()) {
+        console.log("ConversationsList: No conversations node in database");
+        setConversations([]);
+        setLoading(false);
+        return;
+      }
+      
+      const conversationsData = snapshot.val();
+      console.log("ConversationsList: Total conversations in DB:", Object.keys(conversationsData).length);
+      const relevantConversations = [];
 
-        for (const conversationId in conversationsData) {
-          const conversation = conversationsData[conversationId];
+      for (const conversationId in conversationsData) {
+        const conversation = conversationsData[conversationId];
+        
+        console.log(`ConversationsList: Checking conversation ${conversationId}`, {
+          hasParticipants: !!conversation.participants,
+          participants: conversation.participants ? Object.keys(conversation.participants) : [],
+          includesCurrentUser: conversation.participants ? !!conversation.participants[user.uid] : false
+        });
 
           if (
             conversation.participants &&
@@ -140,24 +158,27 @@ const ConversationsList = ({ onOpenConversation }) => {
           }
         }
 
-        relevantConversations.sort(
-          (a, b) => b.lastMessageTime - a.lastMessageTime
-        );
-        console.log("ConversationsList: Setting conversations, count:", relevantConversations.length);
-        setConversations(relevantConversations);
-      } else {
-        console.log("ConversationsList: No conversations found");
-        setConversations([]);
-      }
-
+      relevantConversations.sort(
+        (a, b) => b.lastMessageTime - a.lastMessageTime
+      );
+      console.log("ConversationsList: Setting conversations, count:", relevantConversations.length);
+      console.log("ConversationsList: Conversation details:", relevantConversations);
+      setConversations(relevantConversations);
+      
       console.log("ConversationsList: Setting loading to false");
       setLoading(false);
     };
 
-    onValue(conversationsRef, handleConversationsSnapshot);
+    console.log("ConversationsList: About to set up onValue listener");
+    
+    const unsubscribe = onValue(conversationsRef, handleConversationsSnapshot, (error) => {
+      console.error("ConversationsList: Firebase listener error:", error);
+      setLoading(false);
+    });
 
     return () => {
-      off(conversationsRef, "value", handleConversationsSnapshot);
+      console.log("ConversationsList: Cleaning up listener");
+      unsubscribe();
     };
   }, [user]);
 
@@ -209,10 +230,12 @@ const ConversationsList = ({ onOpenConversation }) => {
   };
 
   if (loading) {
+    console.log("ConversationsList: Rendering shimmer (loading)");
     return <ConversationsListShimmer count={7} />;
   }
 
   if (conversations.length === 0) {
+    console.log("ConversationsList: Rendering empty state");
     return (
       <div className="bg-white rounded-2xl shadow-sm border border-lavender-100 p-8 flex flex-col items-center text-center">
         <div className="w-16 h-16 bg-lavender-100 rounded-full flex items-center justify-center mb-4">
@@ -225,10 +248,19 @@ const ConversationsList = ({ onOpenConversation }) => {
           When you start messaging with pet owners, your conversations will
           appear here.
         </p>
+        <div className="mt-4 p-4 bg-blue-50 rounded-lg text-left text-sm">
+          <p className="font-semibold text-blue-900 mb-2">💡 How to start a conversation:</p>
+          <ul className="text-blue-700 space-y-1">
+            <li>• Send a mating request from Nearby Mates</li>
+            <li>• Request to adopt a pet</li>
+            <li>• Wait for someone to message you</li>
+          </ul>
+        </div>
       </div>
     );
   }
 
+  console.log("ConversationsList: Rendering conversations, count:", conversations.length);
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-lavender-100 overflow-hidden">
       <div className="p-4 border-b border-lavender-100 flex items-center gap-2">
