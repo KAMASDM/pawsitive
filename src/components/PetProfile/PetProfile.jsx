@@ -115,6 +115,7 @@ const PetProfile = () => {
           return;
         }
 
+        console.log('PetProfile: Setting pet state with data:', petData);
         setPet(petData);
 
         // Fetch owner data
@@ -253,6 +254,20 @@ const PetProfile = () => {
 
   const birthday = getNextBirthday(pet?.dateOfBirth);
   const isOwner = currentUser?.uid === pet?.userId;
+
+  console.log('PetProfile: About to render, pet:', pet, 'loading:', loading, 'notFound:', notFound);
+
+  if (!pet) {
+    console.log('PetProfile: Pet is null/undefined, showing loading');
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <FaPaw className="w-12 h-12 text-violet-600 animate-bounce mx-auto mb-4" />
+          <p className="text-gray-600">Loading pet data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
