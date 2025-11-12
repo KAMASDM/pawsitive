@@ -19,8 +19,11 @@ const ConversationsList = ({ onOpenConversation }) => {
 
   useEffect(() => {
     if (!user) return;
+    
+    console.log("ConversationsList: Setting up listener for user:", user.uid);
     const conversationsRef = ref(database, "conversations");
     const handleConversationsSnapshot = async (snapshot) => {
+      console.log("ConversationsList: Snapshot received, exists:", snapshot.exists());
       if (snapshot.exists()) {
         const conversationsData = snapshot.val();
         const relevantConversations = [];
@@ -140,9 +143,14 @@ const ConversationsList = ({ onOpenConversation }) => {
         relevantConversations.sort(
           (a, b) => b.lastMessageTime - a.lastMessageTime
         );
+        console.log("ConversationsList: Setting conversations, count:", relevantConversations.length);
         setConversations(relevantConversations);
+      } else {
+        console.log("ConversationsList: No conversations found");
+        setConversations([]);
       }
 
+      console.log("ConversationsList: Setting loading to false");
       setLoading(false);
     };
 
@@ -325,8 +333,9 @@ const ConversationsList = ({ onOpenConversation }) => {
                     </p>
                     <div className="flex items-center justify-between">
                       <div className="text-xs text-gray-500">
-                        {conversation.senderPet?.name}
-                        {conversation.receiverPet?.name}
+                        {conversation.senderPet?.name && conversation.receiverPet?.name 
+                          ? `${conversation.senderPet.name} & ${conversation.receiverPet.name}`
+                          : conversation.senderPet?.name || conversation.receiverPet?.name || "Unknown"}
                       </div>
                       <div
                         className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${conversation.type === "mating"

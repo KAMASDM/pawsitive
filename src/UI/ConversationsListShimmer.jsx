@@ -60,32 +60,6 @@ const ConversationsListShimmer = ({ count = 5 }) => {
           </div>
         ))}
       </div>
-
-      <style jsx>{`
-        .shimmer-effect {
-          position: absolute;
-          top: 0;
-          left: -100%;
-          width: 100%;
-          height: 100%;
-          background: linear-gradient(
-            to right,
-            rgba(255, 255, 255, 0) 0%,
-            rgba(255, 255, 255, 0.2) 50%,
-            rgba(255, 255, 255, 0) 100%
-          );
-          animation: shimmer 2s infinite;
-        }
-
-        @keyframes shimmer {
-          0% {
-            left: -100%;
-          }
-          100% {
-            left: 100%;
-          }
-        }
-      `}</style>
     </div>
   );
 };
