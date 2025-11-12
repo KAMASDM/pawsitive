@@ -5,6 +5,7 @@ import { ref as dbRef, onValue, update } from 'firebase/database';
 import { database, auth } from '../../firebase';
 
 const PlaceNotifications = () => {
+  const [notifications, setNotifications] = useState([]); // eslint-disable-line no-unused-vars
   const [visibleNotifications, setVisibleNotifications] = useState([]);
 
   useEffect(() => {

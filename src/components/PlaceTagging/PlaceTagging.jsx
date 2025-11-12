@@ -18,6 +18,7 @@ const PlaceTagging = ({ isOpen, onClose, userLocation }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [map, setMap] = useState(null); // eslint-disable-line no-unused-vars
 
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
