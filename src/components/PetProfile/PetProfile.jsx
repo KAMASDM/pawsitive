@@ -21,6 +21,7 @@ const PetProfile = () => {
   const [events, setEvents] = useState([]);
   const [showShareModal, setShowShareModal] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
   // Listen to auth state
   useEffect(() => {
@@ -34,12 +35,19 @@ const PetProfile = () => {
       } else {
         setCurrentUser(null);
       }
+      setAuthLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
 
   useEffect(() => {
+    // Don't load pet data until auth state is determined
+    if (authLoading) {
+      console.log('Waiting for auth state...');
+      return;
+    }
+
     const loadPetData = async () => {
       setLoading(true);
       
@@ -171,7 +179,7 @@ const PetProfile = () => {
     };
 
     loadPetData();
-  }, [slug, currentUser]);
+  }, [slug, currentUser, authLoading]);
 
   const calculateAge = (dateOfBirth) => {
     if (!dateOfBirth) return 'Unknown';
