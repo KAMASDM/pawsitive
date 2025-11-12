@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FiShare2, FiLock, FiCalendar, FiArrowLeft, FiEdit, FiEye } from 'react-icons/fi';
+import { FiShare2, FiLock, FiCalendar, FiArrowLeft, FiEdit } from 'react-icons/fi';
 import { FaBirthdayCake, FaPaw } from 'react-icons/fa';
 import { ref, get, onValue, off } from 'firebase/database';
 import { onAuthStateChanged } from 'firebase/auth';

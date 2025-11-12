@@ -5,7 +5,6 @@ import { ref as dbRef, onValue, update } from 'firebase/database';
 import { database, auth } from '../../firebase';
 
 const PlaceNotifications = () => {
-  const [notifications, setNotifications] = useState([]);
   const [visibleNotifications, setVisibleNotifications] = useState([]);
 
   useEffect(() => {

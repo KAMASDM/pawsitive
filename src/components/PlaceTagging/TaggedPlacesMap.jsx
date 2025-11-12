@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FiMapPin, FiThumbsUp, FiThumbsDown, FiUser, FiClock, FiX } from 'react-icons/fi';
+import { motion } from 'framer-motion';
+import { FiMapPin, FiThumbsUp, FiThumbsDown, FiUser, FiClock } from 'react-icons/fi';
 import { FaPaw } from 'react-icons/fa';
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
-import { ref as dbRef, onValue, query, orderByChild } from 'firebase/database';
+import { ref as dbRef, onValue } from 'firebase/database';
 import { database } from '../../firebase';
 import * as geofire from 'geofire-common';
 

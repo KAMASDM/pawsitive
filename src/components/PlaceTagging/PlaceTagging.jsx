@@ -1,9 +1,9 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiX, FiMapPin, FiMessageSquare, FiThumbsUp, FiThumbsDown, FiCheck, FiAlertCircle } from 'react-icons/fi';
+import { FiX, FiMapPin, FiThumbsUp, FiThumbsDown, FiCheck, FiAlertCircle } from 'react-icons/fi';
 import { FaPaw } from 'react-icons/fa';
 import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
-import { ref as dbRef, push, set, serverTimestamp, query, orderByChild, onValue, get } from 'firebase/database';
+import { ref as dbRef, push, set, serverTimestamp, get } from 'firebase/database';
 import { database, auth } from '../../firebase';
 import * as geofire from 'geofire-common';
 
@@ -18,7 +18,6 @@ const PlaceTagging = ({ isOpen, onClose, userLocation }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const [map, setMap] = useState(null);
 
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
@@ -32,7 +31,7 @@ const PlaceTagging = ({ isOpen, onClose, userLocation }) => {
     if (userLocation && !selectedLocation) {
       setSelectedLocation(userLocation);
     }
-  }, [userLocation]);
+  }, [userLocation, selectedLocation]);
 
   const onMapClick = useCallback((e) => {
     const lat = e.latLng.lat();
