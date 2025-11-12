@@ -288,11 +288,18 @@ export const sendWelcomeEmail = async (userData) => {
  * Mating Request Notification (Email + Push)
  */
 export const sendMatingRequestNotification = async (receiverData, senderData, requestData) => {
+  console.log('sendMatingRequestNotification called with:', { 
+    receiver: receiverData.email, 
+    sender: senderData.displayName 
+  });
+  
   const notificationType = 'matingRequests';
   
   // Check preferences
   const sendEmailPref = await shouldSendNotification(receiverData.uid, notificationType, 'email');
   const sendPushPref = await shouldSendNotification(receiverData.uid, notificationType, 'push');
+  
+  console.log('Notification preferences:', { sendEmailPref, sendPushPref });
   
   const results = {};
   
@@ -414,7 +421,7 @@ export const sendMatingRequestNotification = async (receiverData, senderData, re
       `,
     };
     
-    results.email = await sendEmail(emailParams);
+    results.email = await sendEmail(emailParams, EMAIL_TEMPLATES.MATING_REQUEST);
   }
   
   // Send Push Notification
@@ -585,7 +592,7 @@ export const sendMatingRequestAcceptedNotification = async (senderData, receiver
       `,
     };
     
-    results.email = await sendEmail(emailParams);
+    results.email = await sendEmail(emailParams, EMAIL_TEMPLATES.REQUEST_ACCEPTED);
   }
   
   if (sendPushPref) {
@@ -755,7 +762,7 @@ export const sendVaccinationReminder = async (ownerData, petData, vaccineData) =
       `,
     };
     
-    results.email = await sendEmail(emailParams);
+    results.email = await sendEmail(emailParams, EMAIL_TEMPLATES.VACCINATION_REMINDER);
   }
   
   if (sendPushPref) {
@@ -795,6 +802,12 @@ export const sendNewMessageNotification = async (recipientData, senderData, mess
  */
 export const requestNotificationPermission = async (userId) => {
   try {
+    // Check if service worker and messaging are supported
+    if (!('serviceWorker' in navigator) || !('Notification' in window)) {
+      console.log('Push notifications not supported in this browser');
+      return { success: false, error: 'Not supported' };
+    }
+
     const messaging = getMessaging();
     const permission = await Notification.requestPermission();
     
@@ -815,7 +828,8 @@ export const requestNotificationPermission = async (userId) => {
       return { success: false, error: 'Permission denied' };
     }
   } catch (error) {
-    console.error('Error getting notification permission:', error);
-    return { success: false, error };
+    // Silently fail for service worker errors - don't block user registration
+    console.log('Push notifications unavailable:', error.message);
+    return { success: false, error: error.message };
   }
 };

@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback, memo, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { auth, database } from "../../firebase";
 import { ref, set, get, update, remove } from "firebase/database";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { FiMail, FiPhone } from "react-icons/fi";
 import useResponsive from "../../hooks/useResponsive";
 import { FaPlus, FaPaw, FaHeart, FaCommentDots } from "react-icons/fa";
@@ -173,6 +173,7 @@ const Profile = () => {
   const { isDesktop } = useResponsive();
   const user = auth.currentUser;
   const navigate = useNavigate();
+  const location = useLocation();
   const [pets, setPets] = useState([]);
   const [activeTab, setActiveTab] = useState("pets");
   const [matingRequests, setMatingRequests] = useState([]);
@@ -380,7 +381,12 @@ const Profile = () => {
       if (vaccinationEditIndex >= 0) {
         updatedPet.vaccinations[vaccinationEditIndex] = currentVaccination;
       } else {
-        updatedPet.vaccinations.push(currentVaccination);
+        // Add unique ID to new vaccination
+        const vaccinationWithId = {
+          ...currentVaccination,
+          id: Date.now().toString()
+        };
+        updatedPet.vaccinations.push(vaccinationWithId);
       }
       setCurrentPet(updatedPet);
       setOpenVaccinationDialog(false);
@@ -478,6 +484,18 @@ const Profile = () => {
       setIsLoading(false);
     }
   }, [user, fetchMatingRequests]);
+
+  // Handle navigation state from PetProfile (open edit dialog)
+  useEffect(() => {
+    if (location.state?.editPetId && location.state?.openEditDialog && pets.length > 0) {
+      const petToEdit = pets.find(p => p.id === location.state.editPetId);
+      if (petToEdit) {
+        handleEditPet(petToEdit);
+        // Clear the state to prevent reopening on refresh
+        navigate(location.pathname, { replace: true, state: {} });
+      }
+    }
+  }, [location.state, pets, handleEditPet, navigate, location.pathname]);
 
   // --- Tab Configuration ---
   const tabs = useMemo(() => [

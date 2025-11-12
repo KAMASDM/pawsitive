@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { FiHeart, FiMessageCircle, FiGrid, FiList, FiPlus } from 'react-icons/fi';
+import { FiHeart, FiMessageCircle, FiGrid, FiList, FiPlus, FiCalendar } from 'react-icons/fi';
 import { FaBirthdayCake, FaPaw } from 'react-icons/fa';
 import PostCard from './PostCard';
 import CreatePostModal from './CreatePostModal';
+import PetEventsTimeline from './PetEventsTimeline';
 
 const PetPostsFeed = ({
   posts,
@@ -19,6 +20,7 @@ const PetPostsFeed = ({
 }) => {
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
+  const [activeTab, setActiveTab] = useState('posts'); // 'posts' or 'events'
 
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 1024;
 
@@ -68,7 +70,10 @@ const PetPostsFeed = ({
                 </div>
                 <div className="text-xs text-gray-600">Likes</div>
               </div>
-              <div className="text-center">
+              <div 
+                className="text-center cursor-pointer"
+                onClick={() => setActiveTab('events')}
+              >
                 <div className="font-bold text-lg text-gray-900">
                   {events?.length || 0}
                 </div>
@@ -88,30 +93,30 @@ const PetPostsFeed = ({
           </div>
 
           {/* View Toggle & Create Button */}
-          <div className="px-4 pb-3 flex items-center justify-between">
-            <div className="flex items-center space-x-2">
+          <div className="px-4 pb-3 flex items-center justify-between border-b border-gray-200">
+            <div className="flex items-center space-x-1">
               <button
-                onClick={() => onViewModeChange('grid')}
-                className={`p-2 rounded-lg transition-colors ${
-                  viewMode === 'grid'
+                onClick={() => setActiveTab('posts')}
+                className={`px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
+                  activeTab === 'posts'
                     ? 'bg-violet-100 text-violet-600'
                     : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
-                <FiGrid className="w-5 h-5" />
+                Posts
               </button>
               <button
-                onClick={() => onViewModeChange('feed')}
-                className={`p-2 rounded-lg transition-colors ${
-                  viewMode === 'feed'
+                onClick={() => setActiveTab('events')}
+                className={`px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
+                  activeTab === 'events'
                     ? 'bg-violet-100 text-violet-600'
                     : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
-                <FiList className="w-5 h-5" />
+                Events
               </button>
             </div>
-            {isOwner && (
+            {isOwner && activeTab === 'posts' && (
               <button
                 onClick={() => setShowCreatePost(true)}
                 className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors flex items-center text-sm"
@@ -124,106 +129,72 @@ const PetPostsFeed = ({
         </div>
       )}
 
+      {/* Mobile Events Tab Content */}
+      {isMobile && activeTab === 'events' && (
+        <div className="p-4">
+          <PetEventsTimeline
+            events={events}
+            pet={pet}
+            isOwner={isOwner}
+            birthday={birthday}
+          />
+        </div>
+      )}
+
+      {/* Mobile Posts Tab Content */}
+      {isMobile && activeTab === 'posts' && (
+        <>
+          {/* Posts Feed View */}
+          <div className="space-y-6 p-4">
+            {posts.length === 0 ? (
+              <div className="bg-white rounded-xl shadow-sm text-center py-12">
+                <FaPaw className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500">No posts yet</p>
+                {isOwner && (
+                  <button
+                    onClick={() => setShowCreatePost(true)}
+                    className="mt-4 px-6 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors"
+                  >
+                    Create First Post
+                  </button>
+                )}
+              </div>
+            ) : (
+              posts.map((post) => (
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  pet={pet}
+                  owner={owner}
+                  isOwner={isOwner}
+                  currentUser={currentUser}
+                />
+              ))
+            )}
+          </div>
+        </>
+      )}
+
       {/* Desktop Header */}
       {!isMobile && (
         <div className="bg-white rounded-xl shadow-sm mb-6 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-bold text-gray-900">Posts</h2>
-            <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => onViewModeChange('grid')}
-                  className={`p-2 rounded-lg transition-colors ${
-                    viewMode === 'grid'
-                      ? 'bg-violet-100 text-violet-600'
-                      : 'text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
-                  <FiGrid className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => onViewModeChange('feed')}
-                  className={`p-2 rounded-lg transition-colors ${
-                    viewMode === 'feed'
-                      ? 'bg-violet-100 text-violet-600'
-                      : 'text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
-                  <FiList className="w-5 h-5" />
-                </button>
-              </div>
-              {isOwner && (
-                <button
-                  onClick={() => setShowCreatePost(true)}
-                  className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors flex items-center"
-                >
-                  <FiPlus className="w-4 h-4 mr-2" />
-                  New Post
-                </button>
-              )}
-            </div>
+            {isOwner && (
+              <button
+                onClick={() => setShowCreatePost(true)}
+                className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors flex items-center"
+              >
+                <FiPlus className="w-4 h-4 mr-2" />
+                New Post
+              </button>
+            )}
           </div>
         </div>
       )}
 
-      {/* Posts Grid View */}
-      {viewMode === 'grid' && (
-        <div className="grid grid-cols-3 gap-1 lg:gap-4">
-          {posts.length === 0 ? (
-            <div className="col-span-3 text-center py-12">
-              <FaPaw className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500">No posts yet</p>
-              {isOwner && (
-                <button
-                  onClick={() => setShowCreatePost(true)}
-                  className="mt-4 px-6 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors"
-                >
-                  Create First Post
-                </button>
-              )}
-            </div>
-          ) : (
-            posts.map((post) => (
-              <motion.div
-                key={post.id}
-                whileHover={{ scale: 1.02 }}
-                className="aspect-square cursor-pointer relative group"
-                onClick={() => setSelectedPost(post)}
-              >
-                {post.mediaType === 'video' ? (
-                  <video
-                    src={post.mediaUrl}
-                    className="w-full h-full object-cover rounded-lg"
-                    muted
-                  />
-                ) : (
-                  <img
-                    src={post.mediaUrl}
-                    alt={post.caption}
-                    className="w-full h-full object-cover rounded-lg"
-                  />
-                )}
-                {/* Hover Overlay */}
-                <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-                  <div className="flex items-center space-x-6 text-white">
-                    <div className="flex items-center">
-                      <FiHeart className="w-6 h-6 mr-2" />
-                      <span className="font-bold">{post.likes?.length || 0}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <FiMessageCircle className="w-6 h-6 mr-2" />
-                      <span className="font-bold">{post.comments?.length || 0}</span>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))
-          )}
-        </div>
-      )}
-
-      {/* Posts Feed View */}
-      {viewMode === 'feed' && (
+      {/* Desktop Posts - Always Feed View */}
+      {!isMobile && (
         <div className="space-y-6">
           {posts.length === 0 ? (
             <div className="bg-white rounded-xl shadow-sm text-center py-12">

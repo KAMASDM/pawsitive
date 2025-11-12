@@ -400,9 +400,13 @@ const PetDialog = ({
   };
 
   const handleSaveMedicationSchedule = (schedule) => {
+    const scheduleWithId = medicationEditIndex >= 0 
+      ? schedule // Keep existing schedule (already has ID if it had one)
+      : { ...schedule, id: Date.now().toString() }; // Add ID to new schedule
+    
     const updatedSchedules = medicationEditIndex >= 0
-      ? medicationSchedules.map((s, i) => i === medicationEditIndex ? schedule : s)
-      : [...medicationSchedules, schedule];
+      ? medicationSchedules.map((s, i) => i === medicationEditIndex ? scheduleWithId : s)
+      : [...medicationSchedules, scheduleWithId];
 
     setCurrentPet({
       ...currentPet,
@@ -482,10 +486,11 @@ const PetDialog = ({
   return (
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-30 flex items-center justify-center p-4">
+        <div key="pet-dialog-overlay" className="fixed inset-0 z-50 bg-black bg-opacity-30 flex items-center justify-center lg:p-4">
           <AnimatePresence>
             {showDeleteConfirmation && (
               <motion.div
+                key="delete-confirmation"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -557,16 +562,18 @@ const PetDialog = ({
             )}
           </AnimatePresence>
           <motion.div
+            key="pet-dialog-content"
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.3 }}
-            className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col"
+            className="bg-white lg:rounded-2xl shadow-xl w-full lg:max-w-4xl h-full lg:h-auto lg:max-h-[90vh] flex flex-col"
           >
             {/* Success Message */}
             <AnimatePresence>
               {showSuccessMessage && (
                 <motion.div
+                  key="success-message"
                   initial={{ opacity: 0, y: -20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
@@ -581,7 +588,7 @@ const PetDialog = ({
               )}
             </AnimatePresence>
 
-            <div className="px-6 py-4 bg-gradient-to-r from-lavender-600 to-purple-600 text-white rounded-t-2xl flex justify-between items-center">
+            <div className="px-6 py-4 bg-gradient-to-r from-lavender-600 to-purple-600 text-white lg:rounded-t-2xl flex justify-between items-center shrink-0">
               <h2 className="text-xl font-bold">
                 {isEditMode
                   ? `Edit ${currentPet?.name}'s Profile`
@@ -595,7 +602,7 @@ const PetDialog = ({
                 <FiX className="w-5 h-5" />
               </button>
             </div>
-            <div className="border-b border-lavender-100 bg-white relative z-10 overflow-x-auto scrollbar-hide">
+            <div className="border-b border-lavender-100 bg-white relative z-10 overflow-x-auto scrollbar-hide shrink-0">
               <div className="flex min-w-max">
                 <button
                   onClick={(e) => handleTabChange(e, 0)}
@@ -659,7 +666,7 @@ const PetDialog = ({
                 </button>
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto min-h-0">
               <TabPanel value={tabValue} index={0}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="md:col-span-2 mb-2">
@@ -1052,7 +1059,7 @@ const PetDialog = ({
                     <div className="space-y-3">
                       {medicationSchedules.map((schedule, index) => (
                         <motion.div
-                          key={index}
+                          key={schedule.id || `schedule-${index}`}
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           className="bg-white border border-violet-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-all"
@@ -1152,7 +1159,7 @@ const PetDialog = ({
                       const status = getVaccinationStatus(vaccine.nextDue);
                       return (
                         <div
-                          key={index}
+                          key={vaccine.id || `vaccine-${index}`}
                           className="bg-white border border-lavender-100 rounded-xl shadow-sm overflow-hidden relative"
                         >
                           {vaccine.nextDue && (
@@ -1375,7 +1382,7 @@ const PetDialog = ({
                 </div>
               </TabPanel>
             </div>
-            <div className="border-t border-lavender-100 p-3 sm:p-4 flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 bg-gray-50 rounded-b-2xl">
+            <div className="border-t border-lavender-100 p-3 sm:p-4 flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 bg-gray-50 lg:rounded-b-2xl shrink-0">
               <button
                 onClick={onClose}
                 disabled={isSaving}

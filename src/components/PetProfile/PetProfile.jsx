@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FiShare2, FiLock, FiCalendar } from 'react-icons/fi';
+import { FiShare2, FiLock, FiCalendar, FiArrowLeft, FiEdit, FiEye } from 'react-icons/fi';
 import { FaBirthdayCake, FaPaw } from 'react-icons/fa';
 import { ref, get, onValue, off } from 'firebase/database';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -19,7 +19,6 @@ const PetProfile = () => {
   const [notFound, setNotFound] = useState(false);
   const [posts, setPosts] = useState([]);
   const [events, setEvents] = useState([]);
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'feed'
   const [showShareModal, setShowShareModal] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
 
@@ -248,6 +247,67 @@ const PetProfile = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Back Button and Breadcrumb */}
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <button
+                onClick={() => navigate(-1)}
+                className="flex items-center text-gray-600 hover:text-violet-600 transition-colors mr-4"
+              >
+                <FiArrowLeft className="w-5 h-5 mr-2" />
+                <span className="font-medium">Back</span>
+              </button>
+              <div className="hidden md:flex items-center text-sm text-gray-500">
+                <button onClick={() => navigate('/')} className="hover:text-violet-600">Home</button>
+                <span className="mx-2">/</span>
+                <span className="text-gray-900 font-medium">{pet?.petName || pet?.name}</span>
+              </div>
+            </div>
+            
+            {/* Action Buttons for Owner */}
+            {isOwner && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    // Navigate to profile with state to open edit dialog
+                    navigate('/profile', { 
+                      state: { 
+                        editPetId: pet?.id,
+                        openEditDialog: true 
+                      } 
+                    });
+                  }}
+                  className="flex items-center px-3 py-2 text-sm bg-violet-50 text-violet-600 rounded-lg hover:bg-violet-100 transition-colors"
+                >
+                  <FiEdit className="w-4 h-4 mr-1" />
+                  <span className="hidden md:inline">Edit Profile</span>
+                </button>
+                <button
+                  onClick={() => setShowShareModal(true)}
+                  className="flex items-center px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  <FiShare2 className="w-4 h-4 mr-1" />
+                  <span className="hidden md:inline">Share</span>
+                </button>
+              </div>
+            )}
+            
+            {/* Share Button for Non-Owner */}
+            {!isOwner && (
+              <button
+                onClick={() => setShowShareModal(true)}
+                className="flex items-center px-3 py-2 text-sm bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors"
+              >
+                <FiShare2 className="w-4 h-4 mr-1" />
+                <span className="hidden md:inline">Share</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Desktop Layout */}
       <div className="hidden lg:block max-w-7xl mx-auto px-4 py-8">
         <div className="grid grid-cols-12 gap-6">
@@ -339,14 +399,43 @@ const PetProfile = () => {
                   </div>
                 )}
 
-                {/* Share Button */}
-                <button
-                  onClick={() => setShowShareModal(true)}
-                  className="w-full mt-6 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors flex items-center justify-center"
-                >
-                  <FiShare2 className="w-4 h-4 mr-2" />
-                  Share Profile
-                </button>
+                {/* Action Buttons */}
+                <div className="mt-6 space-y-2">
+                  {isOwner ? (
+                    <>
+                      <button
+                        onClick={() => {
+                          // Navigate to profile with state to open edit dialog
+                          navigate('/profile', { 
+                            state: { 
+                              editPetId: pet?.id,
+                              openEditDialog: true 
+                            } 
+                          });
+                        }}
+                        className="w-full px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors flex items-center justify-center"
+                      >
+                        <FiEdit className="w-4 h-4 mr-2" />
+                        Edit Profile
+                      </button>
+                      <button
+                        onClick={() => setShowShareModal(true)}
+                        className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center"
+                      >
+                        <FiShare2 className="w-4 h-4 mr-2" />
+                        Share Profile
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => setShowShareModal(true)}
+                      className="w-full px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors flex items-center justify-center"
+                    >
+                      <FiShare2 className="w-4 h-4 mr-2" />
+                      Share Profile
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -358,8 +447,7 @@ const PetProfile = () => {
               pet={pet}
               isOwner={isOwner}
               currentUser={currentUser}
-              viewMode={viewMode}
-              onViewModeChange={setViewMode}
+              viewMode="feed"
             />
           </div>
 
@@ -383,8 +471,7 @@ const PetProfile = () => {
           owner={owner}
           isOwner={isOwner}
           currentUser={currentUser}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
+          viewMode="feed"
           birthday={birthday}
           events={events}
           onShare={() => setShowShareModal(true)}

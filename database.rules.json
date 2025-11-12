@@ -2,7 +2,7 @@
   "rules": {
     "users": {
       "$userId": {
-        ".read": "true",
+        ".read": "auth != null",
         ".write": "auth != null && auth.uid == $userId"
       }
     },
@@ -80,6 +80,19 @@
     "comments": {
       "$resourceId": {
         ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "taggedPlaces": {
+      ".read": "true",
+      ".write": "auth != null",
+      "$placeId": {
+        ".validate": "newData.hasChildren(['placeName', 'location', 'geohash', 'isPetFriendly', 'comment', 'userId', 'userEmail', 'timestamp', 'createdAt'])"
+      }
+    },
+    "notifications": {
+      "$userId": {
+        ".read": "auth != null && auth.uid == $userId",
         ".write": "auth != null"
       }
     }

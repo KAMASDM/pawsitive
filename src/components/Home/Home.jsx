@@ -1,16 +1,22 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
-import { FaSearch, FaDog, FaCat, FaArrowRight, FaHeart } from "react-icons/fa";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { FaSearch, FaDog, FaCat, FaArrowRight, FaHeart, FaPlus } from "react-icons/fa";
 import { IoIosArrowForward } from "react-icons/io";
-import { FiActivity, FiHeart as FiHeartEmpty, FiUsers, FiShield } from "react-icons/fi";
+import { FiActivity, FiHeart as FiHeartEmpty, FiUsers, FiShield, FiMapPin } from "react-icons/fi";
+import { auth, database } from "../../firebase";
+import { ref, get } from "firebase/database";
+import SiteTour from "../Tour/SiteTour";
+import PlaceTagging from "../PlaceTagging/PlaceTagging";
+import TaggedPlacesMap from "../PlaceTagging/TaggedPlacesMap";
+import PlaceNotifications from "../PlaceTagging/PlaceNotifications";
 
 // --- Mobile-specific data (Unchanged) ---
 const quickActionsMobile = [
   { icon: "🚨", title: "Emergency", subtitle: "24/7 Care", description: "Round-the-clock emergency veterinary services", color: "from-purple-300 to-purple-400", route: "/resource", state: { category: "all", subCategory: "Health & Wellness" } },
   { icon: "🐾", title: "Adopt", subtitle: "Find Pets", description: "Browse verified pets looking for loving homes", color: "from-violet-300 to-violet-400", route: "/adopt-pets" },
   { icon: "💕", title: "Mates", subtitle: "Find Partner", description: "Connect with nearby pets for responsible breeding", color: "from-indigo-300 to-indigo-400", route: "/nearby-mates" },
-  { icon: "🏥", title: "Care", subtitle: "Health Services", description: "Complete healthcare and wellness services", color: "from-slate-300 to-slate-400", route: "/resource", state: { category: "all", subCategory: "Nutrition" } }
+  { icon: "📍", title: "Tag Place", subtitle: "Pet Spots", description: "Mark pet-friendly places near you", color: "from-green-300 to-green-400", action: "tagPlace" }
 ];
 const adoptionCards = [
   { emoji: "🐶", title: "Adopt a Pet", count: "500+ Pets", color: "from-violet-100 to-purple-200", route: "/adopt-pets" },
@@ -47,8 +53,37 @@ const featuredStats = [
 ];
 
 
-const MobileVersion = ({ activeTab, setActiveTab, showSearchOptions, setShowSearchOptions }) => {
+const MobileVersion = ({ activeTab, setActiveTab, showSearchOptions, setShowSearchOptions, onTagPlace, userLocation }) => {
   const navigate = useNavigate();
+  const [userPets, setUserPets] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUserPets = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        try {
+          const petsRef = ref(database, `userPets/${user.uid}`);
+          const snapshot = await get(petsRef);
+          if (snapshot.exists()) {
+            const petsData = snapshot.val();
+            const petsArray = Object.entries(petsData).map(([id, data]) => ({
+              id,
+              ...data
+            }));
+            console.log("User pets loaded:", petsArray); // Debug log
+            setUserPets(petsArray);
+          }
+        } catch (error) {
+          console.error("Error fetching pets:", error);
+        }
+      }
+      setLoading(false);
+    };
+
+    fetchUserPets();
+  }, []);
+
   const servicesMobile = [ // Using a separate services array for mobile to keep its original design
     { icon: "🏥", title: "Emergency Care", description: "24/7 veterinary emergency services", badge: "24/7", color: "purple", route: "/resource", state: { category: "all", subCategory: "Health & Wellness" } },
     { icon: "🐾", title: "Pet Adoption", description: "Find your perfect companion", badge: "500+", color: "violet", route: "/resource", state: { category: "all", subCategory: "Adoption" } },
@@ -62,13 +97,93 @@ const MobileVersion = ({ activeTab, setActiveTab, showSearchOptions, setShowSear
         <p className="text-gray-600 text-sm">Everything your pet needs, simplified</p>
       </motion.div>
 
+      {/* Pet Profiles Section */}
+      <motion.div className="mb-6" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.05 }}>
+        {loading ? (
+          <div className="bg-white rounded-2xl p-4 shadow-md border border-violet-100">
+            <div className="h-24 bg-gradient-to-r from-violet-100 to-purple-100 rounded-xl animate-pulse"></div>
+          </div>
+        ) : userPets.length > 0 ? (
+          <div>
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="text-lg font-bold text-slate-800">Your Pets</h2>
+              <button onClick={() => navigate('/profile')} className="text-violet-600 text-sm font-medium hover:text-violet-700 transition-colors">
+                Manage All
+              </button>
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+              <motion.button
+                onClick={() => navigate('/profile')}
+                className="bg-gradient-to-br from-violet-50 to-purple-50 rounded-2xl border-2 border-dashed border-violet-300 hover:border-violet-400 transition-all duration-300 flex-shrink-0 w-32 flex flex-col items-center justify-center cursor-pointer"
+                whileHover={{ scale: 1.05, y: -3 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <FaPlus className="text-violet-500 text-2xl mb-2" />
+                <span className="text-violet-600 text-sm font-medium">Add Pet</span>
+              </motion.button>
+              {userPets.slice(0, 3).map((pet, index) => {
+                const petSlug = pet.slug || `${pet.petName?.toLowerCase().replace(/\s+/g, '-')}-${pet.id.slice(-6)}`;
+                console.log("Pet card:", pet.petName, "Slug:", petSlug); // Debug log
+                
+                return (
+                  <motion.div
+                    key={pet.id}
+                    onClick={() => navigate(`/pet/${petSlug}`)}
+                    className="bg-white rounded-2xl shadow-md border border-violet-100 hover:shadow-lg transition-all duration-300 cursor-pointer flex-shrink-0 w-32"
+                    whileHover={{ scale: 1.05, y: -3 }}
+                    whileTap={{ scale: 0.95 }}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                  >
+                    <div className="h-24 bg-gradient-to-br from-violet-200 to-purple-200 rounded-t-2xl flex items-center justify-center relative overflow-hidden">
+                      {pet.profilePicture ? (
+                        <img src={pet.profilePicture} alt={pet.petName} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="text-4xl">{pet.petType === 'dog' ? '🐕' : pet.petType === 'cat' ? '🐈' : '🐾'}</div>
+                      )}
+                    </div>
+                    <div className="p-3">
+                      <h3 className="font-semibold text-slate-800 text-sm truncate">{pet.petName}</h3>
+                      <p className="text-violet-600 text-xs truncate">{pet.breed || pet.petType}</p>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <motion.div
+            onClick={() => navigate('/profile')}
+            className="bg-gradient-to-br from-violet-50 to-purple-50 rounded-2xl p-6 shadow-md border-2 border-dashed border-violet-300 hover:border-violet-400 hover:shadow-lg transition-all duration-300 cursor-pointer text-center"
+            whileHover={{ scale: 1.02, y: -3 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <motion.div
+              className="text-5xl mb-3"
+              animate={{ scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            >
+              🐾
+            </motion.div>
+            <h3 className="text-lg font-bold text-slate-800 mb-2">Create Your Pet Profile</h3>
+            <p className="text-gray-600 text-sm mb-4">Share your pet's story, health records, and connect with other pet parents</p>
+            <div className="flex items-center justify-center text-violet-600 font-medium">
+              <FaPlus className="mr-2" />
+              <span>Create Profile</span>
+              <FaArrowRight className="ml-2" />
+            </div>
+          </motion.div>
+        )}
+      </motion.div>
+
       <motion.div className="mb-6" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}>
         <div className="grid grid-cols-4 gap-3">
           {quickActionsMobile.map((action, index) => (
             <motion.button
               key={index}
-              onClick={() => navigate(action.route, { state: action.state })}
-              className="bg-lavender-600 text-white p-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 text-center border border-purple-50"
+              onClick={() => action.action === 'tagPlace' ? onTagPlace() : navigate(action.route, { state: action.state })}
+              className="bg-gradient-to-br from-violet-50 to-purple-50 text-violet-700 p-3 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 text-center border border-violet-100"
               whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
               initial={{ opacity: 0, y: 20 }}
@@ -77,7 +192,7 @@ const MobileVersion = ({ activeTab, setActiveTab, showSearchOptions, setShowSear
             >
               <div className="text-2xl mb-1">{action.icon}</div>
               <div className="text-xs font-medium">{action.title}</div>
-              <div className="text-xs opacity-90">{action.subtitle}</div>
+              <div className="text-xs opacity-75">{action.subtitle}</div>
             </motion.button>
           ))}
         </div>
@@ -128,7 +243,7 @@ const MobileVersion = ({ activeTab, setActiveTab, showSearchOptions, setShowSear
             { id: "resources", label: "Care", icon: "📚" },
             { id: "mates", label: "Mates", icon: "💕" }
           ].map((tab) => (
-            <motion.button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex-1 flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 ${activeTab === tab.id ? "bg-lavender-600 text-white shadow-md" : "text-gray-600 hover:bg-violet-50"}`} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <motion.button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex-1 flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 ${activeTab === tab.id ? "bg-gradient-to-br from-violet-100 to-purple-100 text-violet-700 shadow-md border border-violet-200" : "text-gray-600 hover:bg-violet-50"}`} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <span className="text-lg mb-1">{tab.icon}</span>
               <span className="text-xs font-medium">{tab.label}</span>
             </motion.button>
@@ -143,7 +258,7 @@ const MobileVersion = ({ activeTab, setActiveTab, showSearchOptions, setShowSear
               {servicesMobile.map((service, index) => (
                 <motion.div key={index} onClick={() => navigate(service.route, { state: service.state })} className="bg-white rounded-2xl p-4 shadow-md border border-violet-100 hover:shadow-lg transition-all duration-300 cursor-pointer h-24 flex items-center" whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.1 }}>
                   <div className="flex items-center flex-1">
-                    <div className="w-12 h-12 rounded-full bg-lavender-600 flex items-center justify-center text-white text-xl mr-4 shadow-sm">{service.icon}</div>
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-violet-100 to-purple-100 flex items-center justify-center text-violet-600 text-xl mr-4 shadow-sm border border-violet-200">{service.icon}</div>
                     <div className="flex-1">
                       <h3 className="font-semibold text-slate-800 text-base mb-1">{service.title}</h3>
                       <p className="text-gray-600 text-sm">{service.description}</p>
@@ -162,9 +277,9 @@ const MobileVersion = ({ activeTab, setActiveTab, showSearchOptions, setShowSear
             <motion.div key="adoption" className="grid grid-cols-1 gap-4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               {adoptionCards.map((card, index) => (
                 <motion.div key={index} onClick={() => navigate(card.route)} className="bg-white rounded-2xl overflow-hidden shadow-md border border-violet-100 hover:shadow-lg transition-all duration-300 cursor-pointer h-40" whileHover={{ scale: 1.03, y: -3 }} whileTap={{ scale: 0.97 }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.1 }}>
-                  <div className="h-24 bg-lavender-600 flex items-center justify-center relative overflow-hidden">
-                    <div className="absolute -right-4 -top-4 w-16 h-16 bg-white rounded-full opacity-20"></div>
-                    <div className="text-4xl text-white">{card.emoji}</div>
+                  <div className="h-24 bg-gradient-to-br from-violet-200 to-purple-200 flex items-center justify-center relative overflow-hidden border-b border-violet-300">
+                    <div className="absolute -right-4 -top-4 w-16 h-16 bg-white rounded-full opacity-30"></div>
+                    <div className="text-4xl">{card.emoji}</div>
                   </div>
                   <div className="p-4 flex justify-between items-center">
                     <div>
@@ -200,7 +315,7 @@ const MobileVersion = ({ activeTab, setActiveTab, showSearchOptions, setShowSear
               <motion.div className="text-5xl mb-4" animate={{ scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}>💕</motion.div>
               <h3 className="text-xl font-bold text-slate-800 mb-3">Find Pet Mates</h3>
               <p className="text-gray-600 text-sm mb-6 max-w-xs">Connect with verified pet owners for safe breeding</p>
-              <motion.button onClick={() => navigate('/nearby-mates')} className="bg-lavender-600 text-white px-6 py-3 rounded-full font-medium hover:bg-lavender-700 transition-all duration-300 shadow-md hover:shadow-lg flex items-center" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <motion.button onClick={() => navigate('/nearby-mates')} className="bg-gradient-to-r from-violet-500 to-purple-500 text-white px-6 py-3 rounded-full font-medium hover:from-violet-600 hover:to-purple-600 transition-all duration-300 shadow-md hover:shadow-lg flex items-center" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                 <FaHeart className="mr-2" />
                 Find Mates
               </motion.button>
@@ -208,11 +323,31 @@ const MobileVersion = ({ activeTab, setActiveTab, showSearchOptions, setShowSear
           )}
         </AnimatePresence>
       </motion.div>
+
+      {/* Pet-Friendly Places Section - Mobile */}
+      <motion.div 
+        className="mt-6"
+        initial={{ opacity: 0, y: 20 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        transition={{ duration: 0.6, delay: 0.4 }}
+      >
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-bold text-slate-800">Pet-Friendly Places</h2>
+          <button 
+            onClick={onTagPlace}
+            className="text-violet-600 text-sm font-medium hover:text-violet-700 transition-colors flex items-center"
+          >
+            <FiMapPin className="mr-1" />
+            Tag Place
+          </button>
+        </div>
+        <TaggedPlacesMap userLocation={userLocation} radius={5} />
+      </motion.div>
     </div>
   );
 };
 
-const DesktopVersion = ({ showSearchOptions, setShowSearchOptions, handlePetTypeSelect }) => {
+const DesktopVersion = ({ showSearchOptions, setShowSearchOptions, handlePetTypeSelect, onTagPlace, userLocation }) => {
   const navigate = useNavigate();
 
   return (
@@ -328,6 +463,38 @@ const DesktopVersion = ({ showSearchOptions, setShowSearchOptions, handlePetType
           </div>
         </div>
       </motion.div>
+
+      {/* PET-FRIENDLY PLACES SECTION */}
+      <motion.div 
+        className="py-20 bg-gradient-to-br from-violet-50 to-purple-50" 
+        initial={{ opacity: 0, y: 50 }} 
+        whileInView={{ opacity: 1, y: 0 }} 
+        transition={{ duration: 0.8 }} 
+        viewport={{ once: true }}
+      >
+        <div className="max-w-7xl mx-auto px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold text-slate-800 mb-4">Pet-Friendly Places Near You</h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Discover and share pet-friendly locations in your community
+            </p>
+          </div>
+
+          <div className="mb-8 flex justify-center">
+            <motion.button
+              onClick={onTagPlace}
+              className="bg-gradient-to-r from-violet-600 to-purple-600 text-white px-8 py-4 rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-3"
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <FiMapPin className="text-2xl" />
+              <span>Tag a Pet-Friendly Place</span>
+            </motion.button>
+          </div>
+
+          <TaggedPlacesMap userLocation={userLocation} radius={5} />
+        </div>
+      </motion.div>
     </div>
   );
 };
@@ -335,9 +502,42 @@ const DesktopVersion = ({ showSearchOptions, setShowSearchOptions, handlePetType
 
 const Home = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("services");
   const [showSearchOptions, setShowSearchOptions] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
+  const [showTour, setShowTour] = useState(false);
+  const [showPlaceTagging, setShowPlaceTagging] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
+
+  // Get user's current location
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const location = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          };
+          console.log('User location set:', location);
+          setUserLocation(location);
+        },
+        (error) => {
+          console.error('Error getting location:', error);
+        }
+      );
+    } else {
+      console.error('Geolocation not supported by browser');
+    }
+  }, []);
+
+  useEffect(() => {
+    // Check if tour should be shown
+    const tourParam = searchParams.get('tour');
+    if (tourParam === 'true') {
+      setShowTour(true);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const checkScreenSize = () => {
@@ -358,8 +558,27 @@ const Home = () => {
     setShowSearchOptions(false);
   }, [navigate]);
 
+  const handleTourComplete = () => {
+    setShowTour(false);
+    // Remove tour param from URL
+    navigate('/dashboard', { replace: true });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-violet-50 relative overflow-hidden">
+      {/* Site Tour */}
+      {showTour && <SiteTour onComplete={handleTourComplete} />}
+      
+      {/* Place Tagging Modal */}
+      <PlaceTagging 
+        isOpen={showPlaceTagging} 
+        onClose={() => setShowPlaceTagging(false)} 
+        userLocation={userLocation}
+      />
+
+      {/* Place Notifications */}
+      <PlaceNotifications />
+      
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div className="absolute top-10 right-10 w-20 h-20 bg-violet-200 rounded-full opacity-20" animate={{ scale: [1, 1.2, 1], rotate: [0, 180, 360] }} transition={{ duration: 20, repeat: Infinity, ease: "linear" }} />
         <motion.div className="absolute bottom-20 left-5 w-16 h-16 bg-indigo-200 rounded-full opacity-25" animate={{ y: [0, -20, 0], x: [0, 10, 0] }} transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }} />
@@ -370,6 +589,8 @@ const Home = () => {
           showSearchOptions={showSearchOptions}
           setShowSearchOptions={setShowSearchOptions}
           handlePetTypeSelect={handlePetTypeSelect}
+          onTagPlace={() => setShowPlaceTagging(true)}
+          userLocation={userLocation}
         />
         : <MobileVersion
           activeTab={activeTab}
@@ -377,6 +598,8 @@ const Home = () => {
           showSearchOptions={showSearchOptions}
           setShowSearchOptions={setShowSearchOptions}
           handlePetTypeSelect={handlePetTypeSelect}
+          onTagPlace={() => setShowPlaceTagging(true)}
+          userLocation={userLocation}
         />
       }
     </div>

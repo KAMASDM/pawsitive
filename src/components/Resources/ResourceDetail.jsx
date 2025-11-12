@@ -23,7 +23,10 @@ const ResourceDetail = () => {
 
     const { isLoaded, loadError } = useJsApiLoader({
         googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
-        libraries
+        libraries,
+        preventGoogleFontsLoading: true,
+        async: true,
+        defer: true,
     });
 
     const mapContainerStyle = {
