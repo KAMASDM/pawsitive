@@ -10,6 +10,7 @@ import SiteTour from "../Tour/SiteTour";
 import PlaceTagging from "../PlaceTagging/PlaceTagging";
 import TaggedPlacesMap from "../PlaceTagging/TaggedPlacesMap";
 import PlaceNotifications from "../PlaceTagging/PlaceNotifications";
+import UpcomingReminders from "./UpcomingReminders";
 
 // --- Mobile-specific data (Unchanged) ---
 const quickActionsMobile = [
@@ -176,6 +177,9 @@ const MobileVersion = ({ activeTab, setActiveTab, showSearchOptions, setShowSear
           </motion.div>
         )}
       </motion.div>
+
+      {/* Upcoming Reminders Section */}
+      <UpcomingReminders />
 
       <motion.div className="mb-6" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}>
         <div className="grid grid-cols-4 gap-3">
@@ -423,6 +427,19 @@ const DesktopVersion = ({ showSearchOptions, setShowSearchOptions, handlePetType
               ))}
             </motion.div>
           </div>
+        </div>
+      </motion.div>
+
+      {/* Upcoming Reminders Section for Desktop */}
+      <motion.div 
+        className="py-12 bg-gray-50"
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        transition={{ duration: 0.8 }}
+        viewport={{ once: true }}
+      >
+        <div className="max-w-7xl mx-auto px-8">
+          <UpcomingReminders />
         </div>
       </motion.div>
 

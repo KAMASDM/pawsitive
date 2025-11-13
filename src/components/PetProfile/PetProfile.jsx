@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FiShare2, FiLock, FiCalendar, FiArrowLeft, FiEdit } from 'react-icons/fi';
+import { FiShare2, FiLock, FiCalendar, FiArrowLeft, FiEdit, FiInfo, FiPlus } from 'react-icons/fi';
 import { FaBirthdayCake, FaPaw } from 'react-icons/fa';
 import { ref, get, onValue, off } from 'firebase/database';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -8,6 +8,7 @@ import { database, auth } from '../../firebase';
 import PetPostsFeed from './PetPostsFeed';
 import PetEventsTimeline from './PetEventsTimeline';
 import ShareModal from './ShareModal';
+import QuickActionDialog from './QuickActionDialog';
 import './PetProfile.css';
 
 const PetProfile = () => {
@@ -22,6 +23,8 @@ const PetProfile = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [showQuickActionDialog, setShowQuickActionDialog] = useState(false);
+  const [quickActionType, setQuickActionType] = useState(null); // 'post' or 'event'
 
   // Listen to auth state
   useEffect(() => {
@@ -294,19 +297,31 @@ const PetProfile = () => {
             {isOwner && (
               <div className="flex items-center gap-2">
                 <button
+                  onClick={() => navigate(`/pet-details/${pet?.id}`)}
+                  className="flex items-center px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  <FiInfo className="w-4 h-4 mr-1" />
+                  <span className="hidden md:inline">Pet Details</span>
+                </button>
+                <button
                   onClick={() => {
-                    // Navigate to profile with state to open edit dialog
-                    navigate('/profile', { 
-                      state: { 
-                        editPetId: pet?.id,
-                        openEditDialog: true 
-                      } 
-                    });
+                    setQuickActionType('post');
+                    setShowQuickActionDialog(true);
                   }}
                   className="flex items-center px-3 py-2 text-sm bg-violet-50 text-violet-600 rounded-lg hover:bg-violet-100 transition-colors"
                 >
-                  <FiEdit className="w-4 h-4 mr-1" />
-                  <span className="hidden md:inline">Edit Profile</span>
+                  <FiPlus className="w-4 h-4 mr-1" />
+                  <span className="hidden md:inline">Add Post</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setQuickActionType('event');
+                    setShowQuickActionDialog(true);
+                  }}
+                  className="flex items-center px-3 py-2 text-sm bg-violet-50 text-violet-600 rounded-lg hover:bg-violet-100 transition-colors"
+                >
+                  <FiCalendar className="w-4 h-4 mr-1" />
+                  <span className="hidden md:inline">Add Event</span>
                 </button>
                 <button
                   onClick={() => setShowShareModal(true)}
@@ -509,6 +524,19 @@ const PetProfile = () => {
         pet={pet}
         slug={slug}
       />
+
+      {/* Quick Action Dialog */}
+      {isOwner && (
+        <QuickActionDialog
+          isOpen={showQuickActionDialog}
+          onClose={() => {
+            setShowQuickActionDialog(false);
+            setQuickActionType(null);
+          }}
+          pet={pet}
+          actionType={quickActionType}
+        />
+      )}
     </div>
   );
 };

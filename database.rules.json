@@ -76,9 +76,23 @@
         ".write": "auth != null"
       }
     },
+    "resources": {
+      "$placeId": {
+        "comments": {
+          ".read": "true",
+          ".write": "auth != null"
+        }
+      }
+    },
+    "userComments": {
+      "$userId": {
+        ".read": "auth != null && auth.uid == $userId",
+        ".write": "auth != null && auth.uid == $userId"
+      }
+    },
     "comments": {
       "$resourceId": {
-        ".read": "auth != null",
+        ".read": "true",
         ".write": "auth != null"
       }
     },

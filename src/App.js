@@ -9,6 +9,7 @@ import NearbyMates from "./components/NearbyMates/NearbyMates";
 import AdoptPet from "./components/AdoptPet/AdoptPet";
 import PetDetail from "./components/NearbyMates/PetDetail";
 import PetProfile from "./components/PetProfile/PetProfile";
+import PetDetailsPage from "./components/PetDetails/PetDetailsPage";
 import PR from "./components/PR/PR";
 import ScrollToTop from "./UI/ScrollToTop";
 import Footer from "./components/Footer/Footer";
@@ -82,6 +83,14 @@ function App() {
               element={
                 <PR>
                   <PetDetail />
+                </PR>
+              }
+            />
+            <Route
+              path="/pet-details/:petId"
+              element={
+                <PR>
+                  <PetDetailsPage />
                 </PR>
               }
             />
