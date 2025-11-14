@@ -26,6 +26,7 @@ const ConversationsList = ({ onOpenConversation }) => {
     
     console.log("ConversationsList: Setting up listener for user:", user.uid);
     const conversationsRef = ref(database, "conversations");
+    
     const handleConversationsSnapshot = async (snapshot) => {
       console.log("ConversationsList: Snapshot received, exists:", snapshot.exists());
       
@@ -38,134 +39,119 @@ const ConversationsList = ({ onOpenConversation }) => {
       
       const conversationsData = snapshot.val();
       console.log("ConversationsList: Total conversations in DB:", Object.keys(conversationsData).length);
-      const relevantConversations = [];
-
-      for (const conversationId in conversationsData) {
-        const conversation = conversationsData[conversationId];
-        
-        console.log(`ConversationsList: Checking conversation ${conversationId}`, {
-          hasParticipants: !!conversation.participants,
-          participants: conversation.participants ? Object.keys(conversation.participants) : [],
-          includesCurrentUser: conversation.participants ? !!conversation.participants[user.uid] : false
-        });
-
-          if (
-            conversation.participants &&
-            conversation.participants[user.uid]
-          ) {
-            const otherParticipantId = Object.keys(
-              conversation.participants
-            ).find((id) => id !== user.uid);
-
-            if (!otherParticipantId) continue;
-
-            let otherParticipantName = "Pet's Owner";
-            let senderPet = null;
-            let receiverPet = null;
-
-            try {
-              const userRef = ref(database, `users/${otherParticipantId}`);
-              const userSnapshot = await get(userRef);
-
-              if (userSnapshot.exists()) {
-                const userData = userSnapshot.val();
-                otherParticipantName = userData.displayName || "Pet's Owner";
-              }
-
-              if (conversation.matingRequestId) {
-                const sentRef = ref(
-                  database,
-                  `matingRequests/sent/${user.uid}/${conversation.matingRequestId}`
-                );
-                const sentSnapshot = await get(sentRef);
-
-                if (sentSnapshot.exists()) {
-                  const request = sentSnapshot.val();
-
-                  const userPetRef = ref(
-                    database,
-                    `userPets/${user.uid}/${request.senderPetId}`
-                  );
-                  const otherPetRef = ref(
-                    database,
-                    `userPets/${otherParticipantId}/${request.receiverPetId}`
-                  );
-
-                  const [userPetSnapshot, otherPetSnapshot] = await Promise.all(
-                    [get(userPetRef), get(otherPetRef)]
-                  );
-
-                  senderPet = userPetSnapshot.exists()
-                    ? { id: request.senderPetId, ...userPetSnapshot.val() }
-                    : { name: request.senderPetName };
-
-                  receiverPet = otherPetSnapshot.exists()
-                    ? { id: request.receiverPetId, ...otherPetSnapshot.val() }
-                    : {
-                      name: request.receiverPetName,
-                      image: request.receiverPetImage,
-                    };
-                } else {
-                  const receivedRef = ref(
-                    database,
-                    `matingRequests/received/${user.uid}/${conversation.matingRequestId}`
-                  );
-                  const receivedSnapshot = await get(receivedRef);
-
-                  if (receivedSnapshot.exists()) {
-                    const request = receivedSnapshot.val();
-
-                    const userPetRef = ref(
-                      database,
-                      `userPets/${user.uid}/${request.receiverPetId}`
-                    );
-                    const otherPetRef = ref(
-                      database,
-                      `userPets/${otherParticipantId}/${request.senderPetId}`
-                    );
-
-                    const [userPetSnapshot, otherPetSnapshot] =
-                      await Promise.all([get(userPetRef), get(otherPetRef)]);
-
-                    receiverPet = userPetSnapshot.exists()
-                      ? { id: request.receiverPetId, ...userPetSnapshot.val() }
-                      : { name: request.receiverPetName };
-
-                    senderPet = otherPetSnapshot.exists()
-                      ? { id: request.senderPetId, ...otherPetSnapshot.val() }
-                      : {
-                        name: request.senderPetName,
-                        image: request.senderPetImage,
-                      };
-                  }
-                }
-              }
-            } catch (error) {
-              console.error("Error getting conversation details:", error);
-            }
-
-            relevantConversations.push({
-              id: conversationId,
-              otherParticipantId,
-              otherParticipantName,
-              senderPet,
-              receiverPet,
-              lastMessage: conversation.lastMessageText || "No messages yet",
-              lastMessageTime: conversation.lastMessageTimestamp || 0,
-              matingRequestId: conversation.matingRequestId,
-              type: conversation.matingRequestId ? "mating" : "adoption",
-            });
-          }
-        }
-
-      relevantConversations.sort(
-        (a, b) => b.lastMessageTime - a.lastMessageTime
-      );
-      console.log("ConversationsList: Setting conversations, count:", relevantConversations.length);
-      console.log("ConversationsList: Conversation details:", relevantConversations);
-      setConversations(relevantConversations);
       
-      console.log("ConversationsList: Setting loading to false");
+      // Filter conversations for current user first
+      const userConversations = Object.entries(conversationsData)
+        .filter(([_, conversation]) => 
+          conversation.participants && conversation.participants[user.uid]
+        );
+
+      console.log("ConversationsList: User conversations count:", userConversations.length);
+
+      if (userConversations.length === 0) {
+        setConversations([]);
+        setLoading(false);
+        return;
+      }
+
+      // Batch fetch all required data in parallel
+      const conversationsPromises = userConversations.map(async ([conversationId, conversation]) => {
+        try {
+          const otherParticipantId = Object.keys(conversation.participants).find((id) => id !== user.uid);
+          if (!otherParticipantId) return null;
+
+          // Prepare all database references
+          const userRef = ref(database, `users/${otherParticipantId}`);
+          const fetchPromises = [get(userRef)];
+
+          // If there's a mating request, prepare those refs too
+          let sentRequestRef = null;
+          let receivedRequestRef = null;
+          
+          if (conversation.matingRequestId) {
+            sentRequestRef = ref(database, `matingRequests/sent/${user.uid}/${conversation.matingRequestId}`);
+            receivedRequestRef = ref(database, `matingRequests/received/${user.uid}/${conversation.matingRequestId}`);
+            fetchPromises.push(get(sentRequestRef), get(receivedRequestRef));
+          }
+
+          // Fetch all data in parallel
+          const results = await Promise.all(fetchPromises);
+          const [userSnapshot, sentSnapshot, receivedSnapshot] = results;
+
+          let otherParticipantName = "Pet's Owner";
+          let senderPet = null;
+          let receiverPet = null;
+
+          // Get participant name
+          if (userSnapshot.exists()) {
+            const userData = userSnapshot.val();
+            otherParticipantName = userData.displayName || "Pet's Owner";
+          }
+
+          // Handle mating request data
+          if (conversation.matingRequestId) {
+            if (sentSnapshot && sentSnapshot.exists()) {
+              const request = sentSnapshot.val();
+              
+              // Fetch both pets in parallel
+              const [userPetSnapshot, otherPetSnapshot] = await Promise.all([
+                get(ref(database, `userPets/${user.uid}/${request.senderPetId}`)),
+                get(ref(database, `userPets/${otherParticipantId}/${request.receiverPetId}`))
+              ]);
+
+              senderPet = userPetSnapshot.exists()
+                ? { id: request.senderPetId, ...userPetSnapshot.val() }
+                : { name: request.senderPetName };
+
+              receiverPet = otherPetSnapshot.exists()
+                ? { id: request.receiverPetId, ...otherPetSnapshot.val() }
+                : { name: request.receiverPetName, image: request.receiverPetImage };
+                
+            } else if (receivedSnapshot && receivedSnapshot.exists()) {
+              const request = receivedSnapshot.val();
+              
+              // Fetch both pets in parallel
+              const [userPetSnapshot, otherPetSnapshot] = await Promise.all([
+                get(ref(database, `userPets/${user.uid}/${request.receiverPetId}`)),
+                get(ref(database, `userPets/${otherParticipantId}/${request.senderPetId}`))
+              ]);
+
+              receiverPet = userPetSnapshot.exists()
+                ? { id: request.receiverPetId, ...userPetSnapshot.val() }
+                : { name: request.receiverPetName };
+
+              senderPet = otherPetSnapshot.exists()
+                ? { id: request.senderPetId, ...otherPetSnapshot.val() }
+                : { name: request.senderPetName, image: request.senderPetImage };
+            }
+          }
+
+          return {
+            id: conversationId,
+            otherParticipantId,
+            otherParticipantName,
+            senderPet,
+            receiverPet,
+            lastMessage: conversation.lastMessageText || "No messages yet",
+            lastMessageTime: conversation.lastMessageTimestamp || 0,
+            matingRequestId: conversation.matingRequestId,
+            type: conversation.matingRequestId ? "mating" : "adoption",
+          };
+        } catch (error) {
+          console.error(`Error processing conversation ${conversationId}:`, error);
+          return null;
+        }
+      });
+
+      // Wait for all conversations to be processed in parallel
+      const processedConversations = await Promise.all(conversationsPromises);
+      const validConversations = processedConversations.filter(Boolean);
+
+      // Sort by most recent
+      validConversations.sort((a, b) => b.lastMessageTime - a.lastMessageTime);
+      
+      console.log("ConversationsList: Setting conversations, count:", validConversations.length);
+      setConversations(validConversations);
       setLoading(false);
     };
 

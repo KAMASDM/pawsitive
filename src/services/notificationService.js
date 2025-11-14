@@ -4,7 +4,7 @@ import { getMessaging, getToken } from 'firebase/messaging';
 
 // EmailJS Configuration
 const EMAILJS_SERVICE_ID = 'service_zdt4u0q';
-const EMAILJS_PUBLIC_KEY = process.env.REACT_APP_EMAILJS_PUBLIC_KEY || '9Ic6G_vwTk3Wl8Szu';
+const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY || '9Ic6G_vwTk3Wl8Szu';
 
 // Email Template IDs - You can create separate templates in EmailJS for each type
 const EMAIL_TEMPLATES = {
@@ -236,7 +236,7 @@ export const sendWelcomeEmail = async (userData) => {
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td align="center" style="padding: 20px 0;">
-                    <a href="${process.env.REACT_APP_URL || 'https://pawppy.in'}/profile" style="background: linear-gradient(135deg, #8b77c3 0%, #a78bfa 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 30px; font-size: 16px; font-weight: bold; display: inline-block; box-shadow: 0 4px 12px rgba(139, 119, 195, 0.3);">
+                    <a href="${import.meta.env.VITE_BASE_URL || 'https://pawppy.in'}/profile" style="background: linear-gradient(135deg, #8b77c3 0%, #a78bfa 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 30px; font-size: 16px; font-weight: bold; display: inline-block; box-shadow: 0 4px 12px rgba(139, 119, 195, 0.3);">
                       Complete Your Profile →
                     </a>
                   </td>
@@ -249,7 +249,7 @@ export const sendWelcomeEmail = async (userData) => {
                   <td style="padding: 20px; text-align: center;">
                     <p style="margin: 0; color: #92400e; font-size: 14px; line-height: 1.6;">
                       💡 <strong>Need Help?</strong><br/>
-                      Reply to this email or visit our <a href="${process.env.REACT_APP_URL || 'https://pawppy.in'}/faq" style="color: #8b77c3; text-decoration: none; font-weight: bold;">FAQ section</a>
+                      Reply to this email or visit our <a href="${import.meta.env.VITE_BASE_URL || 'https://pawppy.in'}/faq" style="color: #8b77c3; text-decoration: none; font-weight: bold;">FAQ section</a>
                     </p>
                   </td>
                 </tr>
@@ -267,8 +267,8 @@ export const sendWelcomeEmail = async (userData) => {
                 © ${new Date().getFullYear()} Pawppy. All rights reserved.
               </p>
               <p style="margin: 10px 0 0 0;">
-                <a href="${process.env.REACT_APP_URL || 'https://pawppy.in'}" style="color: #8b77c3; text-decoration: none; font-size: 12px; margin: 0 10px;">Visit Website</a>
-                <a href="${process.env.REACT_APP_URL || 'https://pawppy.in'}/privacy-policy" style="color: #8b77c3; text-decoration: none; font-size: 12px; margin: 0 10px;">Privacy Policy</a>
+                <a href="${import.meta.env.VITE_BASE_URL || 'https://pawppy.in'}" style="color: #8b77c3; text-decoration: none; font-size: 12px; margin: 0 10px;">Visit Website</a>
+                <a href="${import.meta.env.VITE_BASE_URL || 'https://pawppy.in'}/privacy-policy" style="color: #8b77c3; text-decoration: none; font-size: 12px; margin: 0 10px;">Privacy Policy</a>
               </p>
             </td>
           </tr>
@@ -308,6 +308,7 @@ export const sendMatingRequestNotification = async (receiverData, senderData, re
     const emailParams = {
       name: receiverData.displayName || 'Pet Parent',
       to_email: receiverData.email,
+      subject: `💕 New Mating Request from ${senderData.displayName}`,
       message: `
 <!DOCTYPE html>
 <html>
@@ -380,7 +381,7 @@ export const sendMatingRequestNotification = async (receiverData, senderData, re
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td align="center" style="padding: 20px 0;">
-                    <a href="${process.env.REACT_APP_URL || 'https://pawppy.in'}/profile?tab=requests" style="background: linear-gradient(135deg, #ec4899 0%, #f472b6 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 30px; font-size: 16px; font-weight: bold; display: inline-block; box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);">
+                    <a href="${import.meta.env.VITE_BASE_URL || 'https://pawppy.in'}/profile?tab=requests" style="background: linear-gradient(135deg, #ec4899 0%, #f472b6 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 30px; font-size: 16px; font-weight: bold; display: inline-block; box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);">
                       View & Respond to Request →
                     </a>
                   </td>
@@ -551,7 +552,7 @@ export const sendMatingRequestAcceptedNotification = async (senderData, receiver
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td align="center" style="padding: 20px 0;">
-                    <a href="${process.env.REACT_APP_URL || 'https://pawppy.in'}/profile?tab=messages" style="background: linear-gradient(135deg, #10b981 0%, #34d399 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 30px; font-size: 16px; font-weight: bold; display: inline-block; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
+                    <a href="${import.meta.env.VITE_BASE_URL || 'https://pawppy.in'}/profile?tab=messages" style="background: linear-gradient(135deg, #10b981 0%, #34d399 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 30px; font-size: 16px; font-weight: bold; display: inline-block; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
                       Start Messaging Now →
                     </a>
                   </td>
@@ -719,7 +720,7 @@ export const sendVaccinationReminder = async (ownerData, petData, vaccineData) =
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td align="center" style="padding: 20px 0;">
-                    <a href="${process.env.REACT_APP_URL || 'https://pawppy.in'}/resource" style="background: linear-gradient(135deg, ${isOverdue ? '#ef4444' : '#f59e0b'} 0%, ${isOverdue ? '#f87171' : '#fbbf24'} 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 30px; font-size: 16px; font-weight: bold; display: inline-block; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);">
+                    <a href="${import.meta.env.VITE_BASE_URL || 'https://pawppy.in'}/resource" style="background: linear-gradient(135deg, ${isOverdue ? '#ef4444' : '#f59e0b'} 0%, ${isOverdue ? '#f87171' : '#fbbf24'} 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 30px; font-size: 16px; font-weight: bold; display: inline-block; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);">
                       Find Nearby Vets →
                     </a>
                   </td>
@@ -808,28 +809,49 @@ export const requestNotificationPermission = async (userId) => {
       return { success: false, error: 'Not supported' };
     }
 
-    const messaging = getMessaging();
+    // First, ensure service worker is registered
+    console.log('Registering service worker...');
+    let registration;
+    try {
+      registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+      console.log('Service Worker registered:', registration);
+      
+      // Wait for service worker to be ready
+      await navigator.serviceWorker.ready;
+      console.log('Service Worker is ready');
+    } catch (swError) {
+      console.error('Service Worker registration failed:', swError);
+      return { success: false, error: 'Service Worker registration failed: ' + swError.message };
+    }
+
+    // Request notification permission
     const permission = await Notification.requestPermission();
+    console.log('Notification permission:', permission);
     
     if (permission === 'granted') {
+      const messaging = getMessaging();
+      
+      // Get FCM token
       const token = await getToken(messaging, {
-        vapidKey: process.env.REACT_APP_FIREBASE_VAPID_KEY,
+        vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
+        serviceWorkerRegistration: registration
       });
+      
+      console.log('FCM Token obtained:', token);
       
       // Save token to database
       const db = getDatabase();
       const tokenRef = ref(db, `users/${userId}/fcmToken`);
       await set(tokenRef, token);
       
-      console.log('FCM Token saved:', token);
+      console.log('FCM Token saved to database');
       return { success: true, token };
     } else {
       console.log('Notification permission denied');
       return { success: false, error: 'Permission denied' };
     }
   } catch (error) {
-    // Silently fail for service worker errors - don't block user registration
-    console.log('Push notifications unavailable:', error.message);
+    console.error('Push notification setup error:', error);
     return { success: false, error: error.message };
   }
 };

@@ -1,6 +1,7 @@
 export { default as UserInfo } from './UserInfo';
 export { default as PetCard } from './PetCard';
 export { default as PetDialog } from './PetDialog';
+export { default as UserProfileDialog } from './UserProfileDialog';
 export { default as MatingRequestDialog } from './MatingRequestDialog';
 export { default as VaccinationDialog } from './VaccinationDialog';
 export { default as VaccinationSelect } from './VaccinationSelect';

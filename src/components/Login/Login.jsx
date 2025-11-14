@@ -8,6 +8,7 @@ import { sendWelcomeEmail, requestNotificationPermission } from "../../services/
 import { motion, AnimatePresence } from "framer-motion";
 import { FaGoogle, FaPaw } from "react-icons/fa";
 import { FiMail, FiLock, FiUser, FiArrowRight, FiCheck, FiMapPin, FiUsers, FiHeart, FiShield, FiZap, FiMap, FiCamera, FiActivity } from "react-icons/fi";
+import InstallPWA from "../InstallPWA/InstallPWA";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -36,6 +37,10 @@ const Login = () => {
         displayName: displayName || user.displayName || user.email?.split('@')[0],
         email: user.email,
         photoURL: user.photoURL || null,
+        phoneNumber: '',
+        city: '',
+        country: '',
+        dateOfBirth: '',
         createdAt: Date.now(),
         isNewUser: true, // Flag for showing tour
         hasCompletedTour: false,
@@ -693,6 +698,9 @@ const Login = () => {
           animate={{ opacity: showContent ? 1 : 0, y: showContent ? 0 : 20 }}
           transition={{ duration: 0.5 }}
         >
+          {/* PWA Install Prompt */}
+          <InstallPWA />
+          
           <AnimatePresence mode="wait">
             {showVerificationMessage ? (
               <motion.div

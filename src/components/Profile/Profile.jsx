@@ -7,10 +7,12 @@ import { FiMail, FiPhone } from "react-icons/fi";
 import useResponsive from "../../hooks/useResponsive";
 import { FaPlus, FaPaw, FaHeart, FaCommentDots } from "react-icons/fa";
 import { sendMatingRequestAcceptedNotification } from "../../services/notificationService";
+import { clearUnreadNotifications } from "../../services/badgeService";
 import {
   PetDialog,
   VaccinationDialog,
   MessageDialog,
+  UserProfileDialog,
   PetsSection as PetsSectionComponent,
   DesktopPetsSection as DesktopPetsSectionComponent,
   RequestsSection as RequestsSectionComponent,
@@ -28,7 +30,7 @@ const ConversationsListSection = memo(ConversationsList);
 
 // --- Child Components for Mobile/Desktop Views ---
 
-const MobileVersion = ({ user, pets, matingRequests, chats, activeTab, setActiveTab, tabs, handleAddPet, handleEditPet, handleDeletePet, handleToggleAvailability, handleAcceptRequest, handleDeclineRequest, handleOpenMessageDialog }) => (
+const MobileVersion = ({ user, pets, matingRequests, chats, activeTab, setActiveTab, tabs, handleAddPet, handleEditPet, handleDeletePet, handleToggleAvailability, handleAcceptRequest, handleDeclineRequest, handleOpenMessageDialog, handleEditProfile }) => (
   <div className="min-h-screen bg-gradient-to-br from-slate-50 to-violet-50 p-4">
     {/* User Profile Header */}
     <motion.div className="bg-white/80 backdrop-blur-lg rounded-2xl p-6 shadow-lg border border-violet-100 mb-6" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
@@ -40,7 +42,18 @@ const MobileVersion = ({ user, pets, matingRequests, chats, activeTab, setActive
           <h1 className="text-xl font-bold text-slate-800 mb-1">{user.displayName}</h1>
           <div className="flex items-center text-gray-600 text-sm mb-1"><FiMail className="w-3 h-3 mr-1" /><span className="truncate">{user.email}</span></div>
           {user.phoneNumber && (<div className="flex items-center text-gray-600 text-sm"><FiPhone className="w-3 h-3 mr-1" /><span>{user.phoneNumber}</span></div>)}
+          {(user.city || user.country) && (
+            <div className="flex items-center text-gray-600 text-sm">
+              <span>{[user.city, user.country].filter(Boolean).join(', ')}</span>
+            </div>
+          )}
         </div>
+        <button
+          onClick={handleEditProfile}
+          className="ml-2 px-3 py-1.5 text-xs font-medium text-violet-600 hover:bg-violet-50 rounded-lg transition-colors"
+        >
+          Edit
+        </button>
       </div>
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 pt-4 border-t border-violet-100">
@@ -75,7 +88,7 @@ const MobileVersion = ({ user, pets, matingRequests, chats, activeTab, setActive
   </div>
 );
 
-const DesktopVersion = ({ user, pets, matingRequests, activeTab, setActiveTab, tabs, handleAddPet, handleEditPet, handleDeletePet, handleToggleAvailability, handleAcceptRequest, handleDeclineRequest, handleOpenMessageDialog, navigate }) => (
+const DesktopVersion = ({ user, pets, matingRequests, activeTab, setActiveTab, tabs, handleAddPet, handleEditPet, handleDeletePet, handleToggleAvailability, handleAcceptRequest, handleDeclineRequest, handleOpenMessageDialog, handleEditProfile, navigate }) => (
   <div className="min-h-screen bg-gradient-to-br from-slate-50 to-violet-50 p-8">
     <div className="max-w-7xl mx-auto">
       {/* Header */}
@@ -88,13 +101,26 @@ const DesktopVersion = ({ user, pets, matingRequests, activeTab, setActiveTab, t
             <div>
               <h1 className="text-3xl font-bold text-slate-800 mb-2">{user.displayName}</h1>
               <div className="flex items-center text-gray-600 mb-1"><FiMail className="w-4 h-4 mr-2" /><span>{user.email}</span></div>
-              {user.phoneNumber && (<div className="flex items-center text-gray-600"><FiPhone className="w-4 h-4 mr-2" /><span>{user.phoneNumber}</span></div>)}
+              {user.phoneNumber && (<div className="flex items-center text-gray-600 mb-1"><FiPhone className="w-4 h-4 mr-2" /><span>{user.phoneNumber}</span></div>)}
+              {(user.city || user.country) && (
+                <div className="flex items-center text-gray-600">
+                  <span>{[user.city, user.country].filter(Boolean).join(', ')}</span>
+                </div>
+              )}
             </div>
           </div>
-          {/* Desktop Stats */}
-          <div className="flex gap-8">
-            <div className="text-center"><div className="text-2xl font-bold text-slate-800">{pets.length}</div><div className="text-sm text-gray-600">Pets</div></div>
-            <div className="text-center"><div className="text-2xl font-bold text-slate-800">{matingRequests.length}</div><div className="text-sm text-gray-600">Requests</div></div>
+          {/* Desktop Stats & Edit Button */}
+          <div className="flex gap-8 items-center">
+            <div className="flex gap-8">
+              <div className="text-center"><div className="text-2xl font-bold text-slate-800">{pets.length}</div><div className="text-sm text-gray-600">Pets</div></div>
+              <div className="text-center"><div className="text-2xl font-bold text-slate-800">{matingRequests.length}</div><div className="text-sm text-gray-600">Requests</div></div>
+            </div>
+            <button
+              onClick={handleEditProfile}
+              className="px-4 py-2 text-sm font-medium text-violet-600 hover:bg-violet-50 border border-violet-200 rounded-lg transition-colors"
+            >
+              Edit Profile
+            </button>
           </div>
         </div>
       </motion.div>
@@ -180,6 +206,7 @@ const Profile = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [openPetDialog, setOpenPetDialog] = useState(false);
   const [openVaccinationDialog, setOpenVaccinationDialog] = useState(false);
+  const [openUserProfileDialog, setOpenUserProfileDialog] = useState(false);
   const [isSavingVaccination, setIsSavingVaccination] = useState(false);
   const [openMessageDialog, setOpenMessageDialog] = useState(false);
   const [currentPet, setCurrentPet] = useState(null);
@@ -188,6 +215,14 @@ const Profile = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [tabValue, setTabValue] = useState(0);
   const [vaccinationEditIndex, setVaccinationEditIndex] = useState(-1);
+  const [userData, setUserData] = useState({
+    displayName: user?.displayName || '',
+    email: user?.email || '',
+    phoneNumber: '',
+    city: '',
+    country: '',
+    dateOfBirth: '',
+  });
 
   const pendingRequestsCount = matingRequests.filter(
     (req) => req.direction === "incoming" && req.status === "pending"
@@ -204,34 +239,45 @@ const Profile = () => {
         if (!snapshot.exists()) return [];
 
         const requestsData = snapshot.val();
-        const detailedRequests = await Promise.all(Object.keys(requestsData).map(async (requestId) => {
-          const request = requestsData[requestId];
-          const otherUserId = direction === "incoming" ? request.senderId : request.receiverId;
-          const otherPetId = direction === "incoming" ? request.senderPetId : request.receiverPetId;
+        
+        // Batch all requests in parallel instead of sequential
+        const detailedRequests = await Promise.all(
+          Object.keys(requestsData).map(async (requestId) => {
+            const request = requestsData[requestId];
+            const otherUserId = direction === "incoming" ? request.senderId : request.receiverId;
+            const otherPetId = direction === "incoming" ? request.senderPetId : request.receiverPetId;
 
-          const [otherUserSnap, otherPetSnap] = await Promise.all([
-            get(ref(database, `users/${otherUserId}`)),
-            get(ref(database, `userPets/${otherUserId}/${otherPetId}`))
-          ]);
+            // Fetch user and pet data in parallel
+            const [otherUserSnap, otherPetSnap] = await Promise.all([
+              get(ref(database, `users/${otherUserId}`)),
+              get(ref(database, `userPets/${otherUserId}/${otherPetId}`))
+            ]);
 
-          const otherUserData = otherUserSnap.exists() ? otherUserSnap.val() : {};
-          const otherPetData = otherPetSnap.exists() ? otherPetSnap.val() : {};
+            const otherUserData = otherUserSnap.exists() ? otherUserSnap.val() : {};
+            const otherPetData = otherPetSnap.exists() ? otherPetSnap.val() : {};
 
-          return {
-            id: requestId, ...request, direction,
-            senderName: direction === "incoming" ? otherUserData.displayName : user.displayName,
-            receiverName: direction === "outgoing" ? otherUserData.displayName : user.displayName,
-            senderPetName: direction === "incoming" ? otherPetData.name : currentPets.find(p => p.id === request.senderPetId)?.name,
-            receiverPetName: direction === "outgoing" ? otherPetData.name : currentPets.find(p => p.id === request.receiverPetId)?.name,
-            senderPetImage: direction === "incoming" ? otherPetData.image : currentPets.find(p => p.id === request.senderPetId)?.image,
-            receiverPetImage: direction === "outgoing" ? otherPetData.image : currentPets.find(p => p.id === request.receiverPetId)?.image,
-          };
-        }));
+            return {
+              id: requestId, 
+              ...request, 
+              direction,
+              senderName: direction === "incoming" ? otherUserData.displayName : user.displayName,
+              receiverName: direction === "outgoing" ? otherUserData.displayName : user.displayName,
+              senderPetName: direction === "incoming" ? otherPetData.name : currentPets.find(p => p.id === request.senderPetId)?.name,
+              receiverPetName: direction === "outgoing" ? otherPetData.name : currentPets.find(p => p.id === request.receiverPetId)?.name,
+              senderPetImage: direction === "incoming" ? otherPetData.image : currentPets.find(p => p.id === request.senderPetId)?.image,
+              receiverPetImage: direction === "outgoing" ? otherPetData.image : currentPets.find(p => p.id === request.receiverPetId)?.image,
+            };
+          })
+        );
+        
         return detailedRequests.filter(Boolean);
       };
 
-      const incoming = await fetchWithDetails(`matingRequests/received/${user.uid}`, "incoming");
-      const sent = await fetchWithDetails(`matingRequests/sent/${user.uid}`, "outgoing");
+      // Fetch incoming and sent requests in parallel
+      const [incoming, sent] = await Promise.all([
+        fetchWithDetails(`matingRequests/received/${user.uid}`, "incoming"),
+        fetchWithDetails(`matingRequests/sent/${user.uid}`, "outgoing")
+      ]);
 
       const allRequests = [...incoming, ...sent].sort((a, b) => b.createdAt - a.createdAt);
       setMatingRequests(allRequests);
@@ -243,6 +289,14 @@ const Profile = () => {
 
 
   // --- Action Handlers ---
+
+  const handleEditProfile = useCallback(() => {
+    setOpenUserProfileDialog(true);
+  }, []);
+
+  const handleUpdateProfile = useCallback((updatedData) => {
+    setUserData(updatedData);
+  }, []);
 
   const handleAddPet = useCallback(() => {
     setCurrentPet({
@@ -461,16 +515,34 @@ const Profile = () => {
       setIsLoading(true);
       const loadData = async () => {
         try {
-          const userPetsRef = ref(database, `userPets/${user.uid}`);
-          const snapshot = await get(userPetsRef);
-          const fetchedPets = snapshot.exists()
-            ? Object.keys(snapshot.val()).map(id => ({ id, ...snapshot.val()[id] }))
+          // Fetch user profile and pets data in parallel
+          const [userSnapshot, petsSnapshot] = await Promise.all([
+            get(ref(database, `users/${user.uid}`)),
+            get(ref(database, `userPets/${user.uid}`))
+          ]);
+
+          // Process user profile data
+          if (userSnapshot.exists()) {
+            const userProfileData = userSnapshot.val();
+            setUserData({
+              displayName: userProfileData.displayName || user.displayName || '',
+              email: userProfileData.email || user.email || '',
+              phoneNumber: userProfileData.phoneNumber || '',
+              city: userProfileData.city || '',
+              country: userProfileData.country || '',
+              dateOfBirth: userProfileData.dateOfBirth || '',
+              uid: user.uid,
+            });
+          }
+
+          // Process pets data
+          const fetchedPets = petsSnapshot.exists()
+            ? Object.keys(petsSnapshot.val()).map(id => ({ id, ...petsSnapshot.val()[id] }))
             : [];
           setPets(fetchedPets);
 
-          await fetchMatingRequests(fetchedPets);
-
-
+          // Fetch mating requests (runs in parallel after initial data load)
+          fetchMatingRequests(fetchedPets);
 
         } catch (error) {
           console.error("Error loading profile data:", error);
@@ -491,11 +563,27 @@ const Profile = () => {
       const petToEdit = pets.find(p => p.id === location.state.editPetId);
       if (petToEdit) {
         handleEditPet(petToEdit);
+        
+        // If focusTab is specified, set the tab
+        if (location.state.focusTab === 'vaccinations') {
+          setTabValue(2); // Vaccinations tab
+        } else if (location.state.focusTab === 'medical') {
+          setTabValue(1); // Medical tab
+        }
+        
         // Clear the state to prevent reopening on refresh
         navigate(location.pathname, { replace: true, state: {} });
       }
     }
   }, [location.state, pets, handleEditPet, navigate, location.pathname]);
+
+  // Clear notifications when viewing requests or messages tabs
+  useEffect(() => {
+    if (user && (activeTab === 'requests' || activeTab === 'messages')) {
+      console.log('Clearing unread notifications for tab:', activeTab);
+      clearUnreadNotifications(user.uid);
+    }
+  }, [activeTab, user]);
 
   // --- Tab Configuration ---
   const tabs = useMemo(() => [
@@ -511,14 +599,15 @@ const Profile = () => {
   return (
     <>
       {isDesktop ? (
-        <DesktopVersion user={user} pets={pets} navigate={navigate} matingRequests={matingRequests} activeTab={activeTab} setActiveTab={setActiveTab} tabs={tabs} handleAddPet={handleAddPet} handleEditPet={handleEditPet} handleDeletePet={handleDeletePet} handleToggleAvailability={handleToggleAvailability} handleAcceptRequest={handleAcceptRequest} handleDeclineRequest={handleDeclineRequest} handleOpenMessageDialog={handleOpenMessageDialog} />
+        <DesktopVersion user={userData} pets={pets} navigate={navigate} matingRequests={matingRequests} activeTab={activeTab} setActiveTab={setActiveTab} tabs={tabs} handleAddPet={handleAddPet} handleEditPet={handleEditPet} handleDeletePet={handleDeletePet} handleToggleAvailability={handleToggleAvailability} handleAcceptRequest={handleAcceptRequest} handleDeclineRequest={handleDeclineRequest} handleOpenMessageDialog={handleOpenMessageDialog} handleEditProfile={handleEditProfile} />
       ) : (
-        <MobileVersion user={user} pets={pets} matingRequests={matingRequests} activeTab={activeTab} setActiveTab={setActiveTab} tabs={tabs} handleAddPet={handleAddPet} handleEditPet={handleEditPet} handleDeletePet={handleDeletePet} handleToggleAvailability={handleToggleAvailability} handleAcceptRequest={handleAcceptRequest} handleDeclineRequest={handleDeclineRequest} handleOpenMessageDialog={handleOpenMessageDialog} />
+        <MobileVersion user={userData} pets={pets} matingRequests={matingRequests} activeTab={activeTab} setActiveTab={setActiveTab} tabs={tabs} handleAddPet={handleAddPet} handleEditPet={handleEditPet} handleDeletePet={handleDeletePet} handleToggleAvailability={handleToggleAvailability} handleAcceptRequest={handleAcceptRequest} handleDeclineRequest={handleDeclineRequest} handleOpenMessageDialog={handleOpenMessageDialog} handleEditProfile={handleEditProfile} />
       )}
 
       {openPetDialog && (<PetDialog open={openPetDialog} onClose={() => setOpenPetDialog(false)} pet={currentPet} setPet={setCurrentPet} onSave={handleSavePet} isEditMode={isEditMode} tabValue={tabValue} onTabChange={(e, val) => setTabValue(val)} onAddVaccination={handleAddVaccination} onEditVaccination={handleEditVaccination} onDeleteVaccination={handleDeleteVaccination} isMobile={!isDesktop} />)}
       {openVaccinationDialog && (<VaccinationDialog open={openVaccinationDialog} onClose={() => setOpenVaccinationDialog(false)} vaccination={currentVaccination} setVaccination={setCurrentVaccination} onSave={handleSaveVaccination} isEditMode={vaccinationEditIndex >= 0} isMobile={!isDesktop} petType={currentPet?.type} vaccinationEditIndex={vaccinationEditIndex} loading={isSavingVaccination} />)}
       {openMessageDialog && (<MessageDialog open={openMessageDialog} onClose={() => setOpenMessageDialog(false)} conversationId={currentMessage.conversationId} recipientId={currentMessage.recipientId} recipientName={currentMessage.recipientName} senderPet={currentMessage.senderPet} receiverPet={currentMessage.receiverPet} />)}
+      {openUserProfileDialog && (<UserProfileDialog isOpen={openUserProfileDialog} onClose={() => setOpenUserProfileDialog(false)} user={userData} onUpdate={handleUpdateProfile} />)}
     </>
   );
 };

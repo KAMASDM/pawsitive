@@ -18,7 +18,7 @@ const TaggedPlacesMap = ({ userLocation, radius = 5 }) => {
   console.log('TaggedPlacesMap - userLocation:', userLocation, 'radius:', radius);
 
   const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
     libraries,
     preventGoogleFontsLoading: true,
     async: true,

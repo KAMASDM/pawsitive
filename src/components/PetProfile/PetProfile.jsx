@@ -123,58 +123,85 @@ const PetProfile = () => {
 
         // Fetch owner data
         if (ownerId) {
-          const ownerRef = ref(database, `users/${ownerId}`);
-          const ownerSnapshot = await get(ownerRef);
-          if (ownerSnapshot.exists()) {
-            setOwner(ownerSnapshot.val());
+          try {
+            const ownerRef = ref(database, `users/${ownerId}`);
+            const ownerSnapshot = await get(ownerRef);
+            if (ownerSnapshot.exists()) {
+              setOwner(ownerSnapshot.val());
+            }
+          } catch (error) {
+            console.error('Error fetching owner data:', error);
+            // Continue anyway - owner data is optional
           }
         }
 
         // Listen to posts
-        const postsRef = ref(database, `petPosts/${petId}`);
-        onValue(postsRef, (snapshot) => {
-          if (snapshot.exists()) {
-            const postsData = [];
-            snapshot.forEach((childSnapshot) => {
-              postsData.push({
-                id: childSnapshot.key,
-                ...childSnapshot.val()
+        try {
+          const postsRef = ref(database, `petPosts/${petId}`);
+          onValue(postsRef, (snapshot) => {
+            if (snapshot.exists()) {
+              const postsData = [];
+              snapshot.forEach((childSnapshot) => {
+                postsData.push({
+                  id: childSnapshot.key,
+                  ...childSnapshot.val()
+                });
               });
-            });
-            // Sort by timestamp descending
-            postsData.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-            setPosts(postsData);
-          } else {
+              // Sort by timestamp descending
+              postsData.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+              setPosts(postsData);
+            } else {
+              setPosts([]);
+            }
+          }, (error) => {
+            console.error('Error listening to posts:', error);
             setPosts([]);
-          }
-        });
+          });
+        } catch (error) {
+          console.error('Error setting up posts listener:', error);
+          setPosts([]);
+        }
 
         // Listen to events
-        const eventsRef = ref(database, `petEvents/${petId}`);
-        onValue(eventsRef, (snapshot) => {
-          if (snapshot.exists()) {
-            const eventsData = [];
-            snapshot.forEach((childSnapshot) => {
-              eventsData.push({
-                id: childSnapshot.key,
-                ...childSnapshot.val()
+        try {
+          const eventsRef = ref(database, `petEvents/${petId}`);
+          onValue(eventsRef, (snapshot) => {
+            if (snapshot.exists()) {
+              const eventsData = [];
+              snapshot.forEach((childSnapshot) => {
+                eventsData.push({
+                  id: childSnapshot.key,
+                  ...childSnapshot.val()
+                });
               });
-            });
-            // Sort by date ascending
-            eventsData.sort((a, b) => new Date(a.date) - new Date(b.date));
-            setEvents(eventsData);
-          } else {
+              // Sort by date ascending
+              eventsData.sort((a, b) => new Date(a.date) - new Date(b.date));
+              setEvents(eventsData);
+            } else {
+              setEvents([]);
+            }
+          }, (error) => {
+            console.error('Error listening to events:', error);
             setEvents([]);
-          }
-        });
+          });
+        } catch (error) {
+          console.error('Error setting up events listener:', error);
+          setEvents([]);
+        }
 
         console.log('PetProfile: Setting loading to false');
         setLoading(false);
 
         // Cleanup listeners
         return () => {
-          off(postsRef);
-          off(eventsRef);
+          try {
+            const postsRef = ref(database, `petPosts/${petId}`);
+            const eventsRef = ref(database, `petEvents/${petId}`);
+            off(postsRef);
+            off(eventsRef);
+          } catch (error) {
+            console.error('Error cleaning up listeners:', error);
+          }
         };
       } catch (error) {
         console.error('Error loading pet profile:', error);

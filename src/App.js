@@ -22,16 +22,21 @@ import CookiePolicy from "./components/CookiePolicy/CookiePolicy";
 import ResourcesPage from "./components/Resources/Resources";
 import ResourceDetail from "./components/Resources/ResourceDetail";
 import FAQ from "./components/FAQ/FAQ";
+import TestNotifications from "./components/TestNotifications/TestNotifications";
 import { useVaccinationReminder } from "./hooks/useVaccinationReminder";
+import { initializeBadgeManagement } from "./services/badgeService";
 
 function App() {
   // Initialize vaccination reminder checker
   useVaccinationReminder();
   
   useEffect(() => {
+    // Initialize badge management for PWA
+    initializeBadgeManagement();
+    
     if (!window.google) {
       const script = document.createElement("script");
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}&libraries=places`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&libraries=places`;
       script.async = true;
       script.defer = true;
       document.body.appendChild(script);
@@ -167,6 +172,14 @@ function App() {
               element={
                 <PR>
                   <CookiePolicy />
+                </PR>
+              }
+            />
+            <Route
+              path="/test-notifications"
+              element={
+                <PR>
+                  <TestNotifications />
                 </PR>
               }
             />
