@@ -27,6 +27,11 @@ firestore-debug.log
 ui-debug.log
 *.log
 
+# Firebase Service Account Keys (CRITICAL - NEVER COMMIT!)
+**/serviceAccountKey.json
+**/service-account-key.json
+**/*-firebase-adminsdk-*.json
+
 # Firebase Functions
 functions/node_modules/
 functions/.env
