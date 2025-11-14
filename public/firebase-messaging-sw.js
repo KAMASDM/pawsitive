@@ -21,7 +21,7 @@ const database = firebase.database();
 async function updateBadge(userId) {
   if (!userId) return 0;
   try {
-    const snapshot = await database.ref(\`users/\${userId}/unreadNotifications\`).once('value');
+    const snapshot = await database.ref(`users/${userId}/unreadNotifications`).once('value');
     const count = snapshot.val() || 0;
     if (navigator.setAppBadge) {
       if (count > 0) {
