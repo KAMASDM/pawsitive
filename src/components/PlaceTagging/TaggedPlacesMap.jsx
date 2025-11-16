@@ -193,44 +193,94 @@ const TaggedPlacesMap = ({ userLocation, radius = 5 }) => {
           ))}
 
           {/* Info Window */}
-          {selectedPlace && (
+          {selectedPlace && selectedPlace.location && (
             <InfoWindow
               position={selectedPlace.location}
               onCloseClick={() => setSelectedPlace(null)}
+              options={{
+                pixelOffset: new window.google.maps.Size(0, -40),
+                maxWidth: 300,
+              }}
             >
-              <div className="p-2 max-w-xs">
-                <div className="flex items-start justify-between mb-2">
-                  <h3 className="font-bold text-gray-900 text-lg pr-2">{selectedPlace.placeName}</h3>
+              <div style={{ padding: '8px', maxWidth: '280px' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <h3 style={{ fontWeight: 'bold', color: '#111827', fontSize: '16px', margin: 0, paddingRight: '8px' }}>
+                    {selectedPlace.placeName}
+                  </h3>
                   {selectedPlace.isPetFriendly ? (
-                    <div className="bg-green-100 text-green-700 px-2 py-1 rounded-lg text-xs font-semibold flex items-center whitespace-nowrap">
-                      <FiThumbsUp className="mr-1" /> Friendly
+                    <div style={{ 
+                      backgroundColor: '#dcfce7', 
+                      color: '#15803d', 
+                      padding: '4px 8px', 
+                      borderRadius: '8px', 
+                      fontSize: '11px', 
+                      fontWeight: '600',
+                      display: 'flex',
+                      alignItems: 'center',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      ✓ Friendly
                     </div>
                   ) : (
-                    <div className="bg-red-100 text-red-700 px-2 py-1 rounded-lg text-xs font-semibold flex items-center whitespace-nowrap">
-                      <FiThumbsDown className="mr-1" /> Not Friendly
+                    <div style={{ 
+                      backgroundColor: '#fee2e2', 
+                      color: '#b91c1c', 
+                      padding: '4px 8px', 
+                      borderRadius: '8px', 
+                      fontSize: '11px', 
+                      fontWeight: '600',
+                      display: 'flex',
+                      alignItems: 'center',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      ✗ Not Friendly
                     </div>
                   )}
                 </div>
 
-                <div className="space-y-2 text-sm">
-                  <div className="bg-gray-50 rounded-lg p-2">
-                    <p className="text-gray-700">{selectedPlace.comment}</p>
+                <div style={{ marginBottom: '8px' }}>
+                  <div style={{ 
+                    backgroundColor: '#f9fafb', 
+                    borderRadius: '8px', 
+                    padding: '8px',
+                    marginBottom: '8px'
+                  }}>
+                    <p style={{ 
+                      color: '#374151', 
+                      fontSize: '13px', 
+                      margin: 0,
+                      lineHeight: '1.5'
+                    }}>
+                      {selectedPlace.comment || 'No comment provided'}
+                    </p>
                   </div>
 
-                  <div className="flex items-center text-gray-600 text-xs">
-                    <FiUser className="mr-1" />
-                    <span>{selectedPlace.userEmail?.split('@')[0]}</span>
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    color: '#6b7280', 
+                    fontSize: '11px',
+                    marginBottom: '4px'
+                  }}>
+                    <span style={{ marginRight: '4px' }}>👤</span>
+                    <span>{selectedPlace.userEmail?.split('@')[0] || 'Anonymous'}</span>
                   </div>
 
-                  <div className="flex items-center justify-between text-xs text-gray-500">
-                    <div className="flex items-center">
-                      <FiClock className="mr-1" />
-                      {formatTimestamp(selectedPlace.createdAt)}
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'space-between', 
+                    fontSize: '11px', 
+                    color: '#9ca3af'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                      <span style={{ marginRight: '4px' }}>🕐</span>
+                      <span>{formatTimestamp(selectedPlace.createdAt)}</span>
                     </div>
                     {selectedPlace.distance && (
-                      <div className="flex items-center">
-                        <FiMapPin className="mr-1" />
-                        {selectedPlace.distance.toFixed(2)} km away
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <span style={{ marginRight: '4px' }}>📍</span>
+                        <span>{selectedPlace.distance.toFixed(2)} km away</span>
                       </div>
                     )}
                   </div>
