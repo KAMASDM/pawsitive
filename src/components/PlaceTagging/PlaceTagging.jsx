@@ -13,6 +13,7 @@ const PlaceTagging = ({ isOpen, onClose, userLocation }) => {
   const [step, setStep] = useState(1); // 1: Location, 2: Details
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [placeName, setPlaceName] = useState('');
+  const [placeType, setPlaceType] = useState('park'); // park, shelter, vet, store, cafe, grooming, hospital, other
   const [isPetFriendly, setIsPetFriendly] = useState(true);
   const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(false);
@@ -84,6 +85,7 @@ const PlaceTagging = ({ isOpen, onClose, userLocation }) => {
 
       const placeData = {
         placeName: placeName.trim(),
+        placeType: placeType,
         location: {
           lat: selectedLocation.lat,
           lng: selectedLocation.lng,
@@ -171,6 +173,7 @@ const PlaceTagging = ({ isOpen, onClose, userLocation }) => {
     setStep(1);
     setSelectedLocation(userLocation);
     setPlaceName('');
+    setPlaceType('park');
     setIsPetFriendly(true);
     setComment('');
     setError('');
@@ -345,6 +348,41 @@ const PlaceTagging = ({ isOpen, onClose, userLocation }) => {
                           placeholder="e.g., Central Park, Dog Beach, Pet Store"
                           className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-all"
                         />
+                      </div>
+
+                      {/* Place Type */}
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Place Type *
+                        </label>
+                        <div className="grid grid-cols-4 gap-2">
+                          {[
+                            { value: 'park', label: 'Park', icon: '🌳' },
+                            { value: 'shelter', label: 'Shelter', icon: '🏠' },
+                            { value: 'vet', label: 'Vet Clinic', icon: '🏥' },
+                            { value: 'store', label: 'Pet Store', icon: '🛍️' },
+                            { value: 'cafe', label: 'Café', icon: '☕' },
+                            { value: 'grooming', label: 'Grooming', icon: '✂️' },
+                            { value: 'hospital', label: 'Hospital', icon: '⚕️' },
+                            { value: 'other', label: 'Other', icon: '📍' }
+                          ].map((type) => (
+                            <button
+                              key={type.value}
+                              type="button"
+                              onClick={() => setPlaceType(type.value)}
+                              className={`p-3 rounded-xl border-2 transition-all text-center ${
+                                placeType === type.value
+                                  ? 'border-violet-500 bg-violet-50'
+                                  : 'border-gray-200 hover:border-gray-300'
+                              }`}
+                            >
+                              <div className="text-2xl mb-1">{type.icon}</div>
+                              <p className={`text-xs font-semibold ${placeType === type.value ? 'text-violet-600' : 'text-gray-600'}`}>
+                                {type.label}
+                              </p>
+                            </button>
+                          ))}
+                        </div>
                       </div>
 
                       {/* Pet Friendly Rating */}

@@ -26,6 +26,10 @@ import {
   FaVenusMars,
 } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
+import MedicationDialog from '../Profile/components/MedicationDialog';
+import WeightTracker from '../PetProfile/WeightTracker';
+import ExpenseTracker from '../PetProfile/ExpenseTracker';
+import PetAgeCalculatorPage from '../PetProfile/PetAgeCalculatorPage';
 
 const COMMON_CONDITIONS = [
   "Allergies",
@@ -79,6 +83,7 @@ const PetDetailsPage = () => {
   const [editingAllergy, setEditingAllergy] = useState(false);
   const [newCondition, setNewCondition] = useState('');
   const [newAllergy, setNewAllergy] = useState('');
+  const [activeTab, setActiveTab] = useState('health'); // health, weight, expenses, age
 
   // Listen to auth state
   useEffect(() => {
@@ -123,6 +128,23 @@ const PetDetailsPage = () => {
 
     loadPetData();
   }, [petId, currentUser, authLoading, navigate]);
+
+  // Refresh pet data from Firebase
+  const refreshPetData = async () => {
+    if (!currentUser) return;
+    
+    try {
+      const petRef = ref(database, `userPets/${currentUser.uid}/${petId}`);
+      const petSnapshot = await get(petRef);
+      
+      if (petSnapshot.exists()) {
+        const petData = { id: petSnapshot.key, ...petSnapshot.val() };
+        setPet(petData);
+      }
+    } catch (error) {
+      console.error('Error refreshing pet data:', error);
+    }
+  };
 
   const calculateAge = (dateOfBirth) => {
     if (!dateOfBirth) return 'Unknown';
@@ -225,35 +247,31 @@ const PetDetailsPage = () => {
       id: Date.now().toString(),
       name: '',
       dosage: '',
-      schedule: '',
+      frequency: '',
+      startDate: '',
+      nextDose: '',
       notes: '',
-      active: true,
       isNew: true
     });
   };
 
-  const handleSaveMedication = async () => {
-    if (!editingMedication?.name) {
-      alert('Please fill in medication name');
-      return;
-    }
-
+  const handleSaveMedication = async (medicationData) => {
     const updatedPet = { ...pet };
     updatedPet.medications = updatedPet.medications || [];
 
-    if (editingMedication.isNew) {
-      const { isNew, ...medicationData } = editingMedication;
-      updatedPet.medications.push(medicationData);
+    if (medicationData.isNew) {
+      const { isNew, ...cleanData } = medicationData;
+      updatedPet.medications.push(cleanData);
     } else {
-      // Try to find by ID first, then by index
-      let index = updatedPet.medications.findIndex(m => m.id === editingMedication.id);
-      if (index === -1 && editingMedication.index !== undefined) {
-        index = editingMedication.index;
+      // Update existing medication
+      let index = updatedPet.medications.findIndex(m => m.id === medicationData.id);
+      if (index === -1 && medicationData.index !== undefined) {
+        index = medicationData.index;
       }
       
       if (index !== -1) {
-        const { isNew, index: _, ...medicationData } = editingMedication;
-        updatedPet.medications[index] = medicationData;
+        const { isNew, index: _, ...cleanData } = medicationData;
+        updatedPet.medications[index] = cleanData;
       }
     }
 
@@ -465,6 +483,41 @@ const PetDetailsPage = () => {
 
           {/* Right Column - Detailed Information */}
           <div className="lg:col-span-2 space-y-6">
+            {/* Tab Navigation */}
+            <div className="bg-white rounded-xl shadow-sm p-2 overflow-x-auto">
+              <div className="flex gap-2 min-w-max">
+                {[
+                  { id: 'health', label: 'Health Records', icon: FaSyringe },
+                  { id: 'weight', label: 'Weight Tracker', icon: FaWeight },
+                  { id: 'expenses', label: 'Expense Tracker', icon: '💰' },
+                  { id: 'age', label: 'Age Calculator', icon: FaBirthdayCake }
+                ].map(tab => {
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`flex items-center gap-2 px-4 py-3 rounded-lg font-semibold transition-all whitespace-nowrap ${
+                        activeTab === tab.id
+                          ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-md'
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      {typeof Icon === 'string' ? (
+                        <span className="text-lg">{Icon}</span>
+                      ) : (
+                        <Icon className="w-5 h-5" />
+                      )}
+                      <span>{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Health Records Tab */}
+            {activeTab === 'health' && (
+              <>
             {/* Vaccinations Section */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -709,107 +762,41 @@ const PetDetailsPage = () => {
                   
                   return (
                   <div key={medId}>
-                    {isEditing ? (
-                      // Edit Mode
-                      <div className="p-4 bg-blue-50 rounded-lg border-2 border-blue-200 space-y-3">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Medication Name *</label>
-                          <input
-                            type="text"
-                            value={editingMedication?.name || ''}
-                            onChange={(e) => setEditingMedication({...editingMedication, name: e.target.value})}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            placeholder="e.g., Amoxicillin"
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Dosage</label>
-                            <input
-                              type="text"
-                              value={editingMedication?.dosage || ''}
-                              onChange={(e) => setEditingMedication({...editingMedication, dosage: e.target.value})}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                              placeholder="e.g., 500mg"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Schedule</label>
-                            <input
-                              type="text"
-                              value={editingMedication?.schedule || ''}
-                              onChange={(e) => setEditingMedication({...editingMedication, schedule: e.target.value})}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                              placeholder="e.g., Twice daily"
-                            />
-                          </div>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                          <textarea
-                            value={editingMedication?.notes || ''}
-                            onChange={(e) => setEditingMedication({...editingMedication, notes: e.target.value})}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            rows="2"
-                            placeholder="Any additional notes..."
-                          />
-                        </div>
-                        <div className="flex items-center">
-                          <input
-                            type="checkbox"
-                            checked={editingMedication?.active || false}
-                            onChange={(e) => setEditingMedication({...editingMedication, active: e.target.checked})}
-                            className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-                          />
-                          <label className="ml-2 text-sm text-gray-700">Currently Active</label>
-                        </div>
-                        <div className="flex gap-2 justify-end">
-                          <button
-                            onClick={() => setEditingMedication(null)}
-                            className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2"
-                          >
-                            <FiX className="w-4 h-4" />
-                            Cancel
-                          </button>
-                          <button
-                            onClick={handleSaveMedication}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-                          >
-                            <FiSave className="w-4 h-4" />
-                            Save
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      // View Mode
-                      <div className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group">
+                      {/* View Mode */}
+                      <div className="p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg hover:shadow-md transition-all group border border-blue-100">
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex items-center flex-1">
-                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                              <FaPills className="w-4 h-4 text-blue-600" />
+                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center mr-3 shadow-sm">
+                              <FaPills className="w-5 h-5 text-white" />
                             </div>
                             <div className="flex-1">
-                              <p className="font-medium text-gray-900">{medication?.name || medication || 'Unknown Medication'}</p>
-                              {medication?.dosage && (
-                                <p className="text-sm text-gray-600">Dosage: {medication.dosage}</p>
-                              )}
-                              {medication?.schedule && (
-                                <p className="text-sm text-gray-500">Schedule: {medication.schedule}</p>
-                              )}
-                              {medication?.notes && (
-                                <p className="text-sm text-gray-500 mt-1">Notes: {medication.notes}</p>
-                              )}
+                              <p className="font-semibold text-gray-900 text-lg">{medication?.name || medication || 'Unknown Medication'}</p>
+                              <div className="mt-1 space-y-1">
+                                {medication?.dosage && (
+                                  <p className="text-sm text-gray-700 flex items-center">
+                                    <span className="font-medium mr-1">💊 Dosage:</span> {medication.dosage}
+                                  </p>
+                                )}
+                                {medication?.frequency && (
+                                  <p className="text-sm text-gray-700 flex items-center">
+                                    <span className="font-medium mr-1">⏰ Frequency:</span> {medication.frequency.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                  </p>
+                                )}
+                                {medication?.nextDose && (
+                                  <p className="text-sm text-blue-700 font-medium flex items-center">
+                                    <span className="mr-1">📅 Next Dose:</span> {new Date(medication.nextDose).toLocaleDateString()}
+                                  </p>
+                                )}
+                                {medication?.notes && (
+                                  <p className="text-sm text-gray-600 mt-2 italic">Note: {medication.notes}</p>
+                                )}
+                              </div>
                             </div>
-                            {medication?.active && (
-                              <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
-                                Active
-                              </span>
-                            )}
                           </div>
                           <div className="flex gap-2 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button
                               onClick={() => setEditingMedication({ ...medication, id: medId, index })}
-                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                              className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
                               title="Edit"
                             >
                               <FiEdit className="w-4 h-4" />
@@ -824,83 +811,9 @@ const PetDetailsPage = () => {
                           </div>
                         </div>
                       </div>
-                    )}
                   </div>
                   );
                 })}
-
-                {/* New Medication Form */}
-                {editingMedication?.isNew && (
-                  <div className="p-4 bg-blue-50 rounded-lg border-2 border-blue-200 space-y-3">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Medication Name *</label>
-                      <input
-                        type="text"
-                        value={editingMedication.name}
-                        onChange={(e) => setEditingMedication({...editingMedication, name: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="e.g., Amoxicillin"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Dosage</label>
-                        <input
-                          type="text"
-                          value={editingMedication.dosage || ''}
-                          onChange={(e) => setEditingMedication({...editingMedication, dosage: e.target.value})}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          placeholder="e.g., 500mg"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Schedule</label>
-                        <input
-                          type="text"
-                          value={editingMedication.schedule || ''}
-                          onChange={(e) => setEditingMedication({...editingMedication, schedule: e.target.value})}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          placeholder="e.g., Twice daily"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                      <textarea
-                        value={editingMedication.notes || ''}
-                        onChange={(e) => setEditingMedication({...editingMedication, notes: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        rows="2"
-                        placeholder="Any additional notes..."
-                      />
-                    </div>
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={editingMedication.active || false}
-                        onChange={(e) => setEditingMedication({...editingMedication, active: e.target.checked})}
-                        className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-                      />
-                      <label className="ml-2 text-sm text-gray-700">Currently Active</label>
-                    </div>
-                    <div className="flex gap-2 justify-end">
-                      <button
-                        onClick={() => setEditingMedication(null)}
-                        className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2"
-                      >
-                        <FiX className="w-4 h-4" />
-                        Cancel
-                      </button>
-                      <button
-                        onClick={handleSaveMedication}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-                      >
-                        <FiSave className="w-4 h-4" />
-                        Save
-                      </button>
-                    </div>
-                  </div>
-                )}
 
                 {/* Empty State */}
                 {(!pet.medications || pet.medications.length === 0) && !editingMedication && (
@@ -1151,9 +1064,37 @@ const PetDetailsPage = () => {
                 <p className="text-gray-700 whitespace-pre-wrap">{pet.notes}</p>
               </motion.div>
             )}
+          </>)}
+
+          {/* Weight Tracker Tab */}
+          {activeTab === 'weight' && (
+            <WeightTracker pet={pet} onUpdate={refreshPetData} />
+          )}
+
+          {/* Expense Tracker Tab */}
+          {activeTab === 'expenses' && (
+            <ExpenseTracker pet={pet} onUpdate={refreshPetData} />
+          )}
+
+          {/* Age Calculator Tab */}
+          {activeTab === 'age' && (
+            <PetAgeCalculatorPage initialPet={pet} />
+          )}
+
           </div>
         </div>
       </div>
+
+      {/* Medication Dialog */}
+      <MedicationDialog
+        open={!!editingMedication}
+        onClose={() => setEditingMedication(null)}
+        medication={editingMedication}
+        setMedication={setEditingMedication}
+        onSave={handleSaveMedication}
+        isEditMode={editingMedication && !editingMedication.isNew}
+        loading={false}
+      />
     </div>
   );
 };

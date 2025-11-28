@@ -779,6 +779,213 @@ export const sendVaccinationReminder = async (ownerData, petData, vaccineData) =
 };
 
 /**
+ * Medication Reminder Email Template
+ */
+export const sendMedicationReminder = async (ownerData, petData, medicationData) => {
+  const notificationType = 'medications';
+  
+  const sendEmailPref = await shouldSendNotification(ownerData.uid, notificationType, 'email');
+  const sendPushPref = await shouldSendNotification(ownerData.uid, notificationType, 'push');
+  
+  const results = { email: null, push: null };
+  
+  // Calculate time until dose
+  const nextDose = new Date(medicationData.nextDose);
+  const now = new Date();
+  const hoursUntilDose = Math.ceil((nextDose - now) / (1000 * 60 * 60));
+  const isDueNow = hoursUntilDose <= 1;
+  const isDueSoon = hoursUntilDose <= 24 && hoursUntilDose > 1;
+  
+  if (sendEmailPref) {
+    const emailParams = {
+      name: ownerData.displayName || 'Pet Parent',
+      to_email: ownerData.email,
+      subject: isDueNow 
+        ? `🔔 Medication Due Now: ${petData.name} - ${medicationData.name}`
+        : `💊 Medication Reminder: ${petData.name} - ${medicationData.name}`,
+      message: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Medication Reminder</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background-color: #f3f4f6;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 20px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
+          
+          <!-- Header -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%); padding: 40px 30px; text-align: center;">
+              <div style="font-size: 64px; margin-bottom: 15px;">💊</div>
+              <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold;">Medication Reminder</h1>
+              <p style="color: rgba(255, 255, 255, 0.9); margin: 10px 0 0 0; font-size: 16px;">
+                ${isDueNow ? "It's time!" : "Don't forget!"}
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Main Content -->
+          <tr>
+            <td style="padding: 40px 30px;">
+              <p style="font-size: 18px; color: #333333; margin: 0 0 20px 0; line-height: 1.6;">
+                Hi <strong>${ownerData.displayName}</strong>,
+              </p>
+              
+              ${isDueNow ? `
+              <!-- Due Now Alert -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #dbeafe; border: 2px solid #3b82f6; border-radius: 12px; margin-bottom: 25px;">
+                <tr>
+                  <td style="padding: 20px; text-align: center;">
+                    <div style="font-size: 48px; margin-bottom: 10px;">🔔</div>
+                    <p style="margin: 0; color: #1e40af; font-size: 18px; font-weight: bold; line-height: 1.6;">
+                      It's time to give ${petData.name} their medication!
+                    </p>
+                    <p style="margin: 10px 0 0 0; color: #1e40af; font-size: 14px;">
+                      ${medicationData.name} - ${medicationData.dosage}
+                    </p>
+                  </td>
+                </tr>
+              </table>
+              ` : isDueSoon ? `
+              <!-- Due Soon Notice -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fef3c7; border: 2px solid #f59e0b; border-radius: 12px; margin-bottom: 25px;">
+                <tr>
+                  <td style="padding: 20px; text-align: center;">
+                    <div style="font-size: 48px; margin-bottom: 10px;">⏰</div>
+                    <p style="margin: 0; color: #78350f; font-size: 17px; font-weight: bold; line-height: 1.6;">
+                      ${petData.name}'s medication is due in <span style="color: #f59e0b; font-size: 24px;">${hoursUntilDose}</span> hour${hoursUntilDose !== 1 ? 's' : ''}
+                    </p>
+                    <p style="margin: 10px 0 0 0; color: #92400e; font-size: 14px;">
+                      ${medicationData.name} - ${medicationData.dosage}
+                    </p>
+                  </td>
+                </tr>
+              </table>
+              ` : `
+              <!-- Reminder Notice -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #dbeafe; border: 2px solid #3b82f6; border-radius: 12px; margin-bottom: 25px;">
+                <tr>
+                  <td style="padding: 20px; text-align: center;">
+                    <div style="font-size: 48px; margin-bottom: 10px;">📋</div>
+                    <p style="margin: 0; color: #1e40af; font-size: 17px; font-weight: bold; line-height: 1.6;">
+                      Upcoming medication for ${petData.name}
+                    </p>
+                    <p style="margin: 10px 0 0 0; color: #1e40af; font-size: 14px;">
+                      Next dose: ${nextDose.toLocaleString()}
+                    </p>
+                  </td>
+                </tr>
+              </table>
+              `}
+              
+              <!-- Medication Details -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); border-radius: 12px; margin-bottom: 25px;">
+                <tr>
+                  <td style="padding: 25px;">
+                    <h2 style="color: #374151; margin: 0 0 20px 0; font-size: 20px; font-weight: bold;">💊 Medication Details</h2>
+                    
+                    <table width="100%" cellpadding="10" cellspacing="0">
+                      <tr>
+                        <td style="color: #1f2937; font-size: 15px; width: 140px; border-bottom: 1px solid #d1d5db;"><strong>Pet Name:</strong></td>
+                        <td style="color: #4b5563; font-size: 15px; border-bottom: 1px solid #d1d5db;">${petData.name}</td>
+                      </tr>
+                      <tr>
+                        <td style="color: #1f2937; font-size: 15px; border-bottom: 1px solid #d1d5db;"><strong>Medication:</strong></td>
+                        <td style="color: #4b5563; font-size: 15px; border-bottom: 1px solid #d1d5db;">${medicationData.name}</td>
+                      </tr>
+                      <tr>
+                        <td style="color: #1f2937; font-size: 15px; border-bottom: 1px solid #d1d5db;"><strong>Dosage:</strong></td>
+                        <td style="color: #4b5563; font-size: 15px; border-bottom: 1px solid #d1d5db;">${medicationData.dosage}</td>
+                      </tr>
+                      <tr>
+                        <td style="color: #1f2937; font-size: 15px; border-bottom: 1px solid #d1d5db;"><strong>Frequency:</strong></td>
+                        <td style="color: #4b5563; font-size: 15px; border-bottom: 1px solid #d1d5db;">${medicationData.frequency?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</td>
+                      </tr>
+                      <tr>
+                        <td style="color: #1f2937; font-size: 15px;"><strong>Next Dose:</strong></td>
+                        <td style="color: ${isDueNow ? '#dc2626' : '#4b5563'}; font-size: 15px; font-weight: ${isDueNow ? 'bold' : 'normal'};">${nextDose.toLocaleString()}</td>
+                      </tr>
+                      ${medicationData.notes ? `
+                      <tr>
+                        <td style="color: #1f2937; font-size: 15px;"><strong>Notes:</strong></td>
+                        <td style="color: #4b5563; font-size: 15px;">${medicationData.notes}</td>
+                      </tr>
+                      ` : ''}
+                    </table>
+                  </td>
+                </tr>
+              </table>
+              
+              <!-- CTA Button -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="padding: 20px 0;">
+                    <a href="${import.meta.env.VITE_BASE_URL || 'https://pawppy.in'}/pet-details/${petData.id}" style="background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 30px; font-size: 16px; font-weight: bold; display: inline-block; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);">
+                      View Pet Health Records →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              
+              <!-- Tip -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #dbeafe; border-radius: 8px; border-left: 4px solid #3b82f6; margin-top: 30px;">
+                <tr>
+                  <td style="padding: 20px;">
+                    <p style="margin: 0 0 10px 0; color: #1e40af; font-size: 15px; font-weight: bold;">
+                      💡 Medication Tips
+                    </p>
+                    <ul style="margin: 0; padding-left: 20px; color: #1e3a8a; font-size: 14px; line-height: 1.8;">
+                      <li>Give medication at the same time each day for best results</li>
+                      <li>Check if medication should be given with food</li>
+                      <li>Store medications in a cool, dry place</li>
+                      <li>Monitor ${petData.name} for any side effects</li>
+                    </ul>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+              <p style="margin: 0 0 10px 0; color: #6b7280; font-size: 14px;">
+                <strong>Pawppy</strong> - Never Miss a Dose
+              </p>
+              <p style="margin: 0; color: #9ca3af; font-size: 12px;">
+                © ${new Date().getFullYear()} Pawppy. All rights reserved.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+      `,
+    };
+    
+    results.email = await sendEmail(emailParams, EMAIL_TEMPLATES.VACCINATION_REMINDER);
+  }
+  
+  if (sendPushPref) {
+    results.push = await sendPushNotification(
+      ownerData.uid,
+      isDueNow ? `🔔 Medication Due Now` : `💊 Medication Reminder`,
+      `${petData.name}: ${medicationData.name} - ${medicationData.dosage}`,
+      { type: 'medication_reminder', petId: petData.id, medicationId: medicationData.id }
+    );
+  }
+  
+  return results;
+};
+
+/**
  * New Message Notification
  */
 export const sendNewMessageNotification = async (recipientData, senderData, messagePreview) => {

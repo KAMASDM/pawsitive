@@ -4,6 +4,7 @@ import { FaBirthdayCake, FaPaw } from 'react-icons/fa';
 import PostCard from './PostCard';
 import CreatePostModal from './CreatePostModal';
 import PetEventsTimeline from './PetEventsTimeline';
+import PetAgeCard from './PetAgeCard';
 
 const PetPostsFeed = ({
   posts,
@@ -143,6 +144,11 @@ const PetPostsFeed = ({
       {/* Mobile Posts Tab Content */}
       {isMobile && activeTab === 'posts' && (
         <>
+          {/* Pet Age Card for Mobile */}
+          <div className="p-4 pb-0">
+            <PetAgeCard pet={pet} compact={true} />
+          </div>
+          
           {/* Posts Feed View */}
           <div className="space-y-6 p-4">
             {posts.length === 0 ? (

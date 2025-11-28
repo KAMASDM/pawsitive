@@ -5,6 +5,7 @@ export { default as UserProfileDialog } from './UserProfileDialog';
 export { default as MatingRequestDialog } from './MatingRequestDialog';
 export { default as VaccinationDialog } from './VaccinationDialog';
 export { default as VaccinationSelect } from './VaccinationSelect';
+export { default as MedicationDialog } from './MedicationDialog';
 export { default as MedicationSelect } from './MedicationSelect';
 export { default as MedicationScheduleDialog } from './MedicationScheduleDialog';
 export { default as ResourcesList } from './ResourcesList';

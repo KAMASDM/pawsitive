@@ -18,8 +18,7 @@ import { FaPaw, FaSyringe, FaNotesMedical, FaDog, FaCat, FaFish, FaDove, FaHorse
 import AllergiesSelect from "./AllergiesSelect";
 import BreedSelect from "./BreedSelect";
 import MedicalConditionsSelect from "./MedicalConditionsSelect";
-import MedicationSelect from "./MedicationSelect";
-import MedicationScheduleDialog from "./MedicationScheduleDialog";
+import MedicationDialog from "./MedicationDialog";
 
 // TabPanel component for tab content
 function TabPanel(props) {
@@ -127,10 +126,9 @@ const PetDialog = ({
   const [otherConditions, setOtherConditions] = useState("");
   const [otherAllergies, setOtherAllergies] = useState("");
   
-  // Medication scheduling states
-  const [openMedicationSchedule, setOpenMedicationSchedule] = useState(false);
-  const [currentMedication, setCurrentMedication] = useState(null);
-  const [medicationEditIndex, setMedicationEditIndex] = useState(-1);
+  // Medication dialog states
+  const [openMedicationDialog, setOpenMedicationDialog] = useState(false);
+  const [editingMedication, setEditingMedication] = useState(null);
 
   // Validation states
   const [validationErrors, setValidationErrors] = useState({});
@@ -138,7 +136,7 @@ const PetDialog = ({
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   const vaccinations = currentPet?.vaccinations || [];
-  const medicationSchedules = currentPet?.medical?.medicationSchedules || [];
+  const medications = currentPet?.medications || [];
 
   useEffect(() => {
     if (currentPet) {
@@ -368,65 +366,39 @@ const PetDialog = ({
   };
 
   // Medication handlers
-  const handleMedicationsChange = (medications) => {
-    setCurrentPet({
-      ...currentPet,
-      medical: {
-        ...currentPet.medical,
-        medications: medications,
-      },
-    });
+  const handleAddMedication = () => {
+    setEditingMedication(null);
+    setOpenMedicationDialog(true);
   };
 
-  const handleAddMedicationSchedule = () => {
-    setCurrentMedication({
-      name: "",
-      dosage: "",
-      frequency: "daily",
-      timeOfDay: "",
-      startDate: new Date().toISOString().split('T')[0],
-      endDate: "",
-      reminderEnabled: true,
-      notes: "",
-    });
-    setMedicationEditIndex(-1);
-    setOpenMedicationSchedule(true);
+  const handleEditMedication = (medication) => {
+    setEditingMedication(medication);
+    setOpenMedicationDialog(true);
   };
 
-  const handleEditMedicationSchedule = (schedule, index) => {
-    setCurrentMedication(schedule);
-    setMedicationEditIndex(index);
-    setOpenMedicationSchedule(true);
-  };
+  const handleSaveMedication = async (medicationData) => {
+    try {
+      const updatedMedications = editingMedication
+        ? medications.map(m => m.id === editingMedication.id ? { ...medicationData, id: editingMedication.id } : m)
+        : [...medications, { ...medicationData, id: Date.now().toString() }];
 
-  const handleSaveMedicationSchedule = (schedule) => {
-    const scheduleWithId = medicationEditIndex >= 0 
-      ? schedule // Keep existing schedule (already has ID if it had one)
-      : { ...schedule, id: Date.now().toString() }; // Add ID to new schedule
-    
-    const updatedSchedules = medicationEditIndex >= 0
-      ? medicationSchedules.map((s, i) => i === medicationEditIndex ? scheduleWithId : s)
-      : [...medicationSchedules, scheduleWithId];
-
-    setCurrentPet({
-      ...currentPet,
-      medical: {
-        ...currentPet.medical,
-        medicationSchedules: updatedSchedules,
-      },
-    });
-    setOpenMedicationSchedule(false);
-  };
-
-  const handleDeleteMedicationSchedule = (index) => {
-    if (window.confirm("Are you sure you want to delete this medication schedule?")) {
-      const updatedSchedules = medicationSchedules.filter((_, i) => i !== index);
       setCurrentPet({
         ...currentPet,
-        medical: {
-          ...currentPet.medical,
-          medicationSchedules: updatedSchedules,
-        },
+        medications: updatedMedications,
+      });
+      setOpenMedicationDialog(false);
+      setEditingMedication(null);
+    } catch (error) {
+      console.error("Error saving medication:", error);
+    }
+  };
+
+  const handleDeleteMedication = (medicationId) => {
+    if (window.confirm("Are you sure you want to delete this medication?")) {
+      const updatedMedications = medications.filter(m => m.id !== medicationId);
+      setCurrentPet({
+        ...currentPet,
+        medications: updatedMedications,
       });
     }
   };
@@ -1020,76 +992,56 @@ const PetDialog = ({
                   onOtherChange={handleOtherAllergiesChange}
                   disabled={isSaving}
                 />
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Medications
-                  </label>
-                  <MedicationSelect
-                    petType={currentPet?.type}
-                    value={currentPet?.medical?.medications || []}
-                    onChange={handleMedicationsChange}
-                    disabled={isSaving}
-                  />
-                </div>
-
-                {/* Medication Schedules */}
+                {/* Medications Section */}
                 <div className="mt-6">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 mb-4">
                     <div>
                       <h3 className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                        <FaPills className="text-violet-600 w-4 h-4" />
-                        Medication Schedules
+                        <FaPills className="text-blue-600 w-4 h-4" />
+                        Medications
                       </h3>
                       <p className="text-xs text-gray-500 mt-0.5">
-                        Set dosage and reminders for each medication
+                        Add medications with dosage, frequency, and reminders
                       </p>
                     </div>
                     <button
                       type="button"
-                      onClick={handleAddMedicationSchedule}
+                      onClick={handleAddMedication}
                       disabled={isSaving}
-                      className="w-full sm:w-auto px-3 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg inline-flex items-center justify-center text-sm transition-colors disabled:opacity-50 font-medium"
+                      className="w-full sm:w-auto px-3 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-lg inline-flex items-center justify-center text-sm transition-colors disabled:opacity-50 font-medium shadow-sm"
                     >
                       <FiPlus className="mr-1.5" />
-                      Add Schedule
+                      Add Medication
                     </button>
                   </div>
 
-                  {medicationSchedules.length > 0 ? (
+                  {medications.length > 0 ? (
                     <div className="space-y-3">
-                      {medicationSchedules.map((schedule, index) => (
+                      {medications.map((medication) => (
                         <motion.div
-                          key={schedule.id || `schedule-${index}`}
+                          key={medication.id}
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
-                          className="bg-white border border-violet-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-all"
+                          className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-all"
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex-1 min-w-0">
                               <div className="flex items-start sm:items-center gap-2 mb-2 flex-wrap">
-                                <FaPills className="text-violet-600 w-4 h-4 flex-shrink-0 mt-0.5 sm:mt-0" />
-                                <h4 className="font-semibold text-gray-900 text-sm sm:text-base break-words">{schedule.name}</h4>
-                                {schedule.reminderEnabled && (
-                                  <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full flex items-center gap-1">
-                                    <FiClock className="w-3 h-3" />
-                                    Reminders On
-                                  </span>
-                                )}
+                                <span className="text-2xl">💊</span>
+                                <h4 className="font-semibold text-gray-900 text-sm sm:text-base break-words">{medication.name}</h4>
                               </div>
                               <div className="text-xs sm:text-sm text-gray-600 space-y-1">
-                                <p><strong>Dosage:</strong> {schedule.dosage}</p>
-                                <p><strong>Frequency:</strong> {schedule.frequency.replace(/-/g, " ").replace(/\b\w/g, l => l.toUpperCase())}</p>
-                                {schedule.frequency !== "as-needed" && (
-                                  <p><strong>Time:</strong> {schedule.timeOfDay}</p>
+                                <p><strong>Dosage:</strong> {medication.dosage}</p>
+                                <p><strong>Frequency:</strong> {medication.frequency.replace(/-/g, " ").replace(/\b\w/g, l => l.toUpperCase())}</p>
+                                {medication.nextDose && (
+                                  <p className="flex items-center gap-1">
+                                    <strong>Next Dose:</strong> 
+                                    <span className="text-blue-600">📅 {new Date(medication.nextDose).toLocaleDateString()}</span>
+                                  </p>
                                 )}
-                                <p>
-                                  <strong>Period:</strong> {new Date(schedule.startDate).toLocaleDateString()}
-                                  {schedule.endDate && ` - ${new Date(schedule.endDate).toLocaleDateString()}`}
-                                  {!schedule.endDate && " - Ongoing"}
-                                </p>
-                                {schedule.notes && (
-                                  <p className="mt-2 text-xs italic border-t border-gray-100 pt-2 break-words">
-                                    {schedule.notes}
+                                {medication.notes && (
+                                  <p className="mt-2 text-xs italic border-t border-blue-100 pt-2 break-words">
+                                    ℹ️ {medication.notes}
                                   </p>
                                 )}
                               </div>
@@ -1097,15 +1049,15 @@ const PetDialog = ({
                             <div className="flex sm:flex-row flex-col gap-1.5 sm:gap-2 flex-shrink-0">
                               <button
                                 type="button"
-                                onClick={() => handleEditMedicationSchedule(schedule, index)}
+                                onClick={() => handleEditMedication(medication)}
                                 disabled={isSaving}
-                                className="p-2 text-violet-600 hover:bg-violet-50 rounded-md transition-colors disabled:opacity-50"
+                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-md transition-colors disabled:opacity-50"
                               >
                                 <FiEdit2 className="w-4 h-4" />
                               </button>
                               <button
                                 type="button"
-                                onClick={() => handleDeleteMedicationSchedule(index)}
+                                onClick={() => handleDeleteMedication(medication.id)}
                                 disabled={isSaving}
                                 className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50"
                               >
@@ -1117,17 +1069,17 @@ const PetDialog = ({
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-6 sm:py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-                      <FaPills className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-3" />
-                      <p className="text-sm sm:text-base text-gray-600 mb-3">No medication schedules yet</p>
+                    <div className="text-center py-6 sm:py-8 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg border-2 border-dashed border-blue-200">
+                      <FaPills className="w-10 h-10 sm:w-12 sm:h-12 text-blue-400 mx-auto mb-3" />
+                      <p className="text-sm sm:text-base text-gray-600 mb-3">No medications added yet</p>
                       <button
                         type="button"
-                        onClick={handleAddMedicationSchedule}
+                        onClick={handleAddMedication}
                         disabled={isSaving}
-                        className="w-full sm:w-auto px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg inline-flex items-center justify-center transition-colors disabled:opacity-50 font-medium"
+                        className="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-lg inline-flex items-center justify-center transition-colors disabled:opacity-50 font-medium shadow-sm"
                       >
                         <FiPlus className="mr-1.5" />
-                        Add First Schedule
+                        Add First Medication
                       </button>
                     </div>
                   )}
@@ -1434,12 +1386,15 @@ const PetDialog = ({
         </div>
       )}
       
-      {/* Medication Schedule Dialog */}
-      <MedicationScheduleDialog
-        open={openMedicationSchedule}
-        onClose={() => setOpenMedicationSchedule(false)}
-        medication={currentMedication}
-        onSave={handleSaveMedicationSchedule}
+      {/* Medication Dialog */}
+      <MedicationDialog
+        open={openMedicationDialog}
+        onClose={() => {
+          setOpenMedicationDialog(false);
+          setEditingMedication(null);
+        }}
+        medication={editingMedication}
+        onSave={handleSaveMedication}
       />
     </AnimatePresence>
   );

@@ -5,7 +5,8 @@ import { ref, set, get, update, remove } from "firebase/database";
 import { useNavigate, useLocation } from "react-router-dom";
 import { FiMail, FiPhone } from "react-icons/fi";
 import useResponsive from "../../hooks/useResponsive";
-import { FaPlus, FaPaw, FaHeart, FaCommentDots } from "react-icons/fa";
+import { FaPlus, FaPaw, FaHeart, FaCommentDots, FaBalanceScale } from "react-icons/fa";
+import MultiPetCompare from "../PetProfile/MultiPetCompare";
 import { sendMatingRequestAcceptedNotification } from "../../services/notificationService";
 import { clearUnreadNotifications } from "../../services/badgeService";
 import {
@@ -65,7 +66,7 @@ const MobileVersion = ({ user, pets, matingRequests, chats, activeTab, setActive
     {/* Tab Navigation */}
     <motion.div className="mb-6" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}>
       <div className="bg-white/75 backdrop-blur-md rounded-2xl p-2 shadow-lg border border-violet-100">
-        <div className="grid grid-cols-3 gap-1">
+        <div className="grid grid-cols-4 gap-1">
           {tabs.map((tab) => (
             <motion.button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`relative flex flex-col items-center p-3 rounded-xl transition-all duration-300 ${activeTab === tab.id ? "bg-gradient-to-r from-violet-400 to-indigo-400 text-white shadow-md" : "text-gray-600 hover:bg-violet-50"}`} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               {tab.badge > 0 && (<div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center"><span className="text-xs text-white font-bold">{tab.badge}</span></div>)}
@@ -83,6 +84,7 @@ const MobileVersion = ({ user, pets, matingRequests, chats, activeTab, setActive
         {activeTab === "pets" && (<PetsSection key="pets" pets={pets} onAddPet={handleAddPet} onEditPet={handleEditPet} onDeletePet={handleDeletePet} onToggleAvailability={handleToggleAvailability} />)}
         {activeTab === "requests" && (<RequestsSection key="requests" requests={matingRequests} onAccept={handleAcceptRequest} onDecline={handleDeclineRequest} />)}
         {activeTab === "messages" && <ConversationsListSection key="messages" onOpenConversation={handleOpenMessageDialog} />}
+        {activeTab === "compare" && <MultiPetCompare key="compare" pets={pets} />}
       </AnimatePresence>
     </motion.div>
   </div>
@@ -186,6 +188,7 @@ const DesktopVersion = ({ user, pets, matingRequests, activeTab, setActiveTab, t
           {activeTab === "pets" && (<DesktopPetsSection key="pets" pets={pets} onAddPet={handleAddPet} onEditPet={handleEditPet} onDeletePet={handleDeletePet} onToggleAvailability={handleToggleAvailability} />)}
           {activeTab === "requests" && (<DesktopRequestsSection key="requests" requests={matingRequests} onAccept={handleAcceptRequest} onDecline={handleDeclineRequest} />)}
           {activeTab === "messages" && (<ConversationsListSection key="messages" onOpenConversation={handleOpenMessageDialog} />)}
+          {activeTab === "compare" && <MultiPetCompare key="compare" pets={pets} />}
         </AnimatePresence>
       </motion.div>
     </div>
@@ -590,6 +593,7 @@ const Profile = () => {
     { id: "pets", label: "Pets", icon: <FaPaw />, count: pets.length },
     { id: "requests", label: "Requests", icon: <FaHeart />, count: matingRequests.length, badge: pendingRequestsCount },
     { id: "messages", label: "Messages", icon: <FaCommentDots /> },
+    { id: "compare", label: "Compare", icon: <FaBalanceScale />, count: pets.length >= 2 ? pets.length : 0 },
   ], [pets.length, matingRequests.length, pendingRequestsCount]);
 
   if (isLoading) {

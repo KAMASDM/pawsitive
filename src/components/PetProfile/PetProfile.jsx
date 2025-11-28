@@ -9,6 +9,7 @@ import PetPostsFeed from './PetPostsFeed';
 import PetEventsTimeline from './PetEventsTimeline';
 import ShareModal from './ShareModal';
 import QuickActionDialog from './QuickActionDialog';
+import PetAgeCard from './PetAgeCard';
 import './PetProfile.css';
 
 const PetProfile = () => {
@@ -517,8 +518,12 @@ const PetProfile = () => {
             />
           </div>
 
-          {/* Right Sidebar - Events */}
-          <div className="col-span-3">
+          {/* Right Sidebar - Events & Age */}
+          <div className="col-span-3 space-y-6">
+            {/* Pet Age Card */}
+            <PetAgeCard pet={pet} />
+            
+            {/* Events Timeline */}
             <PetEventsTimeline
               events={events}
               pet={pet}
