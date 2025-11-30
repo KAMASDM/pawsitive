@@ -97,11 +97,11 @@ const ContactUs = () => {
                 Our Location
               </h3>
               <p className="text-lavender-700">
-                123 Pet Friendly Avenue
+                1C Satyam Appartment, Vishwas Colony
                 <br />
-                San Francisco, CA 94107
+                Alkapuri, Vadodara 390007
                 <br />
-                United States
+                Gujarat, India
               </p>
             </div>
 
@@ -112,18 +112,10 @@ const ContactUs = () => {
               </h3>
               <p className="text-lavender-700">
                 <a
-                  href="mailto:hello@pawppy.com"
+                  href="mailto:support@pawppy.in"
                   className="hover:text-lavender-600"
                 >
-                  hello@pawppy.com
-                </a>
-              </p>
-              <p className="text-lavender-700 mt-2">
-                <a
-                  href="mailto:support@pawppy.com"
-                  className="hover:text-lavender-600"
-                >
-                  support@pawppy.com
+                  support@pawppy.in
                 </a>
               </p>
             </div>
@@ -134,25 +126,25 @@ const ContactUs = () => {
                 Call Us
               </h3>
               <p className="text-lavender-700">
-                <a href="tel:+18005551234" className="hover:text-lavender-600">
-                  +1 (800) 555-1234
+                <a href="tel:+919638389455" className="hover:text-lavender-600">
+                  +91-9638389455
                 </a>
               </p>
               <p className="text-lavender-700 mt-2">
-                Monday - Friday: 9am - 6pm PST
+                Monday - Friday: 9am - 6pm IST
               </p>
             </div>
 
             <div className="bg-white p-6 rounded-xl shadow-soft-md">
               <h3 className="text-xl font-semibold text-lavender-900 mb-4 flex items-center">
                 <Clock className="h-6 w-6 text-lavender-600 mr-2" />
-                Support Hours
+                Office Hours
               </h3>
               <p className="text-lavender-700">
-                24/7 Emergency Support Available
+                Monday to Friday
               </p>
               <p className="text-lavender-700 mt-2">
-                Standard Support: 8am - 8pm PST
+                9:00 AM - 6:00 PM IST
               </p>
             </div>
           </div>
