@@ -23,6 +23,7 @@ import ResourcesPage from "./components/Resources/Resources";
 import ResourceDetail from "./components/Resources/ResourceDetail";
 import FAQ from "./components/FAQ/FAQ";
 import TestNotifications from "./components/TestNotifications/TestNotifications";
+import LostAndFound from "./components/LostAndFound/LostAndFound";
 import { useVaccinationReminder } from "./hooks/useVaccinationReminder";
 import { initializeBadgeManagement } from "./services/badgeService";
 
@@ -34,11 +35,13 @@ function App() {
     // Initialize badge management for PWA
     initializeBadgeManagement();
     
-    if (!window.google) {
+    // Check if Google Maps script is already loaded or being loaded
+    if (!window.google && !document.querySelector('script[src*="maps.googleapis.com"]')) {
       const script = document.createElement("script");
       script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&libraries=places`;
       script.async = true;
       script.defer = true;
+      script.id = "google-maps-script";
       document.body.appendChild(script);
     }
   }, []);
@@ -180,6 +183,14 @@ function App() {
               element={
                 <PR>
                   <TestNotifications />
+                </PR>
+              }
+            />
+            <Route
+              path="/lost-and-found"
+              element={
+                <PR>
+                  <LostAndFound />
                 </PR>
               }
             />

@@ -17,6 +17,7 @@ const quickActionsMobile = [
   { icon: "🚨", title: "Emergency", subtitle: "24/7 Care", description: "Round-the-clock emergency veterinary services", color: "from-purple-300 to-purple-400", route: "/resource", state: { category: "all", subCategory: "Health & Wellness" } },
   { icon: "🐾", title: "Adopt", subtitle: "Find Pets", description: "Browse verified pets looking for loving homes", color: "from-violet-300 to-violet-400", route: "/adopt-pets" },
   { icon: "💕", title: "Mates", subtitle: "Find Partner", description: "Connect with nearby pets for responsible breeding", color: "from-indigo-300 to-indigo-400", route: "/nearby-mates" },
+  { icon: "🔍", title: "Lost & Found", subtitle: "Reunite Pets", description: "Report lost/found pets and help reunite families", color: "from-red-300 to-orange-400", route: "/lost-and-found" },
   { icon: "📍", title: "Tag Place", subtitle: "Pet Spots", description: "Mark pet-friendly places near you", color: "from-green-300 to-green-400", action: "tagPlace" }
 ];
 const adoptionCards = [
@@ -35,13 +36,15 @@ const desktopQuickActions = [
   { icon: FiActivity, title: "Emergency", description: "Round-the-clock emergency veterinary services", route: "/resource", state: { category: "all", subCategory: "Health & Wellness" } },
   { icon: FiHeartEmpty, title: "Adopt", description: "Browse verified pets looking for loving homes", route: "/adopt-pets" },
   { icon: FiUsers, title: "Mates", description: "Connect with nearby pets for responsible breeding", route: "/nearby-mates" },
+  { icon: FiMapPin, title: "Lost & Found", description: "Report lost/found pets and help reunite families", route: "/lost-and-found" },
   { icon: FiShield, title: "Care", description: "Complete healthcare and wellness services", route: "/resource", state: { category: "all", subCategory: "Nutrition" } }
 ];
 
 const desktopServices = [
   { icon: FiActivity, title: "Emergency Care", details: "Round-the-clock emergency care with certified veterinarians", stat: "50+ Vets Available", route: "/resource", state: { category: "all", subCategory: "Health & Wellness" } },
   { icon: FiHeartEmpty, title: "Pet Adoption", details: "Verified pets with health checkups and adoption support", stat: "500+ Happy Adoptions", route: "/resource", state: { category: "all", subCategory: "Adoption" } },
-  { icon: FiUsers, title: "Pet Mating", details: "Health-verified pets with breed matching services", stat: "200+ Successful Matches", route: "/nearby-mates" }
+  { icon: FiUsers, title: "Pet Mating", details: "Health-verified pets with breed matching services", stat: "200+ Successful Matches", route: "/nearby-mates" },
+  { icon: FiMapPin, title: "Lost & Found Pets", details: "Report lost/found pets with smart matching and map tracking", stat: "Reunite Families", route: "/lost-and-found" }
 ];
 // --- END NEW DATA ---
 

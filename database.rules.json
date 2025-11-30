@@ -108,6 +108,20 @@
         ".read": "auth != null && auth.uid == $userId",
         ".write": "auth != null"
       }
+    },
+    "lostPets": {
+      ".read": "true",
+      "$reportId": {
+        ".write": "auth != null",
+        ".validate": "newData.hasChildren(['petType', 'petName', 'lastSeenDate', 'lastSeenLocation', 'userId', 'status', 'createdAt'])"
+      }
+    },
+    "foundPets": {
+      ".read": "true",
+      "$reportId": {
+        ".write": "auth != null",
+        ".validate": "newData.hasChildren(['petType', 'foundDate', 'foundLocation', 'userId', 'status', 'createdAt'])"
+      }
     }
   }
 }
