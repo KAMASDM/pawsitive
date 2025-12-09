@@ -8,7 +8,7 @@ export default defineConfig({
       include: '**/*.{jsx,js}',
     }),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       includeAssets: ['favicon.png', 'robots.txt', 'sitemap.xml'],
       manifest: {
         name: 'Pawppy App',
@@ -60,6 +60,9 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp}'],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024, // 3 MB
+        cleanupOutdatedCaches: true,
+        skipWaiting: false, // Wait for user to accept update
+        clientsClaim: true,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,

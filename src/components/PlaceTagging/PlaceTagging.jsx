@@ -2,12 +2,10 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiX, FiMapPin, FiThumbsUp, FiThumbsDown, FiCheck, FiAlertCircle } from 'react-icons/fi';
 import { FaPaw } from 'react-icons/fa';
-import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
+import { GoogleMap, Marker } from '@react-google-maps/api';
 import { ref as dbRef, push, set, serverTimestamp, get } from 'firebase/database';
 import { database, auth } from '../../firebase';
 import * as geofire from 'geofire-common';
-
-const libraries = ['places'];
 
 const PlaceTagging = ({ isOpen, onClose, userLocation }) => {
   const [step, setStep] = useState(1); // 1: Location, 2: Details
@@ -20,14 +18,33 @@ const PlaceTagging = ({ isOpen, onClose, userLocation }) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [map, setMap] = useState(null); // eslint-disable-line no-unused-vars
+  const [isMapLoaded, setIsMapLoaded] = useState(false);
 
-  const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-    libraries,
-    preventGoogleFontsLoading: true,
-    async: true,
-    defer: true,
-  });
+  // Check if Google Maps is already loaded (from App.js)
+  useEffect(() => {
+    if (window.google && window.google.maps) {
+      setIsMapLoaded(true);
+    } else {
+      // Poll for Google Maps to be loaded
+      const checkInterval = setInterval(() => {
+        if (window.google && window.google.maps) {
+          setIsMapLoaded(true);
+          clearInterval(checkInterval);
+        }
+      }, 100);
+      
+      // Cleanup after 10 seconds
+      const timeout = setTimeout(() => {
+        clearInterval(checkInterval);
+        setIsMapLoaded(true); // Proceed anyway
+      }, 10000);
+      
+      return () => {
+        clearInterval(checkInterval);
+        clearTimeout(timeout);
+      };
+    }
+  }, []);
 
   useEffect(() => {
     if (userLocation && !selectedLocation) {
@@ -261,7 +278,14 @@ const PlaceTagging = ({ isOpen, onClose, userLocation }) => {
                       <p className="text-sm text-gray-600">Tap on the map to select the place you want to tag</p>
                     </div>
 
-                    {isLoaded && (
+                    {!isMapLoaded ? (
+                      <div className="rounded-2xl overflow-hidden border-2 border-gray-200 mb-4 h-[400px] bg-gray-100 flex items-center justify-center">
+                        <div className="text-center">
+                          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600 mx-auto mb-4"></div>
+                          <p className="text-gray-600 text-sm">Loading map...</p>
+                        </div>
+                      </div>
+                    ) : (
                       <div className="rounded-2xl overflow-hidden border-2 border-gray-200 mb-4">
                         <GoogleMap
                           mapContainerStyle={{ width: '100%', height: '400px' }}
@@ -269,22 +293,21 @@ const PlaceTagging = ({ isOpen, onClose, userLocation }) => {
                           zoom={17}
                           onClick={onMapClick}
                           onLoad={onLoad}
+                          options={{
+                            disableDefaultUI: false,
+                            zoomControl: true,
+                            mapTypeControl: false,
+                            streetViewControl: false,
+                            fullscreenControl: false,
+                            gestureHandling: 'greedy',
+                          }}
                         >
                           {selectedLocation && (
                             <Marker
                               position={selectedLocation}
                               draggable={true}
                               onDragEnd={onMarkerDragEnd}
-                              animation={2}
-                              icon={{
-                                path: 'M256 224c-79.37 0-191.1 122.7-191.1 200.2C64.02 459.1 90.76 480 135.8 480C184.6 480 216.9 454.9 256 454.9C295.5 454.9 327.9 480 376.2 480c44.1 0 71.74-20.88 71.74-55.75C447.1 346.8 335.4 224 256 224zM108.8 211.4c-10.37-34.62-1.383-73.48 21.02-101.1c-22.39 4.25-46.04 22.44-57.93 50.86C60.84 187.8 69.81 226.6 92.23 255.1C103.1 261.6 120.3 244.3 108.8 211.4zM193.5 190.6c30.87-8.125 46.37-49.1 34.87-93.37s-46.5-71.1-77.49-63.87c-30.87 8.125-46.37 49.1-34.87 93.37C127.5 170.1 162.5 198.8 193.5 190.6zM474.9 161.3c-11.88-28.43-35.54-46.62-57.93-50.86c22.4 27.63 31.39 66.48 21.02 101.1c-11.52 32.9 5.641 50.16 16.62 43.66C476.6 226.6 485.6 187.8 474.9 161.3zM318.5 190.6c30.1 8.125 66.9-20.5 77.49-63.87c11.5-43.37-3.1-85.25-34.87-93.37c-30.1-8.125-66.9 20.5-77.49 63.87C272.1 140.6 287.6 182.5 318.5 190.6z',
-                                fillColor: '#7c3aed',
-                                fillOpacity: 1,
-                                strokeColor: '#ffffff',
-                                strokeWeight: 2,
-                                scale: 0.06,
-                                anchor: new window.google.maps.Point(256, 480),
-                              }}
+                              animation={window.google?.maps?.Animation?.DROP}
                             />
                           )}
                         </GoogleMap>

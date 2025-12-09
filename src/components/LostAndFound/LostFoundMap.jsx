@@ -2,12 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { FaDog, FaCat, FaMapMarkerAlt, FaPhone, FaEnvelope } from 'react-icons/fa';
 import { FiAlertCircle, FiCheckCircle, FiClock } from 'react-icons/fi';
-import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
+import { GoogleMap, Marker, InfoWindow } from '@react-google-maps/api';
 import { ref as dbRef, onValue } from 'firebase/database';
 import { database } from '../../firebase';
 import useResponsive from '../../hooks/useResponsive';
-
-const libraries = ['places'];
 
 // Helper function to get marker icon for lost pets
 const getLostPetIcon = () => {
@@ -45,14 +43,33 @@ const LostFoundMap = ({ onPetClick }) => {
   const [showFound, setShowFound] = useState(true);
   const [userLocation, setUserLocation] = useState(null);
   const [mapCenter, setMapCenter] = useState({ lat: 28.6139, lng: 77.2090 }); // Default: Delhi
+  const [isMapLoaded, setIsMapLoaded] = useState(false);
 
-  const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-    libraries,
-    preventGoogleFontsLoading: true,
-    async: true,
-    defer: true,
-  });
+  // Check if Google Maps is already loaded (from App.js)
+  useEffect(() => {
+    if (window.google && window.google.maps) {
+      setIsMapLoaded(true);
+    } else {
+      // Poll for Google Maps to be loaded
+      const checkInterval = setInterval(() => {
+        if (window.google && window.google.maps) {
+          setIsMapLoaded(true);
+          clearInterval(checkInterval);
+        }
+      }, 100);
+      
+      // Cleanup after 10 seconds
+      const timeout = setTimeout(() => {
+        clearInterval(checkInterval);
+        setIsMapLoaded(true); // Proceed anyway
+      }, 10000);
+      
+      return () => {
+        clearInterval(checkInterval);
+        clearTimeout(timeout);
+      };
+    }
+  }, []);
 
   useEffect(() => {
     // Get user's location
@@ -158,7 +175,7 @@ const LostFoundMap = ({ onPetClick }) => {
     ]
   };
 
-  if (!isLoaded) {
+  if (!isMapLoaded) {
     return (
       <div className="w-full h-96 bg-gray-100 rounded-2xl flex items-center justify-center">
         <div className="text-center">
@@ -216,9 +233,10 @@ const LostFoundMap = ({ onPetClick }) => {
           onLoad={onLoad}
           options={{
             streetViewControl: false,
-            mapTypeControl: true,
+            mapTypeControl: false,
             fullscreenControl: true,
             zoomControl: true,
+            gestureHandling: 'greedy',
           }}
         >
           {/* User Location */}

@@ -24,6 +24,7 @@ import ResourceDetail from "./components/Resources/ResourceDetail";
 import FAQ from "./components/FAQ/FAQ";
 import TestNotifications from "./components/TestNotifications/TestNotifications";
 import LostAndFound from "./components/LostAndFound/LostAndFound";
+import UpdateNotification from "./components/PWA/UpdateNotification";
 import { useVaccinationReminder } from "./hooks/useVaccinationReminder";
 import { initializeBadgeManagement } from "./services/badgeService";
 
@@ -49,6 +50,7 @@ function App() {
   return (
     <div>
       <ScrollToTop />
+      <UpdateNotification />
       <div className="min-h-screen bg-lavender-50 flex flex-col">
         <Header />
         <main className="flex-grow mb-12 sm:mb-0">

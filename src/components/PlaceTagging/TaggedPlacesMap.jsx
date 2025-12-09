@@ -2,12 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { FiMapPin, FiThumbsUp, FiThumbsDown, FiUser, FiClock } from 'react-icons/fi';
 import { FaPaw } from 'react-icons/fa';
-import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
+import { GoogleMap, Marker, InfoWindow } from '@react-google-maps/api';
 import { ref as dbRef, onValue } from 'firebase/database';
 import { database } from '../../firebase';
 import * as geofire from 'geofire-common';
-
-const libraries = ['places'];
 
 // Helper function to get marker icon based on place type
 const getMarkerIcon = (placeType, isPetFriendly) => {
@@ -76,16 +74,35 @@ const TaggedPlacesMap = ({ userLocation, radius = 5 }) => {
   const [selectedPlace, setSelectedPlace] = useState(null);
   const [map, setMap] = useState(null);
   const [filter, setFilter] = useState('all'); // 'all', 'friendly', 'not-friendly'
+  const [isMapLoaded, setIsMapLoaded] = useState(false);
 
   console.log('TaggedPlacesMap - userLocation:', userLocation, 'radius:', radius);
 
-  const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-    libraries,
-    preventGoogleFontsLoading: true,
-    async: true,
-    defer: true,
-  });
+  // Check if Google Maps is already loaded (from App.js)
+  useEffect(() => {
+    if (window.google && window.google.maps) {
+      setIsMapLoaded(true);
+    } else {
+      // Poll for Google Maps to be loaded
+      const checkInterval = setInterval(() => {
+        if (window.google && window.google.maps) {
+          setIsMapLoaded(true);
+          clearInterval(checkInterval);
+        }
+      }, 100);
+      
+      // Cleanup after 10 seconds
+      const timeout = setTimeout(() => {
+        clearInterval(checkInterval);
+        setIsMapLoaded(true); // Proceed anyway
+      }, 10000);
+      
+      return () => {
+        clearInterval(checkInterval);
+        clearTimeout(timeout);
+      };
+    }
+  }, []);
 
   useEffect(() => {
     console.log('Setting up Firebase listener for taggedPlaces...');
@@ -164,7 +181,7 @@ const TaggedPlacesMap = ({ userLocation, radius = 5 }) => {
     return date.toLocaleDateString();
   };
 
-  if (!isLoaded) {
+  if (!isMapLoaded) {
     return (
       <div className="w-full h-96 bg-gray-100 rounded-2xl flex items-center justify-center">
         <div className="text-center">
@@ -220,6 +237,14 @@ const TaggedPlacesMap = ({ userLocation, radius = 5 }) => {
           center={userLocation || { lat: 0, lng: 0 }}
           zoom={13}
           onLoad={onLoad}
+          options={{
+            disableDefaultUI: false,
+            zoomControl: true,
+            mapTypeControl: false,
+            streetViewControl: false,
+            fullscreenControl: true,
+            gestureHandling: 'greedy',
+          }}
         >
           {/* User Location */}
           {userLocation && (
