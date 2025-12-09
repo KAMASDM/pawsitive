@@ -25,6 +25,19 @@ const InstallPWA = () => {
     setIsStandalone(standalone);
     console.log('Is standalone mode:', standalone);
 
+    // If already in standalone mode, don't show any prompts
+    if (standalone) {
+      console.log('App is already installed, not showing prompt');
+      return;
+    }
+
+    // Check if the app was already installed (persisted flag)
+    const appInstalled = localStorage.getItem('pwa-installed');
+    if (appInstalled) {
+      console.log('App was previously installed, not showing prompt in browser');
+      return;
+    }
+
     // Detect iOS
     const isIOSDevice = () => {
       return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
@@ -35,8 +48,9 @@ const InstallPWA = () => {
     console.log('Is iOS device:', iOS);
 
     // Handle beforeinstallprompt event for Android/Desktop
+    // This event ONLY fires if the app is not already installed
     const handleBeforeInstallPrompt = (e) => {
-      console.log('beforeinstallprompt event fired');
+      console.log('beforeinstallprompt event fired - app is installable');
       e.preventDefault();
       setDeferredPrompt(e);
       
@@ -61,7 +75,9 @@ const InstallPWA = () => {
       }
     };
 
-    // Handle iOS - show prompt if not installed
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    // Handle iOS - show prompt if not installed and not standalone
     if (iOS && !standalone) {
       const dismissed = localStorage.getItem('pwa-install-dismissed-ios');
       const dismissedDate = dismissed ? new Date(dismissed) : null;
@@ -80,23 +96,13 @@ const InstallPWA = () => {
       }
     }
 
-    // For development/testing - show prompt after delay if not standalone
-    // Remove this in production or make it conditional on environment
-    if (!standalone && !iOS) {
-      console.log('Dev mode: Showing install prompt for testing');
-      setTimeout(() => {
-        console.log('Dev: Setting showInstallPrompt to true');
-        setShowInstallPrompt(true);
-      }, 2000);
-    }
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
     // Handle successful installation
     window.addEventListener('appinstalled', () => {
       console.log('PWA installed successfully');
       setShowInstallPrompt(false);
       setDeferredPrompt(null);
+      // Mark app as installed so we don't show prompt in browser anymore
+      localStorage.setItem('pwa-installed', 'true');
     });
 
     return () => {
@@ -118,6 +124,8 @@ const InstallPWA = () => {
 
     if (outcome === 'accepted') {
       console.log('User accepted the install prompt');
+      // Mark app as installed
+      localStorage.setItem('pwa-installed', 'true');
     } else {
       console.log('User dismissed the install prompt');
     }
