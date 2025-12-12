@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FaDog, 
@@ -16,71 +16,103 @@ import {
   FaArrowLeft
 } from 'react-icons/fa';
 import { FiUpload, FiX, FiAlertCircle } from 'react-icons/fi';
-import { getDatabase, ref, push, set } from 'firebase/database';
+import { getDatabase, ref, push, set, update } from 'firebase/database';
 import { getAuth } from 'firebase/auth';
 import { GoogleMap, Marker } from '@react-google-maps/api';
 import useResponsive from '../../hooks/useResponsive';
 
-const ReportLostPet = () => {
+const ReportLostPet = ({ editMode = false, initialData = null, onEditComplete = null }) => {
   const { isMobile } = useResponsive();
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [reportId, setReportId] = useState(null);
+  const [reportId, setReportId] = useState(editMode && initialData ? initialData.id : null);
   const [showMapModal, setShowMapModal] = useState(false);
   const [tempMapLocation, setTempMapLocation] = useState(null);
   const fileInputRef = useRef(null);
   const auth = getAuth();
   const user = auth.currentUser;
 
-  const [formData, setFormData] = useState({
-    // Step 1: Pet Type & Basic Info
-    petType: '',
-    petName: '',
-    breed: '',
-    gender: '',
-    age: '',
-    size: '',
-    
-    // Step 2: Physical Appearance
-    primaryColor: '',
-    secondaryColor: '',
-    markings: '',
-    distinctiveFeatures: '',
-    photos: [],
-    
-    // Step 3: Last Seen Information
-    lastSeenDate: '',
-    lastSeenTime: '',
-    lastSeenLocation: '',
-    lastSeenAddress: '',
-    lastSeenLatitude: null,
-    lastSeenLongitude: null,
-    circumstances: '',
-    
-    // Step 4: Behavior & Temperament
-    microchipped: false,
-    microchipNumber: '',
-    collar: false,
-    collarDescription: '',
-    responsive: '',
-    temperament: '',
-    medicalConditions: '',
-    
-    // Step 5: Contact Information
-    ownerName: '',
-    contactPhone: '',
-    contactEmail: '',
-    alternatePhone: '',
-    preferredContact: 'phone',
-    
-    // Step 6: Additional Details
-    reward: false,
-    rewardAmount: '',
-    searchRadius: '10',
-    additionalInfo: '',
-    urgency: 'high'
-  });
+  const getInitialFormData = () => {
+    if (editMode && initialData) {
+      return {
+        petType: initialData.petType || '',
+        petName: initialData.petName || '',
+        breed: initialData.breed || '',
+        gender: initialData.gender || '',
+        age: initialData.age || '',
+        size: initialData.size || '',
+        primaryColor: initialData.primaryColor || '',
+        secondaryColor: initialData.secondaryColor || '',
+        markings: initialData.markings || '',
+        distinctiveFeatures: initialData.distinctiveFeatures || '',
+        photos: initialData.photos || [],
+        lastSeenDate: initialData.lastSeenDate || '',
+        lastSeenTime: initialData.lastSeenTime || '',
+        lastSeenLocation: initialData.lastSeenLocation || '',
+        lastSeenAddress: initialData.lastSeenAddress || '',
+        lastSeenLatitude: initialData.lastSeenLatitude || null,
+        lastSeenLongitude: initialData.lastSeenLongitude || null,
+        circumstances: initialData.circumstances || '',
+        microchipped: initialData.microchipped || false,
+        microchipNumber: initialData.microchipNumber || '',
+        collar: initialData.collar || false,
+        collarDescription: initialData.collarDescription || '',
+        responsive: initialData.responsive || '',
+        temperament: initialData.temperament || '',
+        medicalConditions: initialData.medicalConditions || '',
+        ownerName: initialData.ownerName || '',
+        contactPhone: initialData.contactPhone || '',
+        contactEmail: initialData.contactEmail || '',
+        alternatePhone: initialData.alternatePhone || '',
+        preferredContact: initialData.preferredContact || 'phone',
+        reward: initialData.reward || false,
+        rewardAmount: initialData.rewardAmount || '',
+        searchRadius: initialData.searchRadius || '10',
+        additionalInfo: initialData.additionalInfo || '',
+        urgency: initialData.urgency || 'high'
+      };
+    }
+    return {
+      petType: '',
+      petName: '',
+      breed: '',
+      gender: '',
+      age: '',
+      size: '',
+      primaryColor: '',
+      secondaryColor: '',
+      markings: '',
+      distinctiveFeatures: '',
+      photos: [],
+      lastSeenDate: '',
+      lastSeenTime: '',
+      lastSeenLocation: '',
+      lastSeenAddress: '',
+      lastSeenLatitude: null,
+      lastSeenLongitude: null,
+      circumstances: '',
+      microchipped: false,
+      microchipNumber: '',
+      collar: false,
+      collarDescription: '',
+      responsive: '',
+      temperament: '',
+      medicalConditions: '',
+      ownerName: '',
+      contactPhone: '',
+      contactEmail: '',
+      alternatePhone: '',
+      preferredContact: 'phone',
+      reward: false,
+      rewardAmount: '',
+      searchRadius: '10',
+      additionalInfo: '',
+      urgency: 'high'
+    };
+  };
+
+  const [formData, setFormData] = useState(getInitialFormData());
 
   const steps = [
     { number: 1, title: 'Pet Info', icon: FaDog },
@@ -238,27 +270,49 @@ const ReportLostPet = () => {
         type: photo.type
       }));
 
-      // Create report
-      const lostPetsRef = ref(db, 'lostPets');
-      const newReportRef = push(lostPetsRef);
-      
-      const reportData = {
-        ...formData,
-        photos: photoData,
-        userId: user.uid,
-        userEmail: user.email,
-        status: 'lost',
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        views: 0,
-        shares: 0,
-        reportId: newReportRef.key
-      };
+      if (editMode && reportId) {
+        // Update existing report
+        const reportRef = ref(db, `lostPets/${reportId}`);
+        
+        const updateData = {
+          ...formData,
+          photos: photoData,
+          updatedAt: Date.now()
+        };
 
-      await set(newReportRef, reportData);
+        await update(reportRef, updateData);
+        
+        setSubmitted(true);
+        
+        // Call edit complete callback if provided
+        if (onEditComplete) {
+          setTimeout(() => {
+            onEditComplete();
+          }, 2000);
+        }
+      } else {
+        // Create new report
+        const lostPetsRef = ref(db, 'lostPets');
+        const newReportRef = push(lostPetsRef);
+        
+        const reportData = {
+          ...formData,
+          photos: photoData,
+          userId: user.uid,
+          userEmail: user.email,
+          status: 'lost',
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          views: 0,
+          shares: 0,
+          reportId: newReportRef.key
+        };
 
-      setReportId(newReportRef.key);
-      setSubmitted(true);
+        await set(newReportRef, reportData);
+
+        setReportId(newReportRef.key);
+        setSubmitted(true);
+      }
       
       // Send email notification (optional)
       // await sendLostPetEmail(reportData);
@@ -928,38 +982,45 @@ const ReportLostPet = () => {
           >
             <FaCheckCircle className="text-6xl text-green-500 mx-auto mb-4" />
           </motion.div>
-          <h2 className="text-3xl font-bold text-slate-800 mb-4">Report Submitted Successfully!</h2>
+          <h2 className="text-3xl font-bold text-slate-800 mb-4">
+            {editMode ? 'Report Updated Successfully!' : 'Report Submitted Successfully!'}
+          </h2>
           <p className="text-gray-600 mb-6">
-            Your lost pet report has been created. We'll notify nearby users and start matching with found pet reports.
+            {editMode 
+              ? 'Your lost pet report has been updated with the new information.'
+              : "Your lost pet report has been created. We'll notify nearby users and start matching with found pet reports."
+            }
           </p>
           
-          <div className="bg-violet-50 border-2 border-violet-200 rounded-xl p-6 mb-6">
-            <p className="text-sm text-gray-700 mb-4">Share this report to increase visibility:</p>
-            <div className="flex gap-3 justify-center">
-              <motion.button
-                className="px-6 py-3 bg-blue-600 text-white rounded-xl font-medium flex items-center gap-2"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <FaShareAlt /> Share
-              </motion.button>
-              <motion.button
-                className="px-6 py-3 bg-gray-800 text-white rounded-xl font-medium flex items-center gap-2"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <FaQrcode /> QR Code
-              </motion.button>
+          {!editMode && (
+            <div className="bg-violet-50 border-2 border-violet-200 rounded-xl p-6 mb-6">
+              <p className="text-sm text-gray-700 mb-4">Share this report to increase visibility:</p>
+              <div className="flex gap-3 justify-center">
+                <motion.button
+                  className="px-6 py-3 bg-blue-600 text-white rounded-xl font-medium flex items-center gap-2"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <FaShareAlt /> Share
+                </motion.button>
+                <motion.button
+                  className="px-6 py-3 bg-gray-800 text-white rounded-xl font-medium flex items-center gap-2"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <FaQrcode /> QR Code
+                </motion.button>
+              </div>
             </div>
-          </div>
+          )}
 
           <motion.button
-            onClick={() => window.location.reload()}
+            onClick={() => editMode && onEditComplete ? onEditComplete() : window.location.reload()}
             className="px-8 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-xl font-medium"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            Report Another Pet
+            {editMode ? 'Close' : 'Report Another Pet'}
           </motion.button>
         </div>
       </motion.div>

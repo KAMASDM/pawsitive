@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
   FaTimes,
@@ -11,15 +11,26 @@ import {
   FaDollarSign,
   FaShareAlt,
   FaExclamationTriangle,
-  FaHeart
+  FaHeart,
+  FaEdit,
+  FaTrash
 } from 'react-icons/fa';
 import { FiAlertCircle, FiCheckCircle, FiX } from 'react-icons/fi';
+import { getDatabase, ref, update, remove } from 'firebase/database';
+import { getAuth } from 'firebase/auth';
 import useResponsive from '../../hooks/useResponsive';
 
-const LostFoundPetDetail = ({ pet, type, onClose }) => {
+const LostFoundPetDetail = ({ pet, type, onClose, onEdit, onDelete }) => {
   const { isMobile } = useResponsive();
   const Icon = pet.petType === 'Dog' ? FaDog : FaCat;
   const isLost = type === 'lost';
+  const auth = getAuth();
+  const user = auth.currentUser;
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  
+  // Check if current user is the owner
+  const isOwner = user && pet.userId === user.uid;
 
   const formatDate = (timestamp) => {
     return new Date(timestamp).toLocaleDateString('en-US', {
@@ -63,6 +74,58 @@ const LostFoundPetDetail = ({ pet, type, onClose }) => {
       // Fallback copy to clipboard
       navigator.clipboard.writeText(window.location.href);
       alert('Link copied to clipboard!');
+    }
+  };
+
+  const handleEdit = () => {
+    if (onEdit) {
+      onEdit(pet);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!isOwner) {
+      alert('You can only delete your own posts');
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const db = getDatabase();
+      const petRef = ref(db, `${isLost ? 'lostPets' : 'foundPets'}/${pet.id}`);
+      await remove(petRef);
+      
+      alert('Post deleted successfully');
+      if (onDelete) {
+        onDelete();
+      }
+      onClose();
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      alert('Failed to delete post. Please try again.');
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
+  const handleMarkAsReunited = async () => {
+    if (!isOwner || !isLost) return;
+
+    try {
+      const db = getDatabase();
+      const petRef = ref(db, `lostPets/${pet.id}`);
+      await update(petRef, {
+        status: 'reunited',
+        reunitedAt: Date.now(),
+        updatedAt: Date.now()
+      });
+      
+      alert('🎉 Congratulations! Your pet has been marked as reunited!');
+      onClose();
+    } catch (error) {
+      console.error('Error updating status:', error);
+      alert('Failed to update status. Please try again.');
     }
   };
 
@@ -446,27 +509,62 @@ const LostFoundPetDetail = ({ pet, type, onClose }) => {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <motion.button
-              onClick={handleContact}
-              className={`flex-1 py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 ${
-                isLost 
-                  ? 'bg-gradient-to-r from-red-600 to-red-700'
-                  : 'bg-gradient-to-r from-green-600 to-green-700'
-              }`}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <FaPhone /> Contact {isLost ? 'Owner' : 'Finder'}
-            </motion.button>
-            <motion.button
-              onClick={handleShare}
-              className="flex-1 py-4 bg-white border-2 border-violet-600 text-violet-600 rounded-xl font-bold flex items-center justify-center gap-2"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <FaShareAlt /> Share
-            </motion.button>
+          <div className="space-y-4">
+            {/* Owner Actions */}
+            {isOwner && (
+              <div className="flex flex-col sm:flex-row gap-3 pb-4 border-b border-gray-200">
+                <motion.button
+                  onClick={handleEdit}
+                  className="flex-1 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-bold flex items-center justify-center gap-2"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <FaEdit /> Edit Post
+                </motion.button>
+                {isLost && pet.status === 'lost' && (
+                  <motion.button
+                    onClick={handleMarkAsReunited}
+                    className="flex-1 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl font-bold flex items-center justify-center gap-2"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <FiCheckCircle /> Mark as Reunited
+                  </motion.button>
+                )}
+                <motion.button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="py-3 px-6 bg-red-600 text-white rounded-xl font-bold flex items-center justify-center gap-2"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <FaTrash />
+                </motion.button>
+              </div>
+            )}
+
+            {/* Contact Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4">
+              <motion.button
+                onClick={handleContact}
+                className={`flex-1 py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 ${
+                  isLost 
+                    ? 'bg-gradient-to-r from-red-600 to-red-700'
+                    : 'bg-gradient-to-r from-green-600 to-green-700'
+                }`}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <FaPhone /> Contact {isLost ? 'Owner' : 'Finder'}
+              </motion.button>
+              <motion.button
+                onClick={handleShare}
+                className="flex-1 py-4 bg-white border-2 border-violet-600 text-violet-600 rounded-xl font-bold flex items-center justify-center gap-2"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <FaShareAlt /> Share
+              </motion.button>
+            </div>
           </div>
 
           {/* Report Info */}
@@ -475,6 +573,47 @@ const LostFoundPetDetail = ({ pet, type, onClose }) => {
           </div>
         </div>
       </motion.div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <motion.div
+          className="absolute inset-0 bg-black/70 z-10 flex items-center justify-center p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          onClick={() => setShowDeleteConfirm(false)}
+        >
+          <motion.div
+            className="bg-white rounded-2xl p-6 max-w-md w-full"
+            initial={{ scale: 0.9 }}
+            animate={{ scale: 1 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-center">
+              <FaTrash className="text-5xl text-red-500 mx-auto mb-4" />
+              <h3 className="text-2xl font-bold text-slate-800 mb-2">Delete Post?</h3>
+              <p className="text-gray-600 mb-6">
+                Are you sure you want to delete this {isLost ? 'lost' : 'found'} pet post? This action cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="flex-1 py-3 bg-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-300"
+                  disabled={isDeleting}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="flex-1 py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 disabled:opacity-50"
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
     </motion.div>
   );
 };

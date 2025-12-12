@@ -14,17 +14,17 @@ import {
   FaHospital
 } from 'react-icons/fa';
 import { FiUpload, FiX, FiAlertCircle } from 'react-icons/fi';
-import { getDatabase, ref, push, set, onValue } from 'firebase/database';
+import { getDatabase, ref, push, set, onValue, update } from 'firebase/database';
 import { getAuth } from 'firebase/auth';
 import { GoogleMap, Marker } from '@react-google-maps/api';
 import useResponsive from '../../hooks/useResponsive';
 
-const ReportFoundPet = () => {
+const ReportFoundPet = ({ editMode = false, initialData = null, onEditComplete = null }) => {
   const { isMobile } = useResponsive();
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [reportId, setReportId] = useState(null);
+  const [reportId, setReportId] = useState(editMode && initialData ? initialData.id : null);
   const [showMapModal, setShowMapModal] = useState(false);
   const [tempMapLocation, setTempMapLocation] = useState(null);
   const fileInputRef = useRef(null);
@@ -33,27 +33,46 @@ const ReportFoundPet = () => {
 
   const [lostPets, setLostPets] = useState([]);
   const [matchedLostPet, setMatchedLostPet] = useState(null);
-  const [showMatchSuggestions, setShowMatchSuggestions] = useState(true);
+  const [showMatchSuggestions, setShowMatchSuggestions] = useState(!editMode);
 
-  const [formData, setFormData] = useState({
-    // Matching
-    matchedWithLostReport: false,
-    matchedReportId: null,
-    matchedPetName: '',
-    
-    // Simplified form fields
-    foundDate: '',
-    foundTime: '',
-    foundLocation: '',
-    foundAddress: '',
-    foundLatitude: null,
-    foundLongitude: null,
-    photos: [],
-    finderName: '',
-    contactPhone: '',
-    contactEmail: '',
-    additionalInfo: ''
-  });
+  const getInitialFormData = () => {
+    if (editMode && initialData) {
+      return {
+        matchedWithLostReport: initialData.matchedWithLostReport || false,
+        matchedReportId: initialData.matchedReportId || null,
+        matchedPetName: initialData.matchedPetName || '',
+        foundDate: initialData.foundDate || '',
+        foundTime: initialData.foundTime || '',
+        foundLocation: initialData.foundLocation || '',
+        foundAddress: initialData.foundAddress || '',
+        foundLatitude: initialData.foundLatitude || null,
+        foundLongitude: initialData.foundLongitude || null,
+        photos: initialData.photos || [],
+        finderName: initialData.finderName || '',
+        contactPhone: initialData.contactPhone || '',
+        contactEmail: initialData.contactEmail || '',
+        additionalInfo: initialData.additionalInfo || ''
+      };
+    }
+    return {
+      matchedWithLostReport: false,
+      matchedReportId: null,
+      matchedPetName: '',
+      foundDate: '',
+      foundTime: '',
+      foundLocation: '',
+      foundAddress: '',
+      foundLatitude: null,
+      foundLongitude: null,
+      photos: [],
+      finderName: '',
+      contactPhone: '',
+      contactEmail: '',
+      additionalInfo: ''
+    };
+  };
+
+  const [formData, setFormData] = useState(getInitialFormData());
 
   const getSteps = () => {
     if (matchedLostPet) {
@@ -264,26 +283,48 @@ const ReportFoundPet = () => {
         type: photo.type
       }));
 
-      // Create report
-      const foundPetsRef = ref(db, 'foundPets');
-      const newReportRef = push(foundPetsRef);
-      
-      const reportData = {
-        ...formData,
-        photos: photoData,
-        userId: user.uid,
-        userEmail: user.email,
-        status: 'found',
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        views: 0,
-        reportId: newReportRef.key
-      };
+      if (editMode && reportId) {
+        // Update existing report
+        const reportRef = ref(db, `foundPets/${reportId}`);
+        
+        const updateData = {
+          ...formData,
+          photos: photoData,
+          updatedAt: Date.now()
+        };
 
-      await set(newReportRef, reportData);
+        await update(reportRef, updateData);
+        
+        setSubmitted(true);
+        
+        // Call edit complete callback if provided
+        if (onEditComplete) {
+          setTimeout(() => {
+            onEditComplete();
+          }, 2000);
+        }
+      } else {
+        // Create new report
+        const foundPetsRef = ref(db, 'foundPets');
+        const newReportRef = push(foundPetsRef);
+        
+        const reportData = {
+          ...formData,
+          photos: photoData,
+          userId: user.uid,
+          userEmail: user.email,
+          status: 'found',
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          views: 0,
+          reportId: newReportRef.key
+        };
 
-      setReportId(newReportRef.key);
-      setSubmitted(true);
+        await set(newReportRef, reportData);
+
+        setReportId(newReportRef.key);
+        setSubmitted(true);
+      }
 
     } catch (error) {
       console.error('Error submitting report:', error);

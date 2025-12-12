@@ -13,6 +13,7 @@ import {
 import { FiCheckCircle, FiX } from 'react-icons/fi';
 import { getDatabase, ref, onValue, query, orderByChild } from 'firebase/database';
 import LostFoundPetDetail from './LostFoundPetDetail';
+import ReportFoundPet from './ReportFoundPet';
 import useResponsive from '../../hooks/useResponsive';
 
 const BrowseFoundPets = () => {
@@ -23,6 +24,8 @@ const BrowseFoundPets = () => {
   const [selectedPet, setSelectedPet] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [editingPet, setEditingPet] = useState(null);
+  const [showEditForm, setShowEditForm] = useState(false);
   
   const [filters, setFilters] = useState({
     petType: 'all',
@@ -447,12 +450,66 @@ const BrowseFoundPets = () => {
 
       {/* Pet Detail Modal */}
       <AnimatePresence>
-        {selectedPet && (
+        {selectedPet && !showEditForm && (
           <LostFoundPetDetail
             pet={selectedPet}
             type="found"
             onClose={() => setSelectedPet(null)}
+            onEdit={(pet) => {
+              setEditingPet(pet);
+              setShowEditForm(true);
+              setSelectedPet(null);
+            }}
+            onDelete={() => {
+              setSelectedPet(null);
+            }}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Edit Form Modal */}
+      <AnimatePresence>
+        {showEditForm && editingPet && (
+          <motion.div
+            className="fixed inset-0 z-50 bg-black/50 overflow-y-auto"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <div className="min-h-screen flex items-center justify-center p-4">
+              <motion.div
+                className="bg-gradient-to-br from-violet-50 via-purple-50 to-indigo-50 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto"
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+              >
+                <div className="p-6">
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent">
+                      Edit Found Pet Report
+                    </h2>
+                    <button
+                      onClick={() => {
+                        setShowEditForm(false);
+                        setEditingPet(null);
+                      }}
+                      className="p-2 hover:bg-white rounded-lg transition-colors"
+                    >
+                      <FiX className="text-2xl text-gray-600" />
+                    </button>
+                  </div>
+                  <ReportFoundPet
+                    editMode={true}
+                    initialData={editingPet}
+                    onEditComplete={() => {
+                      setShowEditForm(false);
+                      setEditingPet(null);
+                    }}
+                  />
+                </div>
+              </motion.div>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
