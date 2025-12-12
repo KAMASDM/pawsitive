@@ -117,7 +117,7 @@ const PetDetailShimmer = () => {
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .shimmer-effect {
           position: absolute;
           top: 0;

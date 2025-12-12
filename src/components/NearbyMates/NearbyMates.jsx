@@ -627,7 +627,7 @@ const NearbyMates = () => {
             </motion.div>
           )}
         </AnimatePresence>
-        {loading ? (
+        {loading || locationLoading ? (
           <div className="min-h-screen bg-lavender-50 p-6">
             <div className="max-w-7xl mx-auto">
               <SkeletonLoader type="list" count={9} />
@@ -635,17 +635,20 @@ const NearbyMates = () => {
           </div>
         ) : filteredPets.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {filteredPets.map((pet) => (
-              <PetCard
-                key={pet.id}
-                pet={pet}
-                onRequestMating={() => {
-                  setSelectedPet(pet);
-                  setShowRequestModal(true);
-                }}
-                onViewDetails={() => navigate(`/pet-detail/${pet.id}`)}
-              />
-            ))}
+            {filteredPets.map((pet) => {
+              const petSlug = pet.slug || `${pet.name?.toLowerCase().replace(/\s+/g, '-')}-${pet.id.slice(-6)}`;
+              return (
+                <PetCard
+                  key={pet.id}
+                  pet={pet}
+                  onRequestMating={() => {
+                    setSelectedPet(pet);
+                    setShowRequestModal(true);
+                  }}
+                  onViewDetails={() => navigate(`/pet-detail/${petSlug}`)}
+                />
+              );
+            })}
           </div>
         ) : (
           <div className="bg-white rounded-2xl shadow-md p-6 sm:p-8 text-center border border-lavender-100">
