@@ -64,11 +64,29 @@ const PetDetail = () => {
             foundPet = { ...petSnapshot.val(), id: actualPetId, userId: ownerId };
           }
         } else {
-          // Not a slug, try direct pet lookup - we need to find which user owns this pet
-          // Since we can't read all userPets, redirect to the slug-based URL if available
-          setError("Please use the View button from the pet card or the pet's public profile link");
-          setLoading(false);
-          return;
+          // Not a slug - try to find the pet by searching all users
+          const userPetsRef = ref(database, "userPets");
+          const allPetsSnapshot = await get(userPetsRef);
+          
+          if (allPetsSnapshot.exists()) {
+            const allUsersData = allPetsSnapshot.val();
+            
+            // Search through all users to find the pet
+            for (const userId of Object.keys(allUsersData)) {
+              const userPets = allUsersData[userId];
+              if (userPets && userPets[petId]) {
+                foundPet = { ...userPets[petId], id: petId, userId: userId };
+                ownerId = userId;
+                break;
+              }
+            }
+          }
+          
+          if (!foundPet) {
+            setError("Pet not found");
+            setLoading(false);
+            return;
+          }
         }
         
         if (foundPet) {
