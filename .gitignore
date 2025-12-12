@@ -68,3 +68,5 @@ google-credentials.json
 # API Keys (backup safety)
 *-api-key.json
 *-config.json
+# Local Netlify folder
+.netlify

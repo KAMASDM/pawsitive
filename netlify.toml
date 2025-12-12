@@ -2,6 +2,13 @@
   command = "npm run build"
   publish = "build"
 
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# Note: Scheduled functions need to be configured via Netlify UI or API
+# Schedule: 30 3 * * * (3:30 AM UTC = 9:00 AM IST daily)
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
