@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ref, get, set } from "firebase/database";
+import { ref, get, set, query, orderByChild, equalTo } from "firebase/database";
 import { database, auth } from "../../firebase";
 import { sendMatingRequestNotification } from "../../services/notificationService";
 import {
@@ -114,7 +114,9 @@ const NearbyMates = () => {
   useEffect(() => {
     const fetchAvailablePets = async () => {
       setLoading(true);
-      if (!userLocation || !selectedUserPet) return;
+      if (!userLocation || !selectedUserPet) {
+        return;
+      }
       try {
         const userPetsRef = ref(database, "userPets");
         const snapshot = await get(userPetsRef);
@@ -122,46 +124,52 @@ const NearbyMates = () => {
         if (snapshot.exists()) {
           const allPets = [];
           const petsData = snapshot.val();
+          console.log('[NearbyMates] Total users with pets:', Object.keys(petsData).length);
 
           Object.keys(petsData).forEach((userId) => {
             if (userId === user?.uid) return;
 
             const userPets = petsData[userId];
+            if (!userPets) return;
+            
             Object.keys(userPets).forEach((petId) => {
               const pet = userPets[petId];
-              if (pet.availableForMating) {
-                const petLocation = {
-                  latitude: userLocation.latitude + (Math.random() - 0.5) * 0.1,
-                  longitude:
-                    userLocation.longitude + (Math.random() - 0.5) * 0.1,
-                };
+              if (!pet || !pet.availableForMating) return;
+              
+              console.log('[NearbyMates] Found available pet:', pet.name);
+              const petLocation = {
+                latitude: userLocation.latitude + (Math.random() - 0.5) * 0.1,
+                longitude:
+                  userLocation.longitude + (Math.random() - 0.5) * 0.1,
+              };
 
-                const distance = calculateDistance(
-                  userLocation.latitude,
-                  userLocation.longitude,
-                  petLocation.latitude,
-                  petLocation.longitude
-                );
+              const distance = calculateDistance(
+                userLocation.latitude,
+                userLocation.longitude,
+                petLocation.latitude,
+                petLocation.longitude
+              );
 
-                const ownerData = {
-                  id: userId,
-                  displayName: "Pet Owner",
-                };
+              const ownerData = {
+                id: userId,
+                displayName: "Pet Owner",
+              };
 
-                allPets.push({
-                  ...pet,
-                  id: petId,
-                  userId: userId,
-                  distance: distance.toFixed(1),
-                  location: petLocation,
-                  owner: ownerData,
-                });
-              }
+              allPets.push({
+                ...pet,
+                id: petId,
+                userId: userId,
+                distance: distance.toFixed(1),
+                location: petLocation,
+                owner: ownerData,
+              });
             });
           });
           allPets.sort((a, b) => a.distance - b.distance);
+          console.log('[NearbyMates] Found', allPets.length, 'pets available for mating');
           setAvailablePets(allPets);
         } else {
+          console.log('[NearbyMates] No pets data in database');
           setAvailablePets([]);
         }
       } catch (error) {
@@ -174,7 +182,7 @@ const NearbyMates = () => {
     if (userLocation && selectedUserPet) {
       fetchAvailablePets();
     }
-  }, [userLocation, selectedUserPet, user]);
+  }, [userLocation, selectedUserPet?.id, user?.uid]); // Only refetch when these specific values change
 
   useEffect(() => {
     if (!selectedUserPet || availablePets.length === 0) {
@@ -335,6 +343,41 @@ const NearbyMates = () => {
                 className="px-6 py-3 bg-lavender-600 hover:bg-lavender-700 text-white rounded-full transition-colors duration-300"
               >
                 Try Again
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Check if user has no pets
+  if (!loading && userPets.length === 0) {
+    return (
+      <div className="min-h-screen bg-lavender-50 p-4 sm:p-8">
+        <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-lg p-6 sm:p-8">
+          <div className="flex flex-col items-center text-center">
+            <div className="h-24 w-24 bg-lavender-100 rounded-full flex items-center justify-center mb-6">
+              <FaPaw className="h-12 w-12 text-lavender-500" />
+            </div>
+            <h2 className="text-2xl font-bold text-lavender-900 mb-2">
+              No Pets Added Yet
+            </h2>
+            <p className="text-gray-600 mb-6">
+              You need to add at least one pet to your profile before you can find mates.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={() => navigate(-1)}
+                className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-full transition-colors duration-300"
+              >
+                Go Back
+              </button>
+              <button
+                onClick={() => navigate('/profile')}
+                className="px-6 py-3 bg-lavender-600 hover:bg-lavender-700 text-white rounded-full transition-colors duration-300"
+              >
+                Add Your Pet
               </button>
             </div>
           </div>
@@ -611,23 +654,43 @@ const NearbyMates = () => {
                 <FaPaw className="h-10 w-10 text-lavender-300" />
               </div>
               <h3 className="text-xl font-bold text-lavender-900 mb-2">
-                No Matching Pets Found
+                {availablePets.length === 0 ? "No Pets Available for Mating" : "No Matching Pets Found"}
               </h3>
               <p className="text-gray-600 max-w-md mx-auto mb-6">
-                We couldn't find any pets that match your criteria. Try
-                adjusting your filters or check back later.
+                {availablePets.length === 0 ? (
+                  <>
+                    There are currently no pets marked as available for mating in your area. 
+                    <br /><br />
+                    <strong>Want to find mates for your pet?</strong>
+                    <br />
+                    Go to your Profile → Edit your pet → Enable "Available for Mating" toggle
+                  </>
+                ) : (
+                  "We couldn't find any pets that match your criteria. Try adjusting your filters or check back later."
+                )}
               </p>
-              <button
-                onClick={() => {
-                  setShowFilters(true);
-                  setMaxDistance(50);
-                  setActiveCategory("all");
-                  setSearchQuery("");
-                }}
-                className="px-6 py-3 bg-lavender-600 hover:bg-lavender-700 text-white rounded-full transition-colors duration-300"
-              >
-                Adjust Filters
-              </button>
+              <div className="flex flex-col sm:flex-row gap-3">
+                {availablePets.length === 0 ? (
+                  <button
+                    onClick={() => navigate('/profile')}
+                    className="px-6 py-3 bg-lavender-600 hover:bg-lavender-700 text-white rounded-full transition-colors duration-300"
+                  >
+                    Go to Profile
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setShowFilters(true);
+                      setMaxDistance(50);
+                      setActiveCategory("all");
+                      setSearchQuery("");
+                    }}
+                    className="px-6 py-3 bg-lavender-600 hover:bg-lavender-700 text-white rounded-full transition-colors duration-300"
+                  >
+                    Adjust Filters
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         )}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ref, get, set } from "firebase/database";
+import { ref, get, set, query, orderByChild, equalTo } from "firebase/database";
 import { database, auth } from "../../firebase";
 import { useNavigate } from "react-router-dom";
 import {
@@ -254,7 +254,9 @@ const AdoptPet = () => {
   useEffect(() => {
     const fetchAvailablePets = async () => {
       setLoading(true);
-      if (!userLocation) return;
+      if (!userLocation) {
+        return;
+      }
 
       try {
         const userPetsRef = ref(database, "userPets");
@@ -263,47 +265,53 @@ const AdoptPet = () => {
         if (snapshot.exists()) {
           const allPets = [];
           const petsData = snapshot.val();
+          console.log('[AdoptPet] Total users with pets:', Object.keys(petsData).length);
 
           Object.keys(petsData).forEach((userId) => {
             if (userId === user?.uid) return;
 
             const userPets = petsData[userId];
+            if (!userPets) return;
+            
             Object.keys(userPets).forEach((petId) => {
               const pet = userPets[petId];
-              if (pet.availableForAdoption) {
-                const petLocation = {
-                  latitude: userLocation.latitude + (Math.random() - 0.5) * 0.1,
-                  longitude:
-                    userLocation.longitude + (Math.random() - 0.5) * 0.1,
-                };
+              if (!pet || !pet.availableForAdoption) return;
+              
+              console.log('[AdoptPet] Found available pet:', pet.name);
+              const petLocation = {
+                latitude: userLocation.latitude + (Math.random() - 0.5) * 0.1,
+                longitude:
+                  userLocation.longitude + (Math.random() - 0.5) * 0.1,
+              };
 
-                const distance = calculateDistance(
-                  userLocation.latitude,
-                  userLocation.longitude,
-                  petLocation.latitude,
-                  petLocation.longitude
-                );
+              const distance = calculateDistance(
+                userLocation.latitude,
+                userLocation.longitude,
+                petLocation.latitude,
+                petLocation.longitude
+              );
 
-                const ownerData = {
-                  id: userId,
-                  displayName: "Pet Owner",
-                };
+              const ownerData = {
+                id: userId,
+                displayName: "Pet Owner",
+              };
 
-                allPets.push({
-                  ...pet,
-                  id: petId,
-                  userId: userId,
-                  distance: distance.toFixed(1),
-                  location: petLocation,
-                  owner: ownerData,
-                });
-              }
+              allPets.push({
+                ...pet,
+                id: petId,
+                userId: userId,
+                distance: distance.toFixed(1),
+                location: petLocation,
+                owner: ownerData,
+              });
             });
           });
 
           allPets.sort((a, b) => a.distance - b.distance);
+          console.log('[AdoptPet] Found', allPets.length, 'pets available for adoption');
           setAvailablePets(allPets);
         } else {
+          console.log('[AdoptPet] No pets data in database');
           setAvailablePets([]);
         }
       } catch (error) {
@@ -316,7 +324,7 @@ const AdoptPet = () => {
     if (userLocation) {
       fetchAvailablePets();
     }
-  }, [userLocation, user]);
+  }, [userLocation, user?.uid]); // Only refetch when these specific values change
 
   useEffect(() => {
     if (availablePets.length === 0) {
@@ -661,26 +669,45 @@ const AdoptPet = () => {
               <FiHeart className="text-pink-500 text-2xl" />
             </div>
             <h3 className="text-xl font-bold text-gray-800 mb-2">
-              No Pets Found
+              {availablePets.length === 0 ? "No Pets Available for Adoption" : "No Pets Found"}
             </h3>
             <p className="text-gray-600 text-center mb-6 max-w-md">
-              {availablePets.length === 0
-                ? "There are no pets available for adoption at the moment. Please check back later."
-                : "No pets match your current filters. Try adjusting your search criteria."}
+              {availablePets.length === 0 ? (
+                <>
+                  There are no pets available for adoption in your area at the moment.
+                  <br /><br />
+                  <strong>Have a pet to rehome?</strong>
+                  <br />
+                  Go to your Profile → Edit your pet → Enable "Available for Adoption" toggle
+                </>
+              ) : (
+                "No pets match your current filters. Try adjusting your search criteria."
+              )}
             </p>
-            <button
-              onClick={() => {
-                setSelectedType("all");
-                setSelectedGender("all");
-                setSelectedBreed("all");
-                setMaxDistance(25);
-                setTabValue(0);
-                setIsFiltersOpen(true); // Open filters after reset
-              }}
-              className="flex items-center px-6 py-3 bg-lavender-600 text-white rounded-lg hover:bg-lavender-700 transition-colors"
-            >
-              Reset Filters
-            </button>
+            <div className="flex flex-col sm:flex-row gap-3">
+              {availablePets.length === 0 ? (
+                <button
+                  onClick={() => navigate('/profile')}
+                  className="flex items-center px-6 py-3 bg-lavender-600 text-white rounded-lg hover:bg-lavender-700 transition-colors"
+                >
+                  Go to Profile
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    setSelectedType("all");
+                    setSelectedGender("all");
+                    setSelectedBreed("all");
+                    setMaxDistance(25);
+                    setTabValue(0);
+                    setIsFiltersOpen(true);
+                  }}
+                  className="flex items-center px-6 py-3 bg-lavender-600 text-white rounded-lg hover:bg-lavender-700 transition-colors"
+                >
+                  Reset Filters
+                </button>
+              )}
+            </div>
           </div>
         )}
 

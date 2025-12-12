@@ -126,30 +126,32 @@ const MobileVersion = ({ activeTab, setActiveTab, showSearchOptions, setShowSear
                 <span className="text-violet-600 text-sm font-medium">Add Pet</span>
               </motion.button>
               {userPets.slice(0, 3).map((pet, index) => {
-                const petSlug = pet.slug || `${pet.petName?.toLowerCase().replace(/\s+/g, '-')}-${pet.id.slice(-6)}`;
-                console.log("Pet card:", pet.petName, "Slug:", petSlug); // Debug log
+                const petSlug = pet.slug || `${pet.name?.toLowerCase().replace(/\s+/g, '-')}-${pet.id.slice(-6)}`;
+                console.log("Pet card:", pet.name, "Slug:", petSlug); // Debug log
                 
                 return (
                   <motion.div
                     key={pet.id}
                     onClick={() => navigate(`/pet/${petSlug}`)}
-                    className="bg-white rounded-2xl shadow-md border border-violet-100 hover:shadow-lg transition-all duration-300 cursor-pointer flex-shrink-0 w-32"
+                    className="bg-white rounded-2xl shadow-md border border-violet-100 hover:shadow-lg transition-all duration-300 cursor-pointer flex-shrink-0 w-32 overflow-hidden"
                     whileHover={{ scale: 1.05, y: -3 }}
                     whileTap={{ scale: 0.95 }}
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.1 }}
                   >
-                    <div className="h-24 bg-gradient-to-br from-violet-200 to-purple-200 rounded-t-2xl flex items-center justify-center relative overflow-hidden">
-                      {pet.profilePicture ? (
-                        <img src={pet.profilePicture} alt={pet.petName} className="w-full h-full object-cover" />
+                    {/* Image Section */}
+                    <div className="h-32 bg-gradient-to-br from-violet-200 to-purple-200 rounded-t-2xl flex items-center justify-center relative overflow-hidden">
+                      {pet.image ? (
+                        <img src={pet.image} alt={pet.name} className="w-full h-full object-cover" />
                       ) : (
-                        <div className="text-4xl">{pet.petType === 'dog' ? '🐕' : pet.petType === 'cat' ? '🐈' : '🐾'}</div>
+                        <div className="text-4xl">{pet.type === 'dog' ? '🐕' : pet.type === 'cat' ? '🐈' : '🐾'}</div>
                       )}
                     </div>
-                    <div className="p-3">
-                      <h3 className="font-semibold text-slate-800 text-sm truncate">{pet.petName}</h3>
-                      <p className="text-violet-600 text-xs truncate">{pet.breed || pet.petType}</p>
+                    {/* Info Section */}
+                    <div className="p-3 bg-white">
+                      <h3 className="font-semibold text-slate-800 text-sm truncate">{pet.name}</h3>
+                      <p className="text-violet-600 text-xs truncate">{pet.breed || pet.type}</p>
                     </div>
                   </motion.div>
                 );

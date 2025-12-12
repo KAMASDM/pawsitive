@@ -29,6 +29,9 @@ const ReportLostPet = ({ editMode = false, initialData = null, onEditComplete = 
   const [reportId, setReportId] = useState(editMode && initialData ? initialData.id : null);
   const [showMapModal, setShowMapModal] = useState(false);
   const [tempMapLocation, setTempMapLocation] = useState(null);
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [qrImageUrl, setQrImageUrl] = useState('');
+  const [qrShareLink, setQrShareLink] = useState('');
   const fileInputRef = useRef(null);
   const auth = getAuth();
   const user = auth.currentUser;
@@ -219,6 +222,16 @@ const ReportLostPet = ({ editMode = false, initialData = null, onEditComplete = 
       
       setShowMapModal(false);
     }
+  };
+
+  const handleOpenQR = () => {
+    const link = reportId
+      ? `${window.location.origin}/lost-and-found?lostId=${reportId}`
+      : window.location.href;
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(link)}`;
+    setQrShareLink(link);
+    setQrImageUrl(qrUrl);
+    setShowQRModal(true);
   };
 
   const validateStep = () => {
@@ -1004,6 +1017,7 @@ const ReportLostPet = ({ editMode = false, initialData = null, onEditComplete = 
                   <FaShareAlt /> Share
                 </motion.button>
                 <motion.button
+                  onClick={handleOpenQR}
                   className="px-6 py-3 bg-gray-800 text-white rounded-xl font-medium flex items-center gap-2"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -1029,6 +1043,63 @@ const ReportLostPet = ({ editMode = false, initialData = null, onEditComplete = 
 
   return (
     <>
+      {/* QR Code Modal */}
+      <AnimatePresence>
+        {showQRModal && (
+          <motion.div
+            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowQRModal(false)}
+          >
+            <motion.div
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="bg-gray-900 text-white p-4 flex items-center justify-between">
+                <div className="font-bold">QR Code</div>
+                <button
+                  onClick={() => setShowQRModal(false)}
+                  className="p-2 hover:bg-white/10 rounded-full"
+                >
+                  <FiX size={20} />
+                </button>
+              </div>
+              <div className="p-6 text-center space-y-4">
+                {qrImageUrl ? (
+                  <img src={qrImageUrl} alt="QR code" className="mx-auto w-56 h-56" />
+                ) : (
+                  <div className="text-gray-600">Generating QR code...</div>
+                )}
+                {qrShareLink && (
+                  <div className="text-sm text-gray-700 break-words">
+                    <div className="font-medium mb-1">Share link:</div>
+                    <a
+                      href={qrShareLink}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-violet-600 underline"
+                    >
+                      {qrShareLink}
+                    </a>
+                  </div>
+                )}
+                <button
+                  onClick={() => setShowQRModal(false)}
+                  className="mt-2 px-6 py-2 rounded-xl bg-gray-900 text-white font-medium"
+                >
+                  Close
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Map Location Picker Modal */}
       <AnimatePresence>
         {showMapModal && (
@@ -1247,11 +1318,11 @@ const ReportLostPet = ({ editMode = false, initialData = null, onEditComplete = 
       </motion.div>
 
       {/* Navigation Buttons */}
-      <div className="flex gap-4">
+      <div className={`flex gap-4 ${isMobile ? 'pb-24' : 'pb-4'}`}>
         {currentStep > 1 && (
           <motion.button
             onClick={handlePrevious}
-            className="flex-1 px-6 py-4 bg-white border-2 border-violet-200 text-violet-600 rounded-xl font-medium flex items-center justify-center gap-2"
+            className="flex-1 px-6 py-4 bg-white border-2 border-violet-200 text-violet-600 rounded-xl font-medium flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-shadow"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
@@ -1263,7 +1334,7 @@ const ReportLostPet = ({ editMode = false, initialData = null, onEditComplete = 
           <motion.button
             onClick={handleNext}
             disabled={!validateStep()}
-            className={`flex-1 px-6 py-4 rounded-xl font-medium flex items-center justify-center gap-2 ${
+            className={`flex-1 px-6 py-4 rounded-xl font-medium flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-shadow ${
               validateStep()
                 ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white'
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
@@ -1277,7 +1348,7 @@ const ReportLostPet = ({ editMode = false, initialData = null, onEditComplete = 
           <motion.button
             onClick={handleSubmit}
             disabled={loading || !validateStep()}
-            className={`flex-1 px-6 py-4 rounded-xl font-medium flex items-center justify-center gap-2 ${
+            className={`flex-1 px-6 py-4 rounded-xl font-medium flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-shadow ${
               loading || !validateStep()
                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 : 'bg-gradient-to-r from-green-600 to-green-700 text-white'

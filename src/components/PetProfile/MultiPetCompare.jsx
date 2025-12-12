@@ -185,13 +185,13 @@ const MultiPetCompare = ({ pets }) => {
                         const currentWeight = pet.weightHistory 
                           ? Object.values(pet.weightHistory).sort((a, b) => new Date(b.date) - new Date(a.date))[0]?.weight 
                           : pet.weight;
-                        return currentWeight ? `${currentWeight} kg` : 'Not set';
+                        return currentWeight ? `${parseFloat(currentWeight).toFixed(1)} kg` : 'Not set';
                       })}
                       compareNumbers={comparedPets.map(pet => {
                         const currentWeight = pet.weightHistory 
                           ? Object.values(pet.weightHistory).sort((a, b) => new Date(b.date) - new Date(a.date))[0]?.weight 
                           : pet.weight;
-                        return currentWeight || 0;
+                        return parseFloat(currentWeight) || 0;
                       })}
                     />
                     <ComparisonRow
@@ -247,7 +247,8 @@ const MultiPetCompare = ({ pets }) => {
                       label="Medical Conditions"
                       icon={<span>🩺</span>}
                       values={comparedPets.map(pet => {
-                        const conditions = pet.medical?.conditions || [];
+                        const conditions = pet.medicalConditions || pet.medical?.conditions || [];
+                        if (typeof conditions === 'string') return conditions || 'None';
                         return conditions.length > 0 ? conditions.join(', ') : 'None';
                       })}
                     />
@@ -255,7 +256,8 @@ const MultiPetCompare = ({ pets }) => {
                       label="Allergies"
                       icon={<span>⚠️</span>}
                       values={comparedPets.map(pet => {
-                        const allergies = pet.medical?.allergies || [];
+                        const allergies = pet.allergies || pet.medical?.allergies || [];
+                        if (typeof allergies === 'string') return allergies || 'None';
                         return allergies.length > 0 ? allergies.join(', ') : 'None';
                       })}
                     />

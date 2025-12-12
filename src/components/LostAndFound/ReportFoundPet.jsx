@@ -93,6 +93,7 @@ const ReportFoundPet = ({ editMode = false, initialData = null, onEditComplete =
   };
 
   const steps = getSteps();
+  const totalSteps = steps.length;
 
   // Fetch lost pets for matching
   useEffect(() => {
@@ -254,8 +255,7 @@ const ReportFoundPet = ({ editMode = false, initialData = null, onEditComplete =
 
   const handleNext = () => {
     if (validateStep()) {
-      const maxStep = matchedLostPet ? 3 : 4;
-      setCurrentStep(prev => Math.min(prev + 1, maxStep));
+      setCurrentStep(prev => Math.min(prev + 1, totalSteps));
     } else {
       alert('Please fill in all required fields');
     }
@@ -1511,7 +1511,7 @@ const ReportFoundPet = ({ editMode = false, initialData = null, onEditComplete =
           </motion.button>
         )}
         
-        {currentStep < 6 ? (
+        {currentStep < totalSteps ? (
           <motion.button
             onClick={handleNext}
             disabled={!validateStep()}

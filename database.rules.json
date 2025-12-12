@@ -13,6 +13,7 @@
       }
     },
     "userPets": {
+      ".read": "auth != null",
       "$userId": {
         ".read": "true",
         "$petId": {

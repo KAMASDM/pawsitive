@@ -42,6 +42,7 @@ const VaccinationDialog = ({
   onSave,
   isEditMode,
   petType,
+  petDateOfBirth,
   loading = false,
 }) => {
   const currentVaccination = vaccination;
@@ -51,6 +52,7 @@ const VaccinationDialog = ({
   const [vaccineSearch, setVaccineSearch] = useState("");
   const [vaccineDropdownOpen, setVaccineDropdownOpen] = useState(false);
   const [customVaccine, setCustomVaccine] = useState("");
+  const [dateError, setDateError] = useState("");
 
   useEffect(() => {
     if (open) {
@@ -121,6 +123,16 @@ const VaccinationDialog = ({
 
   const handleDateChange = (e) => {
     const newDate = e.target.value ? new Date(e.target.value) : null;
+    setDateError("");
+    
+    // Validate that vaccination date is not before pet's date of birth
+    if (newDate && petDateOfBirth) {
+      const birthDate = new Date(petDateOfBirth);
+      if (newDate < birthDate) {
+        setDateError("Vaccination date cannot be before the pet's date of birth");
+      }
+    }
+    
     setCurrentVaccination({
       ...currentVaccination,
       date: newDate.toDateString(),
@@ -137,6 +149,7 @@ const VaccinationDialog = ({
 
   const handleSaveClick = async () => {
     if (!currentVaccination?.name || !currentVaccination?.date) return;
+    if (dateError) return; // Don't save if there are date validation errors
     await onSave();
   };
 
@@ -296,11 +309,21 @@ const VaccinationDialog = ({
                     type="date"
                     value={formatDateForInput(currentVaccination?.date)}
                     onChange={handleDateChange}
-                    className="w-full px-4 py-2 border border-lavender-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-lavender-500 focus:border-transparent pr-10"
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent pr-10 ${
+                      dateError
+                        ? 'border-red-500 focus:ring-red-500'
+                        : 'border-lavender-200 focus:ring-lavender-500'
+                    }`}
                     disabled={loading}
                   />
                   <FiCalendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 </div>
+                {dateError && (
+                  <p className="mt-1 text-xs text-red-500 flex items-center">
+                    <span className="mr-1">⚠️</span>
+                    {dateError}
+                  </p>
+                )}
               </div>
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -358,10 +381,12 @@ const VaccinationDialog = ({
                   disabled={
                     !currentVaccination?.name ||
                     !currentVaccination?.date ||
+                    dateError ||
                     loading
                   }
                   className={`px-4 py-2 rounded-lg flex items-center justify-center min-w-24 ${!currentVaccination?.name ||
                     !currentVaccination?.date ||
+                    dateError ||
                     loading
                     ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                     : "bg-lavender-600 hover:bg-lavender-700 text-white"
