@@ -7,65 +7,16 @@ import { ref as dbRef, onValue } from 'firebase/database';
 import { database } from '../../firebase';
 import * as geofire from 'geofire-common';
 
-// Helper function to get marker icon based on place type
-const getMarkerIcon = (placeType, isPetFriendly) => {
-  const color = isPetFriendly ? '#10b981' : '#ef4444'; // green or red
-  const strokeColor = '#ffffff';
-  
-  // SVG paths for different place types
-  const icons = {
-    park: {
-      // Tree/Park icon
-      path: 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm-1 13v-3H9v3H7v-3c0-1.1.9-2 2-2h2V8c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1v3h2c1.1 0 2 .9 2 2v3h-2v-3h-2v3h-2z',
-      scale: 1.8,
-    },
-    shelter: {
-      // House/Shelter icon
-      path: 'M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z',
-      scale: 1.8,
-    },
-    vet: {
-      // Medical cross icon  
-      path: 'M19 3H5c-1.1 0-1.99.9-1.99 2L3 19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h4V6h4v4h4v4z',
-      scale: 1.8,
-    },
-    hospital: {
-      // Hospital icon
-      path: 'M19 3H5c-1.1 0-1.99.9-1.99 2L3 19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h4V6h4v4h4v4z',
-      scale: 1.8,
-    },
-    store: {
-      // Shopping bag icon
-      path: 'M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h2v2c0 .55.45 1 1 1s1-.45 1-1V8h4v2c0 .55.45 1 1 1s1-.45 1-1V8h2v12z',
-      scale: 1.8,
-    },
-    cafe: {
-      // Coffee cup icon
-      path: 'M20 3H4v10c0 2.21 1.79 4 4 4h6c2.21 0 4-1.79 4-4v-3h2c1.11 0 2-.9 2-2V5c0-1.11-.89-2-2-2zm0 5h-2V5h2v3zM2 21h18v-2H2v2z',
-      scale: 1.8,
-    },
-    grooming: {
-      // Scissors icon
-      path: 'M9.64 7.64c.23-.5.36-1.05.36-1.64 0-2.21-1.79-4-4-4S2 3.79 2 6s1.79 4 4 4c.59 0 1.14-.13 1.64-.36L10 12l-2.36 2.36C7.14 14.13 6.59 14 6 14c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4c0-.59-.13-1.14-.36-1.64L12 14l7 7h3v-1L9.64 7.64zM6 8c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm0 12c-1.1 0-2-.89-2-2s.9-2 2-2 2 .89 2 2-.9 2-2 2zm6-7.5c-.28 0-.5-.22-.5-.5s.22-.5.5-.5.5.22.5.5-.22.5-.5.5zM19 3l-6 6 2 2 7-7V3z',
-      scale: 1.6,
-    },
-    other: {
-      // Generic pin icon
-      path: 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z',
-      scale: 1.8,
-    },
-  };
-
-  const iconData = icons[placeType] || icons.other;
+// Helper function to get marker icon based on pet friendliness
+const getMarkerIcon = (isPetFriendly) => {
+  const iconUrl = isPetFriendly 
+    ? '/paw-marker-green.svg' 
+    : '/paw-marker-red.svg';
   
   return {
-    path: iconData.path,
-    fillColor: color,
-    fillOpacity: 1,
-    strokeColor: strokeColor,
-    strokeWeight: 2,
-    scale: iconData.scale,
-    anchor: new window.google.maps.Point(12, 24),
+    url: iconUrl,
+    scaledSize: new window.google.maps.Size(40, 53),
+    anchor: new window.google.maps.Point(20, 53),
   };
 };
 
@@ -267,7 +218,7 @@ const TaggedPlacesMap = ({ userLocation, radius = 5 }) => {
               key={place.id}
               position={place.location}
               onClick={() => setSelectedPlace(place)}
-              icon={getMarkerIcon(place.placeType || 'other', place.isPetFriendly)}
+              icon={getMarkerIcon(place.isPetFriendly)}
             />
           ))}
 

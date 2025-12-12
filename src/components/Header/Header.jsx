@@ -397,15 +397,22 @@ const NotificationsPopup = ({ requests, isOpen, onClose, onUpdateRequest }) => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
+      // Check if the click is on the notification button itself
+      const notificationButton = event.target.closest('button');
+      if (notificationButton && notificationButton.querySelector('.mr-1')) {
+        return; // Don't close if clicking the notification button
+      }
+      
       if (popupRef.current && !popupRef.current.contains(event.target)) {
         onClose();
       }
     };
     if (isOpen) {
-      document.addEventListener("click", handleClickOutside);
+      // Use mousedown instead of click to capture earlier
+      document.addEventListener('mousedown', handleClickOutside);
     }
     return () => {
-      document.removeEventListener("click", handleClickOutside);
+      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isOpen, onClose]);
 
@@ -419,7 +426,7 @@ const NotificationsPopup = ({ requests, isOpen, onClose, onUpdateRequest }) => {
   return (
     <div
       ref={popupRef}
-      className="absolute top-full mt-2 right-0 w-80 md:w-96 bg-white rounded-lg shadow-2xl border border-gray-200 z-50 overflow-hidden"
+      className="absolute top-full mt-2 right-0 w-80 md:w-96 bg-white rounded-lg shadow-2xl border border-gray-200 z-[9999] overflow-hidden"
     >
       <div className="p-4 border-b border-gray-100 flex justify-between items-center">
         <h3 className="font-semibold text-gray-800">Mating Requests</h3>
@@ -683,7 +690,7 @@ const Header = () => {
 
   return (
     <>
-      <header className={`sticky top-0 z-50 transition-all duration-300 ${getHeaderClasses()}`}>
+      <header className={`sticky top-0 z-[100] transition-all duration-300 ${getHeaderClasses()}`}>
         <div className="container mx-auto px-4 py-3">
           <div className="flex justify-between items-center">
             <Link to="/dashboard" className="flex items-center hover:opacity-90 transition-opacity">
@@ -722,7 +729,10 @@ const Header = () => {
 
               <div className="relative">
                 <button
-                  onClick={() => setIsNotificationsOpen((prev) => !prev)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsNotificationsOpen((prev) => !prev);
+                  }}
                   className={`flex items-center px-3 py-2 rounded-lg transition-all duration-300 ${getButtonClasses()}`}
                 >
                   <FiBell className="mr-1" />
@@ -753,7 +763,10 @@ const Header = () => {
             <div className="md:hidden flex items-center space-x-3">
               <div className="relative">
                 <button
-                  onClick={() => setIsNotificationsOpen((prev) => !prev)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsNotificationsOpen((prev) => !prev);
+                  }}
                   className={`transition-colors ${getMobileIconClasses()}`}
                 >
                   <FiBell size={20} />
