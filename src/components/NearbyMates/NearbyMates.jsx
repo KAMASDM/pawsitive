@@ -24,6 +24,7 @@ const NearbyMates = () => {
 
   const [loading, setLoading] = useState(true);
   const [locationLoading, setLocationLoading] = useState(true);
+  const [petsLoading, setPetsLoading] = useState(true);
   const [availablePets, setAvailablePets] = useState([]);
   const [filteredPets, setFilteredPets] = useState([]);
   const [userPets, setUserPets] = useState([]);
@@ -113,7 +114,7 @@ const NearbyMates = () => {
 
   useEffect(() => {
     const fetchAvailablePets = async () => {
-      setLoading(true);
+      setPetsLoading(true);
       if (!userLocation || !selectedUserPet) {
         return;
       }
@@ -175,7 +176,7 @@ const NearbyMates = () => {
       } catch (error) {
         console.error("Error fetching available pets:", error);
       } finally {
-        setLoading(false);
+        setPetsLoading(false);
       }
     };
 
@@ -627,7 +628,7 @@ const NearbyMates = () => {
             </motion.div>
           )}
         </AnimatePresence>
-        {loading || locationLoading ? (
+        {loading || locationLoading || petsLoading ? (
           <div className="min-h-screen bg-lavender-50 p-6">
             <div className="max-w-7xl mx-auto">
               <SkeletonLoader type="list" count={9} />
