@@ -177,7 +177,7 @@ const PetAgeCalculator = ({ initialPet }) => {
               </div>
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center">
                 <p className="text-sm opacity-90 mb-1">Life Stage</p>
-                <p className="text-2xl font-bold">{ageInfo.lifeStage?.stage}</p>
+                <p className="text-lg font-bold break-words overflow-hidden">{ageInfo.lifeStage?.stage}</p>
               </div>
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center">
                 <p className="text-sm opacity-90 mb-1">Days Old</p>
@@ -195,8 +195,8 @@ const PetAgeCalculator = ({ initialPet }) => {
             transition={{ delay: 0.1 }}
             className={`bg-gradient-to-r ${ageInfo.lifeStage?.color || 'from-violet-400 to-purple-400'} rounded-2xl p-6 text-white shadow-lg`}
           >
-            <h3 className="text-xl font-bold mb-3 flex items-center gap-2">
-              <FiInfo className="w-6 h-6" />
+            <h3 className="text-lg font-bold mb-3 flex items-center gap-2 break-words overflow-hidden">
+              <FiInfo className="w-6 h-6 flex-shrink-0" />
               {ageInfo.lifeStage?.stage} Stage
             </h3>
             <p className="text-lg opacity-90 mb-4">{ageInfo.lifeStage?.description}</p>
