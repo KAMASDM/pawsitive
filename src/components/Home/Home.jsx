@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { FaSearch, FaDog, FaCat, FaArrowRight, FaHeart, FaPlus } from "react-icons/fa";
@@ -8,9 +8,11 @@ import { auth, database } from "../../firebase";
 import { ref, get } from "firebase/database";
 import SiteTour from "../Tour/SiteTour";
 import PlaceTagging from "../PlaceTagging/PlaceTagging";
-import TaggedPlacesMap from "../PlaceTagging/TaggedPlacesMap";
 import PlaceNotifications from "../PlaceTagging/PlaceNotifications";
 import UpcomingReminders from "./UpcomingReminders";
+
+// Lazy load the map component for better performance
+const TaggedPlacesMap = lazy(() => import("../PlaceTagging/TaggedPlacesMap"));
 
 // --- Mobile-specific data (Unchanged) ---
 const quickActionsMobile = [
@@ -350,7 +352,16 @@ const MobileVersion = ({ activeTab, setActiveTab, showSearchOptions, setShowSear
             Tag Place
           </button>
         </div>
-        <TaggedPlacesMap userLocation={userLocation} radius={5} />
+        <Suspense fallback={
+          <div className="bg-white rounded-2xl shadow-lg p-8 flex items-center justify-center" style={{ height: '400px' }}>
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading map...</p>
+            </div>
+          </div>
+        }>
+          <TaggedPlacesMap userLocation={userLocation} radius={5} />
+        </Suspense>
       </motion.div>
     </div>
   );
@@ -514,7 +525,16 @@ const DesktopVersion = ({ showSearchOptions, setShowSearchOptions, handlePetType
             </motion.button>
           </div>
 
-          <TaggedPlacesMap userLocation={userLocation} radius={5} />
+          <Suspense fallback={
+            <div className="bg-white rounded-2xl shadow-lg p-8 flex items-center justify-center" style={{ height: '500px' }}>
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading map...</p>
+              </div>
+            </div>
+          }>
+            <TaggedPlacesMap userLocation={userLocation} radius={5} />
+          </Suspense>
         </div>
       </motion.div>
     </div>
