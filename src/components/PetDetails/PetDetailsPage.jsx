@@ -83,6 +83,8 @@ const PetDetailsPage = () => {
   const [editingAllergy, setEditingAllergy] = useState(false);
   const [newCondition, setNewCondition] = useState('');
   const [newAllergy, setNewAllergy] = useState('');
+  const [vaccinationDateError, setVaccinationDateError] = useState('');
+  const [vaccinationNextDueError, setVaccinationNextDueError] = useState('');
   const [activeTab, setActiveTab] = useState('health'); // health, weight, expenses, age
 
   // Listen to auth state
@@ -190,11 +192,67 @@ const PetDetailsPage = () => {
       notes: '',
       isNew: true
     });
+    setVaccinationDateError('');
+    setVaccinationNextDueError('');
+  };
+
+  const handleVaccinationDateChange = (newDateValue) => {
+    setVaccinationDateError('');
+    
+    // Validate that vaccination date is not before pet's date of birth
+    if (newDateValue && pet?.dateOfBirth) {
+      const vaccinationDate = new Date(newDateValue);
+      const birthDate = new Date(pet.dateOfBirth);
+      vaccinationDate.setHours(0, 0, 0, 0);
+      birthDate.setHours(0, 0, 0, 0);
+      
+      if (vaccinationDate < birthDate) {
+        setVaccinationDateError("Vaccination date cannot be before the pet's date of birth");
+      }
+    }
+    
+    setEditingVaccination({...editingVaccination, date: newDateValue});
+  };
+
+  const handleVaccinationNextDueChange = (newDateValue) => {
+    setVaccinationNextDueError('');
+    
+    // Validate next due date
+    if (newDateValue && pet?.dateOfBirth) {
+      const nextDueDate = new Date(newDateValue);
+      const birthDate = new Date(pet.dateOfBirth);
+      nextDueDate.setHours(0, 0, 0, 0);
+      birthDate.setHours(0, 0, 0, 0);
+      
+      if (nextDueDate < birthDate) {
+        setVaccinationNextDueError("Next due date cannot be before the pet's date of birth");
+      }
+    }
+    
+    // Validate that next due date is not before or same as vaccination date
+    if (newDateValue && editingVaccination?.date) {
+      const nextDueDate = new Date(newDateValue);
+      const vaccinationDate = new Date(editingVaccination.date);
+      nextDueDate.setHours(0, 0, 0, 0);
+      vaccinationDate.setHours(0, 0, 0, 0);
+      
+      if (nextDueDate <= vaccinationDate) {
+        setVaccinationNextDueError("Next due date must be after the vaccination date");
+      }
+    }
+    
+    setEditingVaccination({...editingVaccination, nextDue: newDateValue});
   };
 
   const handleSaveVaccination = async () => {
     if (!editingVaccination?.name || !editingVaccination?.date) {
       alert('Please fill in vaccination name and date');
+      return;
+    }
+
+    // Check for validation errors
+    if (vaccinationDateError || vaccinationNextDueError) {
+      alert('Please fix the date errors before saving');
       return;
     }
 
@@ -220,6 +278,8 @@ const PetDetailsPage = () => {
     const success = await savePetToFirebase(updatedPet);
     if (success) {
       setEditingVaccination(null);
+      setVaccinationDateError('');
+      setVaccinationNextDueError('');
     }
   };
 
@@ -569,18 +629,38 @@ const PetDetailsPage = () => {
                             <input
                               type="date"
                               value={editingVaccination?.date || ''}
-                              onChange={(e) => setEditingVaccination({...editingVaccination, date: e.target.value})}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                              onChange={(e) => handleVaccinationDateChange(e.target.value)}
+                              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:border-transparent ${
+                                vaccinationDateError
+                                  ? 'border-red-500 focus:ring-red-500'
+                                  : 'border-gray-300 focus:ring-green-500'
+                              }`}
                             />
+                            {vaccinationDateError && (
+                              <p className="mt-1 text-xs text-red-500 flex items-center">
+                                <span className="mr-1">⚠️</span>
+                                {vaccinationDateError}
+                              </p>
+                            )}
                           </div>
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Next Due Date</label>
                             <input
                               type="date"
                               value={editingVaccination?.nextDue || ''}
-                              onChange={(e) => setEditingVaccination({...editingVaccination, nextDue: e.target.value})}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                              onChange={(e) => handleVaccinationNextDueChange(e.target.value)}
+                              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:border-transparent ${
+                                vaccinationNextDueError
+                                  ? 'border-red-500 focus:ring-red-500'
+                                  : 'border-gray-300 focus:ring-green-500'
+                              }`}
                             />
+                            {vaccinationNextDueError && (
+                              <p className="mt-1 text-xs text-red-500 flex items-center">
+                                <span className="mr-1">⚠️</span>
+                                {vaccinationNextDueError}
+                              </p>
+                            )}
                           </div>
                         </div>
                         <div>
@@ -678,18 +758,38 @@ const PetDetailsPage = () => {
                         <input
                           type="date"
                           value={editingVaccination.date}
-                          onChange={(e) => setEditingVaccination({...editingVaccination, date: e.target.value})}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                          onChange={(e) => handleVaccinationDateChange(e.target.value)}
+                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:border-transparent ${
+                            vaccinationDateError
+                              ? 'border-red-500 focus:ring-red-500'
+                              : 'border-gray-300 focus:ring-green-500'
+                          }`}
                         />
+                        {vaccinationDateError && (
+                          <p className="mt-1 text-xs text-red-500 flex items-center">
+                            <span className="mr-1">⚠️</span>
+                            {vaccinationDateError}
+                          </p>
+                        )}
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Next Due Date</label>
                         <input
                           type="date"
                           value={editingVaccination.nextDue || ''}
-                          onChange={(e) => setEditingVaccination({...editingVaccination, nextDue: e.target.value})}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                          onChange={(e) => handleVaccinationNextDueChange(e.target.value)}
+                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:border-transparent ${
+                            vaccinationNextDueError
+                              ? 'border-red-500 focus:ring-red-500'
+                              : 'border-gray-300 focus:ring-green-500'
+                          }`}
                         />
+                        {vaccinationNextDueError && (
+                          <p className="mt-1 text-xs text-red-500 flex items-center">
+                            <span className="mr-1">⚠️</span>
+                            {vaccinationNextDueError}
+                          </p>
+                        )}
                       </div>
                     </div>
                     <div>

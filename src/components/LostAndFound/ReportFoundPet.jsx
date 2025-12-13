@@ -11,7 +11,9 @@ import {
   FaCheckCircle,
   FaArrowRight,
   FaArrowLeft,
-  FaHospital
+  FaHospital,
+  FaInfoCircle,
+  FaFileAlt
 } from 'react-icons/fa';
 import { FiUpload, FiX, FiAlertCircle } from 'react-icons/fi';
 import { getDatabase, ref, push, set, onValue, update } from 'firebase/database';
@@ -83,12 +85,14 @@ const ReportFoundPet = ({ editMode = false, initialData = null, onEditComplete =
         { number: 3, title: 'Contact', icon: FaPhone }
       ];
     }
-    // Full form for unmatched pets - keep original if needed
+    // Full form for unmatched pets - 6 steps
     return [
       { number: 1, title: 'Pet Info', icon: FaDog },
       { number: 2, title: 'Appearance', icon: FaCamera },
       { number: 3, title: 'Found', icon: FaMapMarkerAlt },
-      { number: 4, title: 'Contact', icon: FaPhone }
+      { number: 4, title: 'Status', icon: FaInfoCircle },
+      { number: 5, title: 'Contact', icon: FaPhone },
+      { number: 6, title: 'Details', icon: FaFileAlt }
     ];
   };
 
@@ -225,7 +229,7 @@ const ReportFoundPet = ({ editMode = false, initialData = null, onEditComplete =
 
   const validateStep = () => {
     if (matchedLostPet) {
-      // Simplified validation for matched pets
+      // Simplified validation for matched pets (3 steps)
       switch (currentStep) {
         case 1:
           return formData.foundDate && formData.foundLocation;
@@ -237,7 +241,7 @@ const ReportFoundPet = ({ editMode = false, initialData = null, onEditComplete =
           return false;
       }
     } else {
-      // Full validation for unmatched pets
+      // Full validation for unmatched pets (6 steps)
       switch (currentStep) {
         case 1:
           return formData.petType && formData.approximateBreed;
@@ -246,7 +250,11 @@ const ReportFoundPet = ({ editMode = false, initialData = null, onEditComplete =
         case 3:
           return formData.foundDate && formData.foundLocation;
         case 4:
+          return formData.currentStatus; // Current Status step
+        case 5:
           return formData.finderName && formData.contactPhone && formData.contactEmail;
+        case 6:
+          return true; // Additional details are optional
         default:
           return false;
       }
