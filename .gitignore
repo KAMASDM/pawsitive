@@ -70,3 +70,6 @@ google-credentials.json
 *-config.json
 # Local Netlify folder
 .netlify
+
+# Generated at build time — do not commit
+public/firebase-messaging-sw.js

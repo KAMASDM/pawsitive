@@ -29,6 +29,7 @@
   },
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/generate-firebase-sw.js",
     "build": "vite build && npm run generate-sitemap",
     "generate-sitemap": "node generate-sitemap.js",
     "preview": "vite preview",
