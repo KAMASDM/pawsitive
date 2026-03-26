@@ -20,6 +20,7 @@ import { getDatabase, ref, push, set, onValue, update } from 'firebase/database'
 import { getAuth } from 'firebase/auth';
 import { GoogleMap, Marker } from '@react-google-maps/api';
 import useResponsive from '../../hooks/useResponsive';
+import MapStatusCard from '../../UI/MapStatusCard';
 
 const ReportFoundPet = ({ editMode = false, initialData = null, onEditComplete = null }) => {
   const { isMobile } = useResponsive();
@@ -29,9 +30,45 @@ const ReportFoundPet = ({ editMode = false, initialData = null, onEditComplete =
   const [reportId, setReportId] = useState(editMode && initialData ? initialData.id : null);
   const [showMapModal, setShowMapModal] = useState(false);
   const [tempMapLocation, setTempMapLocation] = useState(null);
+  const [isMapLoaded, setIsMapLoaded] = useState(false);
+  const [mapError, setMapError] = useState(false);
+  const [mapCheckKey, setMapCheckKey] = useState(0);
   const fileInputRef = useRef(null);
   const auth = getAuth();
   const user = auth.currentUser;
+
+  useEffect(() => {
+    if (window.google && window.google.maps) {
+      setIsMapLoaded(true);
+      setMapError(false);
+      return;
+    }
+
+    const checkInterval = setInterval(() => {
+      if (window.google && window.google.maps) {
+        setIsMapLoaded(true);
+        setMapError(false);
+        clearInterval(checkInterval);
+      }
+    }, 100);
+
+    const timeout = setTimeout(() => {
+      clearInterval(checkInterval);
+      setIsMapLoaded(false);
+      setMapError(true);
+    }, 10000);
+
+    return () => {
+      clearInterval(checkInterval);
+      clearTimeout(timeout);
+    };
+  }, [mapCheckKey]);
+
+  const handleRetryMapLoad = () => {
+    setIsMapLoaded(false);
+    setMapError(false);
+    setMapCheckKey((prev) => prev + 1);
+  };
 
   const [lostPets, setLostPets] = useState([]);
   const [matchedLostPet, setMatchedLostPet] = useState(null);
@@ -1277,8 +1314,12 @@ const ReportFoundPet = ({ editMode = false, initialData = null, onEditComplete =
               </div>
 
               {/* Map Container */}
-              <div className="relative" style={{ height: '500px' }}>
-                {window.google ? (
+              <div className="relative h-[60vh] md:h-[500px]">
+                {mapError ? (
+                  <MapStatusCard variant="error" tone="green" onRetry={handleRetryMapLoad} />
+                ) : !isMapLoaded ? (
+                  <MapStatusCard variant="loading" tone="green" />
+                ) : (
                   <GoogleMap
                     mapContainerStyle={{ width: '100%', height: '100%' }}
                     center={tempMapLocation || { lat: 28.6139, lng: 77.2090 }}
@@ -1309,13 +1350,6 @@ const ReportFoundPet = ({ editMode = false, initialData = null, onEditComplete =
                       />
                     )}
                   </GoogleMap>
-                ) : (
-                  <div className="flex items-center justify-center h-full bg-gray-100">
-                    <div className="text-center">
-                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-                      <p className="text-gray-600">Loading map...</p>
-                    </div>
-                  </div>
                 )}
                 
                 {/* Floating instruction card */}

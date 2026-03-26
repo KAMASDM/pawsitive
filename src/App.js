@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, Navigate } from "react-router-dom";
 import Home from "./components/Home/Home";
 import Login from "./components/Login/Login";
 import Header from "./components/Header/Header";
@@ -25,6 +25,9 @@ import FAQ from "./components/FAQ/FAQ";
 import TestNotifications from "./components/TestNotifications/TestNotifications";
 import LostAndFound from "./components/LostAndFound/LostAndFound";
 import UpdateNotification from "./components/PWA/UpdateNotification";
+import PetSelector from "./components/MyPets/PetSelector";
+import PetDashboard from "./components/MyPets/PetDashboard";
+import PlaceTaggingPage from "./components/PlaceTagging/PlaceTaggingPage";
 import { useVaccinationReminder } from "./hooks/useVaccinationReminder";
 import { initializeBadgeManagement } from "./services/badgeService";
 
@@ -53,17 +56,31 @@ function App() {
       <UpdateNotification />
       <div className="min-h-screen bg-lavender-50 flex flex-col">
         <Header />
-        <main className="flex-grow mb-12 sm:mb-0">
+        <main className="flex-grow mb-[70px] sm:mb-0">
           <Routes>
             <Route path="/" element={<Login />} />
+
+            {/* Pet-first landing — replaces /dashboard */}
             <Route
-              path="/dashboard"
+              path="/my-pets"
               element={
                 <PR>
-                  <Home />
+                  <PetSelector />
                 </PR>
               }
             />
+            <Route
+              path="/my-pets/:petId"
+              element={
+                <PR>
+                  <PetDashboard />
+                </PR>
+              }
+            />
+
+            {/* Legacy redirect so old bookmarks/links still work */}
+            <Route path="/dashboard" element={<Navigate to="/my-pets" replace />} />
+
             <Route
               path="/faq"
               element={
@@ -193,6 +210,14 @@ function App() {
               element={
                 <PR>
                   <LostAndFound />
+                </PR>
+              }
+            />
+            <Route
+              path="/place-tagging"
+              element={
+                <PR>
+                  <PlaceTaggingPage />
                 </PR>
               }
             />

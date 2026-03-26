@@ -17,7 +17,7 @@ const BottomNavigation = () => {
   const menus = [
     { name: "FAQ", icon: <MdQuestionAnswer />, path: "/faq" },
     { name: "Resource", icon: <BsGrid />, path: "/resource" },
-    { name: "Home", icon: <FiHome />, path: "/dashboard" },
+    { name: "Home", icon: <FiHome />, path: "/my-pets" },
     { name: "Profile", icon: <FiUser />, path: "/profile" },
     { name: "Logout", icon: <FiLogOut />, path: "/", onClick: handleLogout },
   ];
@@ -33,7 +33,7 @@ const BottomNavigation = () => {
       case "/resource":
         setActiveMenu(1);
         break;
-      case "/dashboard":
+      case "/my-pets":
         setActiveMenu(2);
         break;
       case "/profile":

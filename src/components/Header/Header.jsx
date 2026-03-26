@@ -397,18 +397,17 @@ const NotificationsPopup = ({ requests, isOpen, onClose, onUpdateRequest }) => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      // Check if the click is on the notification button itself
-      const notificationButton = event.target.closest('button');
-      if (notificationButton && notificationButton.querySelector('.mr-1')) {
-        return; // Don't close if clicking the notification button
+      // Don't close when clicking the notification toggle button
+      const notificationButton = event.target.closest('[data-notification-toggle="true"]');
+      if (notificationButton) {
+        return;
       }
-      
+
       if (popupRef.current && !popupRef.current.contains(event.target)) {
         onClose();
       }
     };
     if (isOpen) {
-      // Use mousedown instead of click to capture earlier
       document.addEventListener('mousedown', handleClickOutside);
     }
     return () => {
@@ -426,7 +425,7 @@ const NotificationsPopup = ({ requests, isOpen, onClose, onUpdateRequest }) => {
   return (
     <div
       ref={popupRef}
-      className="absolute top-full mt-2 right-0 w-80 md:w-96 bg-white rounded-lg shadow-2xl border border-gray-200 z-[9999] overflow-hidden"
+      className="absolute top-full mt-2 right-2 left-2 w-auto max-w-[calc(100vw-1rem)] sm:left-auto sm:right-0 sm:w-80 md:w-96 bg-white rounded-lg shadow-2xl border border-gray-200 z-[9999] overflow-hidden"
     >
       <div className="p-4 border-b border-gray-100 flex justify-between items-center">
         <h3 className="font-semibold text-gray-800">Mating Requests</h3>
@@ -522,8 +521,8 @@ const Header = () => {
   const [loading, setLoading] = useState(true);
   const [isScrolled, setIsScrolled] = useState(false);
 
-  // Check if we're on the home/dashboard page
-  const isHomePage = location.pathname === "/dashboard" || location.pathname === "/";
+  // Check if we're on the pet-first landing pages
+  const isHomePage = location.pathname === "/my-pets" || location.pathname.startsWith("/my-pets/") || location.pathname === "/";
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -693,7 +692,7 @@ const Header = () => {
       <header className={`sticky top-0 z-[100] transition-all duration-300 ${getHeaderClasses()}`}>
         <div className="container mx-auto px-4 py-3">
           <div className="flex justify-between items-center">
-            <Link to="/dashboard" className="flex items-center hover:opacity-90 transition-opacity">
+            <Link to="/my-pets" className="flex items-center hover:opacity-90 transition-opacity">
               <img src={logo} alt="Pawppy" className="h-10 mr-3" />
               <span className={`text-2xl font-bold hidden sm:inline transition-all duration-300 ${getLogoTextClasses()}`}>
                 Pawppy
@@ -703,10 +702,10 @@ const Header = () => {
             {/* Desktop Nav */}
             <nav className="hidden md:flex items-center space-x-2">
               <NavLink
-                to="/dashboard"
-                className={getNavLinkClasses(location.pathname === "/dashboard")}
+                to="/my-pets"
+                className={getNavLinkClasses(location.pathname === "/my-pets" || location.pathname.startsWith("/my-pets/"))}
               >
-                <FiHome className="mr-1" /> Home
+                <FiHome className="mr-1" /> My Pets
               </NavLink>
               <NavLink
                 to="/resource"
@@ -729,6 +728,7 @@ const Header = () => {
 
               <div className="relative">
                 <button
+                  data-notification-toggle="true"
                   onClick={(e) => {
                     e.stopPropagation();
                     setIsNotificationsOpen((prev) => !prev);
@@ -763,6 +763,7 @@ const Header = () => {
             <div className="md:hidden flex items-center space-x-3">
               <div className="relative">
                 <button
+                  data-notification-toggle="true"
                   onClick={(e) => {
                     e.stopPropagation();
                     setIsNotificationsOpen((prev) => !prev);
@@ -798,11 +799,11 @@ const Header = () => {
           <div className={`md:hidden animate-fadeIn ${getMobileMenuClasses()}`}>
             <div className="container mx-auto px-4 py-2 space-y-1">
               <MobileNavLink
-                to="/dashboard"
+                to="/my-pets"
                 onClick={() => setIsMenuOpen(false)}
-                className={getMobileNavLinkClasses(location.pathname === "/dashboard")}
+                className={getMobileNavLinkClasses(location.pathname === "/my-pets" || location.pathname.startsWith("/my-pets/"))}
               >
-                <FiHome className="mr-2" /> Home
+                <FiHome className="mr-2" /> My Pets
               </MobileNavLink>
               <MobileNavLink
                 to="/resource"

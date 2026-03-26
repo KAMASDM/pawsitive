@@ -91,9 +91,9 @@ const MobileVersion = ({ activeTab, setActiveTab, showSearchOptions, setShowSear
   }, []);
 
   const servicesMobile = [ // Using a separate services array for mobile to keep its original design
-    { icon: "🏥", title: "Emergency Care", description: "24/7 veterinary emergency services", badge: "24/7", color: "purple", route: "/resource", state: { category: "all", subCategory: "Health & Wellness" } },
-    { icon: "🐾", title: "Pet Adoption", description: "Find your perfect companion", badge: "500+", color: "violet", route: "/resource", state: { category: "all", subCategory: "Adoption" } },
-    { icon: "💕", title: "Pet Mating", description: "Safe breeding services", badge: "Verified", color: "indigo", route: "/nearby-mates" }
+    { icon: "🏥", title: "Emergency Care", description: "24/7 veterinary emergency services", badge: "24/7", badgeClass: "bg-purple-100 text-purple-700", route: "/resource", state: { category: "all", subCategory: "Health & Wellness" } },
+    { icon: "🐾", title: "Pet Adoption", description: "Find your perfect companion", badge: "500+", badgeClass: "bg-violet-100 text-violet-700", route: "/resource", state: { category: "all", subCategory: "Adoption" } },
+    { icon: "💕", title: "Pet Mating", description: "Safe breeding services", badge: "Verified", badgeClass: "bg-indigo-100 text-indigo-700", route: "/nearby-mates" }
   ];
 
   return (
@@ -275,7 +275,7 @@ const MobileVersion = ({ activeTab, setActiveTab, showSearchOptions, setShowSear
                       <p className="text-gray-600 text-sm">{service.description}</p>
                     </div>
                     <div className="flex flex-col items-end">
-                      <span className={`bg-${service.color}-100 text-${service.color}-700 px-2 py-1 rounded-full text-xs font-medium mb-1`}>{service.badge}</span>
+                      <span className={`${service.badgeClass} px-2 py-1 rounded-full text-xs font-medium mb-1`}>{service.badge}</span>
                       <FaArrowRight className="text-violet-500" />
                     </div>
                   </div>
@@ -603,7 +603,7 @@ const Home = () => {
   const handleTourComplete = () => {
     setShowTour(false);
     // Remove tour param from URL
-    navigate('/dashboard', { replace: true });
+    navigate('/my-pets', { replace: true });
   };
 
   return (

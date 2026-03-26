@@ -6,6 +6,7 @@ import { GoogleMap, Marker } from '@react-google-maps/api';
 import { ref as dbRef, push, set, serverTimestamp, get } from 'firebase/database';
 import { database, auth } from '../../firebase';
 import * as geofire from 'geofire-common';
+import MapStatusCard from '../../UI/MapStatusCard';
 
 const PlaceTagging = ({ isOpen, onClose, userLocation }) => {
   const [step, setStep] = useState(1); // 1: Location, 2: Details
@@ -19,32 +20,42 @@ const PlaceTagging = ({ isOpen, onClose, userLocation }) => {
   const [success, setSuccess] = useState(false);
   const [map, setMap] = useState(null); // eslint-disable-line no-unused-vars
   const [isMapLoaded, setIsMapLoaded] = useState(false);
+  const [mapError, setMapError] = useState(false);
+  const [mapCheckKey, setMapCheckKey] = useState(0);
 
   // Check if Google Maps is already loaded (from App.js)
   useEffect(() => {
     if (window.google && window.google.maps) {
       setIsMapLoaded(true);
-    } else {
-      // Poll for Google Maps to be loaded
-      const checkInterval = setInterval(() => {
-        if (window.google && window.google.maps) {
-          setIsMapLoaded(true);
-          clearInterval(checkInterval);
-        }
-      }, 100);
-      
-      // Cleanup after 10 seconds
-      const timeout = setTimeout(() => {
-        clearInterval(checkInterval);
-        setIsMapLoaded(true); // Proceed anyway
-      }, 10000);
-      
-      return () => {
-        clearInterval(checkInterval);
-        clearTimeout(timeout);
-      };
+      setMapError(false);
+      return;
     }
-  }, []);
+
+    const checkInterval = setInterval(() => {
+      if (window.google && window.google.maps) {
+        setIsMapLoaded(true);
+        setMapError(false);
+        clearInterval(checkInterval);
+      }
+    }, 100);
+
+    const timeout = setTimeout(() => {
+      clearInterval(checkInterval);
+      setIsMapLoaded(false);
+      setMapError(true);
+    }, 10000);
+
+    return () => {
+      clearInterval(checkInterval);
+      clearTimeout(timeout);
+    };
+  }, [mapCheckKey]);
+
+  const handleRetryMapLoad = () => {
+    setIsMapLoaded(false);
+    setMapError(false);
+    setMapCheckKey((prev) => prev + 1);
+  };
 
   useEffect(() => {
     if (userLocation && !selectedLocation) {
@@ -278,18 +289,19 @@ const PlaceTagging = ({ isOpen, onClose, userLocation }) => {
                       <p className="text-sm text-gray-600">Tap on the map to select the place you want to tag</p>
                     </div>
 
-                    {!isMapLoaded ? (
-                      <div className="rounded-2xl overflow-hidden border-2 border-gray-200 mb-4 h-[400px] bg-gray-100 flex items-center justify-center">
-                        <div className="text-center">
-                          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600 mx-auto mb-4"></div>
-                          <p className="text-gray-600 text-sm">Loading map...</p>
-                        </div>
+                    {mapError ? (
+                      <div className="rounded-2xl overflow-hidden border-2 border-gray-200 mb-4 h-[60vh] md:h-[400px]">
+                        <MapStatusCard variant="error" tone="violet" onRetry={handleRetryMapLoad} />
+                      </div>
+                    ) : !isMapLoaded ? (
+                      <div className="rounded-2xl overflow-hidden border-2 border-gray-200 mb-4 h-[60vh] md:h-[400px]">
+                        <MapStatusCard variant="loading" tone="violet" />
                       </div>
                     ) : (
-                      <div className="rounded-2xl overflow-hidden border-2 border-gray-200 mb-4">
+                      <div className="rounded-2xl overflow-hidden border-2 border-gray-200 mb-4 h-[60vh] md:h-[400px]">
                         <GoogleMap
-                          mapContainerStyle={{ width: '100%', height: '400px' }}
-                          center={selectedLocation || userLocation || { lat: 0, lng: 0 }}
+                          mapContainerStyle={{ width: '100%', height: '100%' }}
+                          center={selectedLocation || userLocation || { lat: 20.5937, lng: 78.9629 }}
                           zoom={17}
                           onClick={onMapClick}
                           onLoad={onLoad}

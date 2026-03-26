@@ -286,6 +286,12 @@ const PetProfile = () => {
   const birthday = getNextBirthday(pet?.dateOfBirth);
   const isOwner = currentUser?.uid === pet?.userId;
 
+  // Private event types — only the owner should see these
+  const PRIVATE_EVENT_TYPES = ['veterinary'];
+  const visibleEvents = isOwner
+    ? events
+    : events.filter(e => !PRIVATE_EVENT_TYPES.includes(e.type));
+
   console.log('PetProfile: About to render, pet:', pet, 'loading:', loading, 'notFound:', notFound);
 
   if (!pet) {
@@ -525,7 +531,7 @@ const PetProfile = () => {
             
             {/* Events Timeline */}
             <PetEventsTimeline
-              events={events}
+              events={visibleEvents}
               pet={pet}
               isOwner={isOwner}
               birthday={birthday}
@@ -544,7 +550,7 @@ const PetProfile = () => {
           currentUser={currentUser}
           viewMode="feed"
           birthday={birthday}
-          events={events}
+          events={visibleEvents}
           onShare={() => setShowShareModal(true)}
         />
       </div>

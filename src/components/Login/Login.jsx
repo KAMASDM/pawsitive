@@ -89,12 +89,8 @@ const Login = () => {
       const result = await signInWithPopup(auth, googleProvider);
       const isNewUser = await createUserProfile(result.user);
       
-      // Navigate with tour flag if new user
-      if (isNewUser) {
-        navigate("/dashboard?tour=true");
-      } else {
-        navigate("/dashboard");
-      }
+      // Navigate to pet-first landing after login
+      navigate("/my-pets");
     } catch (error) {
       console.error("Error during Google sign in:", error);
       setError(error.message || "Failed to sign in with Google");
@@ -137,11 +133,7 @@ const Login = () => {
       const snapshot = await get(userRef);
       const userData = snapshot.val();
       
-      if (userData && !userData.hasCompletedTour) {
-        navigate("/dashboard?tour=true");
-      } else {
-        navigate("/dashboard");
-      }
+      navigate("/my-pets");
     } catch (error) {
       console.error("Error during email sign in:", error);
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
@@ -279,8 +271,7 @@ const Login = () => {
       
       // Check ref instead of state to avoid race condition
       if (user && !isShowingVerification.current) {
-        console.log("Redirecting to dashboard");
-        navigate("/dashboard");
+        navigate("/my-pets");
       }
     });
 

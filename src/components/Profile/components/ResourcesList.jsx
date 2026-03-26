@@ -247,7 +247,7 @@ const ResourcesList = ({ resources = [] }) => {
                     setSearchQuery("");
                     setActiveFilter("all");
                   } else {
-                    navigate("/dashboard");
+                    navigate("/my-pets");
                   }
                 }}
                 className="px-6 py-3 bg-lavender-600 hover:bg-lavender-700 text-white rounded-full transition-colors duration-300"

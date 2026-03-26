@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pawppy Brochure</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #1f2937;
+      --muted: #6b7280;
+      --violet: #6d5bd0;
+      --indigo: #4f46e5;
+      --mint: #10b981;
+      --sun: #f59e0b;
+      --rose: #ef4444;
+      --paper: #f7f4ff;
+      --white: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: linear-gradient(160deg, #f6f2ff 0%, #f8fbff 45%, #fff6f2 100%);
+      color: var(--ink);
+      font-family: "Space Grotesk", system-ui, -apple-system, sans-serif;
+    }
+
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 0 auto;
+      padding: 18mm 16mm 16mm;
+      background: var(--paper);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .halo {
+      position: absolute;
+      inset: -20% auto auto -15%;
+      width: 320mm;
+      height: 180mm;
+      background: radial-gradient(circle at 20% 30%, rgba(109, 91, 208, 0.25), transparent 60%),
+                  radial-gradient(circle at 70% 10%, rgba(16, 185, 129, 0.18), transparent 55%),
+                  radial-gradient(circle at 80% 60%, rgba(245, 158, 11, 0.15), transparent 50%);
+      pointer-events: none;
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 24px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand img {
+      width: 52px;
+      height: 52px;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-family: "Fraunces", serif;
+      font-size: 34px;
+      letter-spacing: 0.5px;
+    }
+
+    .tagline {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      max-width: 420px;
+    }
+
+    .cta {
+      text-align: right;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .cta strong {
+      display: block;
+      color: var(--ink);
+      font-size: 14px;
+      margin-bottom: 6px;
+    }
+
+    .hero {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 18px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .hero-card {
+      background: var(--white);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 16px 30px rgba(31, 41, 55, 0.08);
+      border: 1px solid rgba(109, 91, 208, 0.15);
+    }
+
+    .hero-card h2 {
+      margin: 0 0 10px;
+      font-family: "Fraunces", serif;
+      font-size: 26px;
+    }
+
+    .hero-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .quick-stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .stat {
+      padding: 12px;
+      border-radius: 14px;
+      background: linear-gradient(145deg, rgba(109, 91, 208, 0.1), rgba(79, 70, 229, 0.08));
+      border: 1px solid rgba(79, 70, 229, 0.18);
+    }
+
+    .stat span {
+      display: block;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .stat strong {
+      font-size: 18px;
+    }
+
+    .grid {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .card {
+      background: var(--white);
+      border-radius: 16px;
+      padding: 14px;
+      border: 1px solid rgba(31, 41, 55, 0.08);
+      box-shadow: 0 12px 24px rgba(31, 41, 55, 0.05);
+    }
+
+    .card h3 {
+      margin: 0 0 8px;
+      font-size: 14px;
+      color: var(--ink);
+    }
+
+    .card p {
+      margin: 0;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .chip.violet { background: rgba(109, 91, 208, 0.12); color: #4c3aa8; }
+    .chip.green { background: rgba(16, 185, 129, 0.12); color: #0f766e; }
+    .chip.rose { background: rgba(239, 68, 68, 0.12); color: #b91c1c; }
+    .chip.sun { background: rgba(245, 158, 11, 0.15); color: #b45309; }
+    .chip.blue { background: rgba(79, 70, 229, 0.12); color: #4338ca; }
+
+    .audience {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .audience .card {
+      min-height: 110px;
+    }
+
+    .footer {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 14px;
+      align-items: center;
+      position: relative;
+      z-index: 2;
+    }
+
+    .footer .card {
+      padding: 16px;
+    }
+
+    .cta-strip {
+      background: linear-gradient(120deg, #6d5bd0, #4f46e5);
+      color: #fff;
+      border-radius: 14px;
+      padding: 14px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .cta-strip strong {
+      font-size: 16px;
+    }
+
+    .cta-strip span {
+      font-size: 12px;
+      opacity: 0.9;
+    }
+
+    .legal {
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    @page {
+      size: A4;
+      margin: 0;
+    }
+
+    @media print {
+      body {
+        background: #ffffff;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .page {
+        box-shadow: none;
+        background: #ffffff;
+      }
+      .card, .hero-card {
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="halo"></div>
+
+    <header>
+      <div class="brand">
+        <img src="src/images/logo.png" alt="Pawppy logo" />
+        <div>
+          <h1>Pawppy</h1>
+          <p class="tagline">A unified care platform that helps pet parents, shelters, and partners coordinate care, discovery, and community support.</p>
+        </div>
+      </div>
+      <div class="cta">
+        <strong>Built for every pet journey</strong>
+        Lost &amp; Found, Care, Adoption, Mates, and Smart Reminders
+      </div>
+    </header>
+
+    <section class="hero">
+      <div class="hero-card">
+        <h2>All-in-one pet care, organized and proactive.</h2>
+        <p>
+          Pawppy helps pet owners track care, connect with trusted communities, and reunite pets faster.
+          It combines health reminders, adoption discovery, local pet-friendly places, and social profiles in one secure dashboard.
+        </p>
+      </div>
+      <div class="hero-card">
+        <div class="quick-stats">
+          <div class="stat">
+            <span>Smart health reminders</span>
+            <strong>Daily email + in-app</strong>
+          </div>
+          <div class="stat">
+            <span>Lost &amp; Found matching</span>
+            <strong>100-point scoring</strong>
+          </div>
+          <div class="stat">
+            <span>Mobile-first experience</span>
+            <strong>PWA-ready</strong>
+          </div>
+          <div class="stat">
+            <span>Community discovery</span>
+            <strong>Mates + Adoption</strong>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="card">
+        <div class="chip rose">Lost &amp; Found</div>
+        <h3>Report, browse, and reunite faster</h3>
+        <p>Guided 6-step reports, map view, and real-time match suggestions help families reconnect quickly.</p>
+      </div>
+      <div class="card">
+        <div class="chip violet">Care &amp; Health</div>
+        <h3>Reminders that keep pets on track</h3>
+        <p>Vaccination, birthday, and health checkup reminders are scheduled automatically.</p>
+      </div>
+      <div class="card">
+        <div class="chip green">Discovery</div>
+        <h3>Adoption and mates discovery</h3>
+        <p>Search, filter, and message verified profiles with a clean, mobile-first experience.</p>
+      </div>
+      <div class="card">
+        <div class="chip blue">Pet Profiles</div>
+        <h3>Share pet stories and milestones</h3>
+        <p>Social profiles, posts, and timelines with QR sharing to showcase your pet.</p>
+      </div>
+      <div class="card">
+        <div class="chip sun">Local Community</div>
+        <h3>Pet-friendly places, tagged</h3>
+        <p>Map nearby parks, vets, and cafes, plus notify nearby users when new places are tagged.</p>
+      </div>
+      <div class="card">
+        <div class="chip violet">Insights</div>
+        <h3>Track trends and expenses</h3>
+        <p>Weight and expense tracking with charts to make care decisions easier.</p>
+      </div>
+    </section>
+
+    <section class="audience">
+      <div class="card">
+        <h3>For Pet Owners</h3>
+        <p>One dashboard for care schedules, profiles, and local services. Designed for quick actions on mobile.</p>
+      </div>
+      <div class="card">
+        <h3>For Shelters &amp; Vets</h3>
+        <p>Increase visibility for adoption, connect with verified owners, and reduce lost-pet turnaround time.</p>
+      </div>
+      <div class="card">
+        <h3>For Partners</h3>
+        <p>Integrate services, advertise trusted offerings, and join a growing pet-focused community.</p>
+      </div>
+    </section>
+
+    <section class="footer">
+      <div class="card">
+        <div class="cta-strip">
+          <strong>Ready to partner or pilot?</strong>
+          <span>Let us customize a rollout for your city, shelter network, or service marketplace.</span>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Highlights</h3>
+        <p>Realtime updates, secure auth, Firebase-backed data, PWA support, scheduled reminders, and modern UI.</p>
+        <p class="legal">Pawppy is a product of Pawppy Labs. All rights reserved.</p>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

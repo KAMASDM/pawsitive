@@ -6,9 +6,11 @@ import { GoogleMap, Marker, InfoWindow } from '@react-google-maps/api';
 import { ref as dbRef, onValue } from 'firebase/database';
 import { database } from '../../firebase';
 import useResponsive from '../../hooks/useResponsive';
+import MapStatusCard from '../../UI/MapStatusCard';
 
 // Helper function to get marker icon for lost pets
 const getLostPetIcon = () => {
+  if (!window.google || !window.google.maps) return null;
   return {
     path: 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z',
     fillColor: '#ef4444',
@@ -22,6 +24,7 @@ const getLostPetIcon = () => {
 
 // Helper function to get marker icon for found pets
 const getFoundPetIcon = () => {
+  if (!window.google || !window.google.maps) return null;
   return {
     path: 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z',
     fillColor: '#10b981',
@@ -44,32 +47,42 @@ const LostFoundMap = ({ onPetClick }) => {
   const [userLocation, setUserLocation] = useState(null);
   const [mapCenter, setMapCenter] = useState({ lat: 28.6139, lng: 77.2090 }); // Default: Delhi
   const [isMapLoaded, setIsMapLoaded] = useState(false);
+  const [mapError, setMapError] = useState(false);
+  const [mapCheckKey, setMapCheckKey] = useState(0);
 
   // Check if Google Maps is already loaded (from App.js)
   useEffect(() => {
     if (window.google && window.google.maps) {
       setIsMapLoaded(true);
-    } else {
-      // Poll for Google Maps to be loaded
-      const checkInterval = setInterval(() => {
-        if (window.google && window.google.maps) {
-          setIsMapLoaded(true);
-          clearInterval(checkInterval);
-        }
-      }, 100);
-      
-      // Cleanup after 10 seconds
-      const timeout = setTimeout(() => {
-        clearInterval(checkInterval);
-        setIsMapLoaded(true); // Proceed anyway
-      }, 10000);
-      
-      return () => {
-        clearInterval(checkInterval);
-        clearTimeout(timeout);
-      };
+      setMapError(false);
+      return;
     }
-  }, []);
+
+    const checkInterval = setInterval(() => {
+      if (window.google && window.google.maps) {
+        setIsMapLoaded(true);
+        setMapError(false);
+        clearInterval(checkInterval);
+      }
+    }, 100);
+
+    const timeout = setTimeout(() => {
+      clearInterval(checkInterval);
+      setIsMapLoaded(false);
+      setMapError(true);
+    }, 10000);
+
+    return () => {
+      clearInterval(checkInterval);
+      clearTimeout(timeout);
+    };
+  }, [mapCheckKey]);
+
+  const handleRetryMapLoad = () => {
+    setIsMapLoaded(false);
+    setMapError(false);
+    setMapCheckKey((prev) => prev + 1);
+  };
 
   useEffect(() => {
     // Get user's location
@@ -157,7 +170,7 @@ const LostFoundMap = ({ onPetClick }) => {
 
   const mapContainerStyle = {
     width: '100%',
-    height: isMobile ? '70vh' : '700px'
+    height: isMobile ? '60vh' : '600px'
   };
 
   const mapOptions = {
@@ -175,13 +188,18 @@ const LostFoundMap = ({ onPetClick }) => {
     ]
   };
 
+  if (mapError) {
+    return (
+      <div className="w-full h-96">
+        <MapStatusCard variant="error" tone="violet" onRetry={handleRetryMapLoad} />
+      </div>
+    );
+  }
+
   if (!isMapLoaded) {
     return (
-      <div className="w-full h-96 bg-gray-100 rounded-2xl flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading map...</p>
-        </div>
+      <div className="w-full h-96">
+        <MapStatusCard variant="loading" tone="violet" />
       </div>
     );
   }
@@ -227,7 +245,7 @@ const LostFoundMap = ({ onPetClick }) => {
       {/* Map */}
       <div className="rounded-2xl overflow-hidden border-2 border-gray-200 shadow-lg">
         <GoogleMap
-          mapContainerStyle={{ width: '100%', height: isMobile ? '400px' : '600px' }}
+          mapContainerStyle={mapContainerStyle}
           center={mapCenter}
           zoom={12}
           onLoad={onLoad}
@@ -240,7 +258,7 @@ const LostFoundMap = ({ onPetClick }) => {
           }}
         >
           {/* User Location */}
-          {userLocation && (
+          {userLocation && window.google?.maps && (
             <Marker
               position={userLocation}
               icon={{

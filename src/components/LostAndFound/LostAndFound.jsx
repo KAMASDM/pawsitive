@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLocation } from 'react-router-dom';
 import { 
   FaSearch, 
   FaMapMarkerAlt, 
@@ -20,7 +21,10 @@ import { getDatabase, ref, onValue, query, orderByChild } from 'firebase/databas
 import useResponsive from '../../hooks/useResponsive';
 
 const LostAndFound = () => {
-  const [activeTab, setActiveTab] = useState('browse-lost');
+  const location = useLocation();
+  // Allow other pages (e.g. PetDashboard) to deep-link to a specific tab
+  const initialTab = location.state?.openTab ?? 'browse-lost';
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [stats, setStats] = useState({
     totalLost: 0,
     totalFound: 0,

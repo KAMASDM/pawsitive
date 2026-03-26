@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GoogleMap, Marker, Circle, DirectionsRenderer, useJsApiLoader } from '@react-google-maps/api';
 import { FaArrowLeft, FaPhone, FaStar, FaMapMarkerAlt, FaClock, FaGlobe, FaDirections, FaHeart, FaShare, FaRegHeart, FaMapPin, FaRoute } from 'react-icons/fa';
+import MapStatusCard from '../../UI/MapStatusCard';
 
 const libraries = ['places'];
 
@@ -628,7 +629,15 @@ const ResourceDetail = () => {
                             <h3 className="text-xl font-bold text-violet-900 mb-4 flex items-center gap-2">
                                 <FaMapPin /> Location
                             </h3>
-                            {isLoaded && (
+                            {loadError ? (
+                                <div className="w-full h-[400px]">
+                                    <MapStatusCard variant="error" tone="violet" onRetry={() => window.location.reload()} />
+                                </div>
+                            ) : !isLoaded ? (
+                                <div className="w-full h-[400px]">
+                                    <MapStatusCard variant="loading" tone="violet" />
+                                </div>
+                            ) : (
                                 <GoogleMap
                                     mapContainerStyle={mapContainerStyle}
                                     center={mapCenter}

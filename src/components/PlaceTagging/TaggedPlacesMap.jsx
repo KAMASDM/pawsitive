@@ -6,9 +6,11 @@ import { GoogleMap, Marker, InfoWindow } from '@react-google-maps/api';
 import { ref as dbRef, onValue } from 'firebase/database';
 import { database } from '../../firebase';
 import * as geofire from 'geofire-common';
+import MapStatusCard from '../../UI/MapStatusCard';
 
 // Helper function to get marker icon based on pet friendliness
 const getMarkerIcon = (isPetFriendly) => {
+  if (!window.google || !window.google.maps) return null;
   const iconUrl = isPetFriendly 
     ? '/paw-marker-green.svg' 
     : '/paw-marker-red.svg';
@@ -26,6 +28,8 @@ const TaggedPlacesMap = ({ userLocation, radius = 5 }) => {
   const [map, setMap] = useState(null);
   const [filter, setFilter] = useState('all'); // 'all', 'friendly', 'not-friendly'
   const [isMapLoaded, setIsMapLoaded] = useState(false);
+  const [mapError, setMapError] = useState(false);
+  const [mapCheckKey, setMapCheckKey] = useState(0);
 
   console.log('TaggedPlacesMap - userLocation:', userLocation, 'radius:', radius);
 
@@ -33,27 +37,35 @@ const TaggedPlacesMap = ({ userLocation, radius = 5 }) => {
   useEffect(() => {
     if (window.google && window.google.maps) {
       setIsMapLoaded(true);
-    } else {
-      // Poll for Google Maps to be loaded
-      const checkInterval = setInterval(() => {
-        if (window.google && window.google.maps) {
-          setIsMapLoaded(true);
-          clearInterval(checkInterval);
-        }
-      }, 100);
-      
-      // Cleanup after 10 seconds
-      const timeout = setTimeout(() => {
-        clearInterval(checkInterval);
-        setIsMapLoaded(true); // Proceed anyway
-      }, 10000);
-      
-      return () => {
-        clearInterval(checkInterval);
-        clearTimeout(timeout);
-      };
+      setMapError(false);
+      return;
     }
-  }, []);
+
+    const checkInterval = setInterval(() => {
+      if (window.google && window.google.maps) {
+        setIsMapLoaded(true);
+        setMapError(false);
+        clearInterval(checkInterval);
+      }
+    }, 100);
+
+    const timeout = setTimeout(() => {
+      clearInterval(checkInterval);
+      setIsMapLoaded(false);
+      setMapError(true);
+    }, 10000);
+
+    return () => {
+      clearInterval(checkInterval);
+      clearTimeout(timeout);
+    };
+  }, [mapCheckKey]);
+
+  const handleRetryMapLoad = () => {
+    setIsMapLoaded(false);
+    setMapError(false);
+    setMapCheckKey((prev) => prev + 1);
+  };
 
   useEffect(() => {
     console.log('Setting up Firebase listener for taggedPlaces...');
@@ -132,16 +144,23 @@ const TaggedPlacesMap = ({ userLocation, radius = 5 }) => {
     return date.toLocaleDateString();
   };
 
-  if (!isMapLoaded) {
+  if (mapError) {
     return (
-      <div className="w-full h-96 bg-gray-100 rounded-2xl flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading map...</p>
-        </div>
+      <div className="w-full h-96">
+        <MapStatusCard variant="error" tone="violet" onRetry={handleRetryMapLoad} />
       </div>
     );
   }
+
+  if (!isMapLoaded) {
+    return (
+      <div className="w-full h-96">
+        <MapStatusCard variant="loading" tone="violet" />
+      </div>
+    );
+  }
+
+  const defaultCenter = { lat: 20.5937, lng: 78.9629 };
 
   return (
     <div className="space-y-4">
@@ -184,8 +203,8 @@ const TaggedPlacesMap = ({ userLocation, radius = 5 }) => {
       {/* Map */}
       <div className="rounded-2xl overflow-hidden border-2 border-gray-200 shadow-lg">
         <GoogleMap
-          mapContainerStyle={{ width: '100%', height: '500px' }}
-          center={userLocation || { lat: 0, lng: 0 }}
+          mapContainerStyle={{ width: '100%', height: '60vh', minHeight: '360px' }}
+          center={userLocation || defaultCenter}
           zoom={13}
           onLoad={onLoad}
           options={{

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { ref, get, set, query, orderByChild, equalTo } from "firebase/database";
 import { database, auth } from "../../firebase";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   FiArrowLeft,
   FiHeart,
@@ -150,7 +150,10 @@ const PetDetailPopup = ({ pet, onClose, onMessageOwner }) => {
 // Main AdoptPet component with restructured layout
 const AdoptPet = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const user = auth.currentUser;
+  // petType passed from PetDashboard for automatic filtering
+  const preselectedType = location.state?.petType ?? "all";
 
   const [loading, setLoading] = useState(true);
   const [loadingUserLocation, setLoadingUserLocation] = useState(true);
@@ -177,7 +180,7 @@ const AdoptPet = () => {
   const [selectedPetForDetail, setSelectedPetForDetail] = useState(null);
 
   // Filter states
-  const [selectedType, setSelectedType] = useState("all");
+  const [selectedType, setSelectedType] = useState(preselectedType);
   const [selectedGender, setSelectedGender] = useState("all");
   const [selectedBreed, setSelectedBreed] = useState("all");
 

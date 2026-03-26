@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { ref, get, set, query, orderByChild, equalTo } from "firebase/database";
 import { database, auth } from "../../firebase";
 import { sendMatingRequestNotification } from "../../services/notificationService";
@@ -20,7 +20,10 @@ import SkeletonLoader from "../Loaders/SkeletonLoader";
 
 const NearbyMates = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const user = auth.currentUser;
+  // petId passed from PetDashboard to pre-select a specific pet
+  const preselectedPetId = location.state?.selectedPetId ?? null;
 
   const [loading, setLoading] = useState(true);
   const [locationLoading, setLocationLoading] = useState(true);
@@ -84,7 +87,11 @@ const NearbyMates = () => {
           }));
           setUserPets(petsArray);
           if (petsArray.length > 0) {
-            setSelectedUserPet(petsArray[0]);
+            // If navigated from a specific pet's dashboard, pre-select that pet
+            const preselected = preselectedPetId
+              ? petsArray.find((p) => p.id === preselectedPetId)
+              : null;
+            setSelectedUserPet(preselected || petsArray[0]);
           }
         } else {
           setUserPets([]);
