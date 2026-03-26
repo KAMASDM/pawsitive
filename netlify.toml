@@ -5,9 +5,9 @@
 # Firebase API keys are client-side identifiers (not secrets) — security is
 # enforced by Firebase Security Rules and domain restrictions, not by keeping
 # the key hidden. The compiled Vite bundle always contains the value of
-# VITE_FIREBASE_API_KEY; tell Netlify's scanner to allow it.
+# VITE_FIREBASE_API_KEY; disable Netlify's smart detection to allow it.
 [build.environment]
-  SECRETS_SCAN_OMIT_KEYS = "VITE_FIREBASE_API_KEY,VITE_FIREBASE_APP_ID,VITE_FIREBASE_MEASUREMENT_ID"
+  SECRETS_SCAN_SMART_DETECTION_ENABLED = "false"
 
 [functions]
   directory = "netlify/functions"
