@@ -5,6 +5,8 @@ import { signOut } from "firebase/auth";
 import { auth, database } from "../../firebase";
 import { ref, get } from "firebase/database";
 import { FaPlus, FaPaw } from "react-icons/fa";
+import useResponsive from "../../hooks/useResponsive";
+import Home from "../Home/Home";
 import {
   FiArrowRight,
   FiUser,
@@ -140,9 +142,17 @@ const PetCard = ({ pet, index, onClick }) => {
   );
 };
 
-// ---- Main Component ----
+// ---- Main Component (wrapper — routes desktop to Home, mobile to PetSelectorMobile) ----
 
 export default function PetSelector() {
+  const { isDesktop } = useResponsive();
+  if (isDesktop) return <Home />;
+  return <PetSelectorMobile />;
+}
+
+// ---- Mobile Component ----
+
+function PetSelectorMobile() {
   const navigate = useNavigate();
   const user = auth.currentUser;
   const [pets, setPets] = useState([]);
