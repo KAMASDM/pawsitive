@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
-import { Route, Routes, Navigate } from "react-router-dom";
+import { Route, Routes, Navigate, useLocation } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
 import Home from "./components/Home/Home";
 import Login from "./components/Login/Login";
 import Header from "./components/Header/Header";
@@ -34,6 +35,7 @@ import { initializeBadgeManagement } from "./services/badgeService";
 function App() {
   // Initialize vaccination reminder checker
   useVaccinationReminder();
+  const location = useLocation();
   
   useEffect(() => {
     // Initialize badge management for PWA
@@ -56,9 +58,21 @@ function App() {
       <UpdateNotification />
       <div className="min-h-screen bg-lavender-50 flex flex-col">
         <Header />
-        <main className="flex-grow mb-[70px] sm:mb-0">
-          <Routes>
-            <Route path="/" element={<Login />} />
+        <main className="flex-grow mb-[62px] sm:mb-0">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{
+                duration: 0.18,
+                ease: [0.25, 0.46, 0.45, 0.94],
+              }}
+              className="will-change-[opacity,transform]"
+            >
+              <Routes location={location}>
+                <Route path="/" element={<Login />} />
 
             {/* Pet-first landing — replaces /dashboard */}
             <Route
@@ -222,7 +236,9 @@ function App() {
               }
             />
             <Route path="*" element={<NotFound />} />
-          </Routes>
+              </Routes>
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
       <Footer />

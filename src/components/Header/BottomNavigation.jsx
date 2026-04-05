@@ -1,86 +1,130 @@
 import React, { useState, useEffect } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { auth } from "../../firebase"; // Ensure this path is correct
-import { FiHome, FiUser, FiLogOut } from "react-icons/fi";
-import { MdQuestionAnswer } from "react-icons/md"; // FAQ icon
-import { BsGrid } from "react-icons/bs";
+import { useLocation, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { auth } from "../../firebase";
+import { FiHome, FiUser, FiGrid, FiHelpCircle, FiLogOut } from "react-icons/fi";
+
+const MENUS = [
+  { id: "faq",      label: "FAQ",       Icon: FiHelpCircle, path: "/faq"      },
+  { id: "resource", label: "Explore",   Icon: FiGrid,       path: "/resource" },
+  { id: "home",     label: "Home",      Icon: FiHome,       path: "/my-pets"  },
+  { id: "profile",  label: "Profile",   Icon: FiUser,       path: "/profile"  },
+  { id: "logout",   label: "Logout",    Icon: FiLogOut,     path: "/"         },
+];
+
+const matchId = (pathname) => {
+  if (pathname === "/faq")             return "faq";
+  if (pathname.startsWith("/resource")) return "resource";
+  if (pathname === "/my-pets" || pathname.startsWith("/my-pets/")) return "home";
+  if (pathname === "/profile")         return "profile";
+  return null;
+};
 
 const BottomNavigation = () => {
-  const location = useLocation();
-  const navigate = useNavigate();
+  const location  = useLocation();
+  const navigate  = useNavigate();
+  const activeId  = matchId(location.pathname);
 
-  const handleLogout = () => {
-    auth.signOut();
-    navigate("/");
+  const handleTap = (menu) => {
+    if (menu.id === "logout") {
+      auth.signOut();
+      navigate("/");
+    } else {
+      navigate(menu.path);
+    }
   };
 
-  const menus = [
-    { name: "FAQ", icon: <MdQuestionAnswer />, path: "/faq" },
-    { name: "Resource", icon: <BsGrid />, path: "/resource" },
-    { name: "Home", icon: <FiHome />, path: "/my-pets" },
-    { name: "Profile", icon: <FiUser />, path: "/profile" },
-    { name: "Logout", icon: <FiLogOut />, path: "/", onClick: handleLogout },
-  ];
-
-  const { pathname } = location;
-  const [activeMenu, setActiveMenu] = useState(2); // Default to Home
-
-  useEffect(() => {
-    switch (pathname) {
-      case "/faq":
-        setActiveMenu(0);
-        break;
-      case "/resource":
-        setActiveMenu(1);
-        break;
-      case "/my-pets":
-        setActiveMenu(2);
-        break;
-      case "/profile":
-        setActiveMenu(3);
-        break;
-      default:
-        setActiveMenu(-1);
-    }
-  }, [pathname]);
-
   return (
-    <div className="fixed bottom-0 left-0 w-full md:hidden h-[70px] z-50">
-      <ul className="w-full flex justify-between items-center bg-lavender-700 text-white h-full shadow-lg">
-        {menus.map((menu, index) => (
-          <li
-            key={index}
-            className={`w-full h-full flex items-center justify-center text-center ${activeMenu === index ? "bg-lavender-800" : ""
-              }`}
-          >
-            <Link
-              onClick={() => {
-                if (menu.name !== "Logout") {
-                  setActiveMenu(index);
-                }
-                menu.onClick && menu.onClick();
-              }}
-              to={menu.path}
-              className={`${activeMenu === index ? "gap-[6px]" : "gap-1"
-                } flex flex-col items-center justify-center text-center h-full w-full`}
-            >
-              <span className={activeMenu === index ? "text-2xl" : "text-xl"}>
-                {menu.icon}
-              </span>
-              <span
-                className={`${activeMenu === index
-                  ? "text-sm bg-white text-lavender-600 px-2 mt-1 rounded-sm"
-                  : "text-xs"
-                  }`}
-              >
-                {menu.name}
-              </span>
-            </Link>
-          </li>
-        ))}
-      </ul>
+    <div
+      className="fixed bottom-0 left-0 right-0 md:hidden z-50"
+      style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+    >
+      {/* Glass card nav bar */}
+      <div className="bg-white/95 backdrop-blur-xl border-t border-gray-100 shadow-[0_-4px_24px_rgba(0,0,0,0.08)]">
+        <nav className="flex items-center justify-around px-2 h-[62px]">
+          {MENUS.map((menu) => {
+            const isActive = activeId === menu.id;
+            return (
+              <NavItem
+                key={menu.id}
+                menu={menu}
+                isActive={isActive}
+                onTap={handleTap}
+              />
+            );
+          })}
+        </nav>
+      </div>
     </div>
   );
 };
 
+/* ── Individual nav item ── */
+const NavItem = ({ menu, isActive, onTap }) => {
+  const { Icon, label, id } = menu;
+  const isLogout = id === "logout";
+
+  return (
+    <button
+      onClick={() => onTap(menu)}
+      className="relative flex flex-col items-center justify-center flex-1 h-full py-1 gap-0.5 select-none outline-none tap-highlight"
+      style={{ WebkitTapHighlightColor: "transparent" }}
+      aria-label={label}
+    >
+      {/* Active pill indicator */}
+      <AnimatePresence>
+        {isActive && (
+          <motion.div
+            key="pill"
+            layoutId="nav-indicator"
+            className="absolute top-2 w-14 h-7 rounded-full bg-violet-100"
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.5, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 500, damping: 36 }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Icon */}
+      <motion.div
+        animate={{
+          scale: isActive ? 1.08 : 1,
+          y:     isActive ? -1  : 0,
+        }}
+        transition={{ type: "spring", stiffness: 500, damping: 38 }}
+        className="relative z-10"
+      >
+        <Icon
+          size={22}
+          strokeWidth={isActive ? 2.2 : 1.7}
+          className={
+            isActive
+              ? "text-violet-600"
+              : isLogout
+              ? "text-rose-400"
+              : "text-gray-400"
+          }
+        />
+      </motion.div>
+
+      {/* Label */}
+      <motion.span
+        animate={{ opacity: isActive ? 1 : 0.55 }}
+        transition={{ duration: 0.15 }}
+        className={`text-[10px] font-semibold tracking-wide leading-none relative z-10 ${
+          isActive
+            ? "text-violet-600"
+            : isLogout
+            ? "text-rose-400"
+            : "text-gray-400"
+        }`}
+      >
+        {label}
+      </motion.span>
+    </button>
+  );
+};
+
 export default BottomNavigation;
+
