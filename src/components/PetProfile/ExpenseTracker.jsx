@@ -1,9 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiPlus, FiX, FiDollarSign, FiTrash2, FiEdit2, FiCalendar, FiPieChart, FiTrendingUp } from 'react-icons/fi';
+import { FiPlus, FiX, FiDollarSign, FiTrash2, FiEdit2, FiCalendar, FiPieChart, FiTrendingUp, FiChevronDown } from 'react-icons/fi';
 import { FaDog, FaSyringe, FaCut, FaBone, FaShoppingCart, FaHospital, FaEllipsisH } from 'react-icons/fa';
 import { ref as dbRef, update, push } from 'firebase/database';
 import { database, auth } from '../../firebase';
+
+const CURRENCIES = [
+  { code: 'USD', symbol: '$',  label: 'USD – US Dollar' },
+  { code: 'INR', symbol: '₹',  label: 'INR – Indian Rupee' },
+  { code: 'EUR', symbol: '€',  label: 'EUR – Euro' },
+  { code: 'GBP', symbol: '£',  label: 'GBP – British Pound' },
+  { code: 'JPY', symbol: '¥',  label: 'JPY – Japanese Yen' },
+  { code: 'AUD', symbol: 'A$', label: 'AUD – Australian Dollar' },
+  { code: 'CAD', symbol: 'C$', label: 'CAD – Canadian Dollar' },
+  { code: 'AED', symbol: 'د.إ', label: 'AED – UAE Dirham' },
+  { code: 'SGD', symbol: 'S$', label: 'SGD – Singapore Dollar' },
+  { code: 'CHF', symbol: 'Fr', label: 'CHF – Swiss Franc' },
+];
 
 const EXPENSE_CATEGORIES = [
   { id: 'food', label: 'Food & Treats', icon: FaBone, color: 'from-orange-500 to-amber-500' },
@@ -28,6 +41,22 @@ const ExpenseTracker = ({ pet, onUpdate }) => {
   const [loading, setLoading] = useState(false);
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'chart'
   const [timeFilter, setTimeFilter] = useState('all'); // 'all', 'month', 'year'
+  const [currencyCode, setCurrencyCode] = useState(() => pet?.expenseCurrency || 'USD');
+  const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
+
+  const currency = CURRENCIES.find(c => c.code === currencyCode) || CURRENCIES[0];
+
+  const handleCurrencyChange = async (code) => {
+    setCurrencyCode(code);
+    setShowCurrencyPicker(false);
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
+      await update(dbRef(database, `userPets/${user.uid}/${pet.id}`), { expenseCurrency: code });
+    } catch (e) {
+      console.error('Error saving currency:', e);
+    }
+  };
 
   useEffect(() => {
     if (pet?.expenses) {
@@ -37,6 +66,7 @@ const ExpenseTracker = ({ pet, onUpdate }) => {
       })).sort((a, b) => new Date(b.date) - new Date(a.date));
       setExpenses(expenseList);
     }
+    if (pet?.expenseCurrency) setCurrencyCode(pet.expenseCurrency);
   }, [pet]);
 
   const filteredExpenses = expenses.filter(expense => {
@@ -156,7 +186,7 @@ const ExpenseTracker = ({ pet, onUpdate }) => {
             </div>
             <div>
               <p className="text-sm opacity-90">Total Spent</p>
-              <p className="text-3xl font-bold">${totalExpenses.toFixed(2)}</p>
+              <p className="text-3xl font-bold">{currency.symbol}{totalExpenses.toFixed(2)}</p>
             </div>
           </div>
           <div className="flex gap-2 mt-4">
@@ -206,28 +236,69 @@ const ExpenseTracker = ({ pet, onUpdate }) => {
             <div>
               <p className="text-sm opacity-90">Avg per Expense</p>
               <p className="text-3xl font-bold">
-                ${filteredExpenses.length > 0 ? (totalExpenses / filteredExpenses.length).toFixed(2) : '0.00'}
+                {currency.symbol}{filteredExpenses.length > 0 ? (totalExpenses / filteredExpenses.length).toFixed(2) : '0.00'}
               </p>
             </div>
           </div>
         </motion.div>
       </div>
 
-      {/* Action Buttons */}
-      <div className="flex gap-3">
-        <button
-          onClick={() => setShowAddDialog(true)}
-          className="flex-1 py-3 bg-gradient-to-r from-violet-500 to-purple-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2"
-        >
-          <FiPlus className="w-5 h-5" />
-          Add Expense
-        </button>
-        <button
-          onClick={() => setViewMode(viewMode === 'list' ? 'chart' : 'list')}
-          className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-all"
-        >
-          {viewMode === 'list' ? '📊 Chart' : '📝 List'}
-        </button>
+      {/* Currency Selector + Action Buttons */}
+      <div className="space-y-3">
+        {/* Currency picker row */}
+        <div className="relative">
+          <button
+            onClick={() => setShowCurrencyPicker(v => !v)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-violet-200 bg-white text-sm font-semibold text-violet-700 hover:border-violet-400 transition-colors"
+          >
+            <span className="text-base">{currency.symbol}</span>
+            <span>{currency.code}</span>
+            <FiChevronDown className={`w-4 h-4 transition-transform ${showCurrencyPicker ? 'rotate-180' : ''}`} />
+          </button>
+          <AnimatePresence>
+            {showCurrencyPicker && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                className="absolute left-0 top-full mt-1 z-30 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden"
+                style={{ minWidth: 220 }}
+              >
+                {CURRENCIES.map(c => (
+                  <button
+                    key={c.code}
+                    onClick={() => handleCurrencyChange(c.code)}
+                    className={`w-full flex items-center gap-3 px-4 py-3 text-sm text-left transition-colors ${
+                      c.code === currencyCode
+                        ? 'bg-violet-50 text-violet-700 font-semibold'
+                        : 'text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    <span className="w-6 text-center font-bold text-base">{c.symbol}</span>
+                    <span>{c.label}</span>
+                    {c.code === currencyCode && <span className="ml-auto text-violet-500">✓</span>}
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            onClick={() => setShowAddDialog(true)}
+            className="flex-1 py-3 bg-gradient-to-r from-violet-500 to-purple-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2"
+          >
+            <FiPlus className="w-5 h-5" />
+            Add Expense
+          </button>
+          <button
+            onClick={() => setViewMode(viewMode === 'list' ? 'chart' : 'list')}
+            className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-all"
+          >
+            {viewMode === 'list' ? '📊 Chart' : '📝 List'}
+          </button>
+        </div>
       </div>
 
       {/* Category Breakdown */}
@@ -254,7 +325,7 @@ const ExpenseTracker = ({ pet, onUpdate }) => {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-lg font-bold text-gray-900">${category.total.toFixed(2)}</p>
+                      <p className="text-lg font-bold text-gray-900">{currency.symbol}{category.total.toFixed(2)}</p>
                       <p className="text-sm text-gray-500">{category.percentage.toFixed(1)}%</p>
                     </div>
                   </div>
@@ -318,7 +389,7 @@ const ExpenseTracker = ({ pet, onUpdate }) => {
                         </div>
                       </div>
                       <div className="text-right flex-shrink-0">
-                        <p className="text-xl font-bold text-gray-900">${expense.amount.toFixed(2)}</p>
+                        <p className="text-xl font-bold text-gray-900">{currency.symbol}{expense.amount.toFixed(2)}</p>
                       </div>
                     </div>
                     <div className="flex gap-2 ml-4 flex-shrink-0">
@@ -403,7 +474,7 @@ const ExpenseTracker = ({ pet, onUpdate }) => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Amount ($) *
+                    Amount ({currency.symbol}) *
                   </label>
                   <input
                     type="number"
