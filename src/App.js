@@ -38,6 +38,11 @@ function App() {
   const location = useLocation();
   
   useEffect(() => {
+    // Hide the inline HTML splash screen now that React has mounted
+    if (typeof window.__hideSplash === "function") {
+      window.__hideSplash();
+    }
+
     // Initialize badge management for PWA
     initializeBadgeManagement();
     
