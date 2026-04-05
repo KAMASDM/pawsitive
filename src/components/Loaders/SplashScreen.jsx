@@ -6,109 +6,132 @@ const SplashScreen = () => {
   return (
     <motion.div
       initial={{ opacity: 1 }}
-      exit={{ opacity: 0, transition: { duration: 0.35, ease: "easeInOut" } }}
-      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center"
+      exit={{ opacity: 0, transition: { duration: 0.3, ease: "easeInOut" } }}
       style={{
-        background:
-          "linear-gradient(145deg, #5d4d9b 0%, #4a3d7d 50%, #372c5e 100%)",
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100vw",
+        height: "100vh",
+        zIndex: 9999,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "linear-gradient(160deg, #6b5aad 0%, #4a3d7d 55%, #2e2550 100%)",
       }}
     >
-      {/* Radial glow behind logo */}
+      {/* Radial centre glow */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            "radial-gradient(ellipse 60% 40% at 50% 48%, rgba(162,148,207,0.18) 0%, transparent 70%)",
+            "radial-gradient(ellipse 55% 38% at 50% 46%, rgba(185,175,219,0.22) 0%, transparent 70%)",
         }}
       />
 
-      {/* Decorative blurred blobs */}
+      {/* Decorative blobs */}
       <div
-        className="absolute top-[12%] left-[10%] w-40 h-40 rounded-full opacity-20 blur-3xl"
-        style={{ background: "#b9afdb" }}
+        className="absolute top-[10%] left-[8%] w-44 h-44 rounded-full blur-3xl"
+        style={{ background: "rgba(162,148,207,0.25)" }}
       />
       <div
-        className="absolute bottom-[14%] right-[8%] w-52 h-52 rounded-full opacity-15 blur-3xl"
-        style={{ background: "#8b79c3" }}
+        className="absolute bottom-[12%] right-[6%] w-56 h-56 rounded-full blur-3xl"
+        style={{ background: "rgba(93,77,155,0.35)" }}
       />
 
-      {/* Logo card */}
+      {/* --- Content group: springs in as one unit --- */}
       <motion.div
-        initial={{ scale: 0.72, opacity: 0, y: 24 }}
+        initial={{ scale: 0.78, opacity: 0, y: 20 }}
         animate={{
           scale: 1,
           opacity: 1,
           y: 0,
-          transition: { type: "spring", stiffness: 320, damping: 26, delay: 0.06 },
+          transition: { type: "spring", stiffness: 300, damping: 24 },
         }}
         className="relative flex flex-col items-center"
       >
-        {/* Logo image in a glowing white ring */}
+        {/* Logo — object-contain so the full circle + text inside is visible */}
         <div
-          className="rounded-full p-1.5"
           style={{
-            background: "rgba(255,255,255,0.12)",
+            width: 136,
+            height: 136,
+            borderRadius: "50%",
+            background: "#fff",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
             boxShadow:
-              "0 0 0 1.5px rgba(255,255,255,0.25), 0 16px 48px rgba(0,0,0,0.28), 0 4px 16px rgba(0,0,0,0.18)",
+              "0 0 0 6px rgba(255,255,255,0.18), 0 20px 56px rgba(0,0,0,0.32)",
+            overflow: "hidden",
           }}
         >
           <img
             src={logo}
             alt="Pawppy"
-            className="w-28 h-28 rounded-full object-cover"
-            style={{ background: "#fff" }}
+            style={{
+              width: "88%",
+              height: "88%",
+              objectFit: "contain",
+              display: "block",
+            }}
           />
         </div>
 
-        {/* App name */}
-        <motion.p
-          initial={{ opacity: 0, y: 8 }}
-          animate={{
-            opacity: 1,
-            y: 0,
-            transition: { delay: 0.28, duration: 0.3, ease: "easeOut" },
+        {/* App name — visible immediately, no extra delay */}
+        <p
+          style={{
+            marginTop: 22,
+            color: "#ffffff",
+            fontFamily: "Inter, sans-serif",
+            fontSize: 24,
+            fontWeight: 700,
+            letterSpacing: "0.07em",
+            lineHeight: 1,
           }}
-          className="mt-5 text-white font-display font-semibold text-2xl tracking-wide"
-          style={{ letterSpacing: "0.06em" }}
         >
           pawppy
-        </motion.p>
+        </p>
 
-        {/* Tagline */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{
-            opacity: 1,
-            transition: { delay: 0.42, duration: 0.3 },
+        {/* Tagline — visible immediately */}
+        <p
+          style={{
+            marginTop: 6,
+            color: "#d1cae7",
+            fontFamily: "Inter, sans-serif",
+            fontSize: 11,
+            fontWeight: 500,
+            letterSpacing: "0.2em",
+            textTransform: "uppercase",
+            lineHeight: 1,
           }}
-          className="mt-1 text-lavender-200 text-[13px] tracking-widest uppercase font-medium"
-          style={{ letterSpacing: "0.18em", color: "#d1cae7" }}
         >
           Pet Resources Finder
-        </motion.p>
+        </p>
       </motion.div>
 
-      {/* Loading indicator */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1, transition: { delay: 0.55 } }}
-        className="absolute bottom-16 flex gap-2"
-      >
+      {/* Loading dots */}
+      <div className="absolute flex gap-2" style={{ bottom: 72 }}>
         {[0, 1, 2].map((i) => (
           <motion.span
             key={i}
-            className="block w-1.5 h-1.5 rounded-full"
-            style={{ background: "rgba(255,255,255,0.5)" }}
-            animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1.2, 0.8] }}
+            style={{
+              display: "block",
+              width: 7,
+              height: 7,
+              borderRadius: "50%",
+              background: "rgba(255,255,255,0.45)",
+            }}
+            animate={{ opacity: [0.25, 1, 0.25], scale: [0.75, 1.25, 0.75] }}
             transition={{
               duration: 1.1,
               repeat: Infinity,
-              delay: i * 0.18,
+              delay: i * 0.2,
               ease: "easeInOut",
             }}
           />
         ))}
-      </motion.div>
+      </div>
     </motion.div>
   );
 };

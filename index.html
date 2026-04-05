@@ -51,51 +51,72 @@
   <meta name="application-name" content="Pawppy" />
 
   <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+    }
     #app-splash {
       position: fixed;
-      inset: 0;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
       z-index: 99999;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(145deg, #5d4d9b 0%, #4a3d7d 50%, #372c5e 100%);
+      background: linear-gradient(160deg, #6b5aad 0%, #4a3d7d 55%, #2e2550 100%);
       transition: opacity 0.35s ease;
     }
-    #app-splash img {
-      width: 112px;
-      height: 112px;
+    #app-splash-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      animation: splash-pop 0.44s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    #app-splash-logo-ring {
+      width: 136px;
+      height: 136px;
       border-radius: 50%;
       background: #fff;
-      box-shadow: 0 0 0 6px rgba(255,255,255,0.15), 0 16px 48px rgba(0,0,0,0.28);
-      animation: splash-pop 0.42s cubic-bezier(0.34,1.56,0.64,1) forwards;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 0 6px rgba(255,255,255,0.18), 0 20px 56px rgba(0,0,0,0.32);
+      overflow: hidden;
+    }
+    #app-splash-logo-ring img {
+      width: 88%;
+      height: 88%;
+      object-fit: contain;
+      display: block;
     }
     #app-splash p.splash-name {
-      margin-top: 20px;
+      margin-top: 22px;
       color: #fff;
-      font-family: 'Inter', sans-serif;
-      font-size: 22px;
-      font-weight: 600;
-      letter-spacing: 0.06em;
-      animation: splash-fade 0.3s ease 0.28s both;
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      line-height: 1;
     }
     #app-splash p.splash-tag {
-      margin-top: 4px;
+      margin-top: 6px;
       color: #d1cae7;
-      font-family: 'Inter', sans-serif;
+      font-family: 'Inter', system-ui, sans-serif;
       font-size: 11px;
-      letter-spacing: 0.18em;
+      letter-spacing: 0.2em;
       text-transform: uppercase;
       font-weight: 500;
-      animation: splash-fade 0.3s ease 0.4s both;
+      line-height: 1;
     }
     @keyframes splash-pop {
-      from { transform: scale(0.72); opacity: 0; }
-      to   { transform: scale(1);    opacity: 1; }
-    }
-    @keyframes splash-fade {
-      from { opacity: 0; transform: translateY(6px); }
-      to   { opacity: 1; transform: translateY(0);   }
+      from { transform: scale(0.78) translateY(20px); opacity: 0; }
+      to   { transform: scale(1)    translateY(0);    opacity: 1; }
     }
     #app-splash.hidden { opacity: 0; pointer-events: none; }
   </style>
@@ -106,9 +127,13 @@
 
   <!-- Inline splash: visible instantly before React mounts -->
   <div id="app-splash">
-    <img src="/favicon.png" alt="Pawppy" />
-    <p class="splash-name">pawppy</p>
-    <p class="splash-tag">Pet Resources Finder</p>
+    <div id="app-splash-inner">
+      <div id="app-splash-logo-ring">
+        <img src="/favicon.png" alt="Pawppy" />
+      </div>
+      <p class="splash-name">pawppy</p>
+      <p class="splash-tag">Pet Resources Finder</p>
+    </div>
   </div>
 
   <div id="root"></div>
