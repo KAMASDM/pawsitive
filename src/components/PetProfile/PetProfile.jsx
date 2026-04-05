@@ -307,9 +307,9 @@ const PetProfile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#f4f1fb]">
       {/* Back Button and Breadcrumb */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+      <div className="hidden lg:block bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center">

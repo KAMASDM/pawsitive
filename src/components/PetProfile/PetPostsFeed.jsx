@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { FiMessageCircle, FiPlus } from 'react-icons/fi';
+import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { FiArrowLeft, FiShare2, FiPlus } from 'react-icons/fi';
 import { FaBirthdayCake, FaPaw } from 'react-icons/fa';
 import PostCard from './PostCard';
 import CreatePostModal from './CreatePostModal';
@@ -18,6 +20,7 @@ const PetPostsFeed = ({
   events,
   onShare
 }) => {
+  const navigate = useNavigate();
   const [showCreatePost, setShowCreatePost] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
   const [activeTab, setActiveTab] = useState('posts'); // 'posts' or 'events'
@@ -26,112 +29,151 @@ const PetPostsFeed = ({
 
   return (
     <div className="w-full">
-      {/* Mobile Header */}
+      {/* ── Mobile Hero ── */}
       {isMobile && (
-        <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-          {/* Pet Info Header */}
-          <div className="px-4 py-4">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center">
-                <div className="relative w-16 h-16 mr-3">
+        <div>
+          {/* Hero Header */}
+          <div
+            className="relative overflow-hidden pb-8"
+            style={{ background: "linear-gradient(160deg, #6d5dbf 0%, #4a3d7d 60%, #2e2550 100%)" }}
+          >
+            {/* Decorative paw prints */}
+            {[
+              { top: "10%", left: "6%",   size: 24, opacity: 0.11, rotate: -18 },
+              { top: "22%", right: "8%",  size: 18, opacity: 0.08, rotate: 22  },
+              { top: "50%", left: "15%",  size: 20, opacity: 0.07, rotate: 38  },
+              { top: "38%", right: "20%", size: 28, opacity: 0.09, rotate: -10 },
+              { top: "68%", left: "44%",  size: 16, opacity: 0.06, rotate: 6   },
+            ].map((p, i) => (
+              <div key={i} className="absolute pointer-events-none" style={{ top: p.top, left: p.left, right: p.right, transform: `rotate(${p.rotate}deg)` }}>
+                <svg width={p.size} height={p.size} viewBox="0 0 64 64" fill="#fff" opacity={p.opacity}>
+                  <ellipse cx="16" cy="14" rx="7" ry="9" />
+                  <ellipse cx="32" cy="10" rx="7" ry="9" />
+                  <ellipse cx="48" cy="14" rx="7" ry="9" />
+                  <ellipse cx="8" cy="28" rx="6" ry="8" />
+                  <path d="M32 56 C14 56 10 38 14 30 C18 22 46 22 50 30 C54 38 50 56 32 56Z" />
+                </svg>
+              </div>
+            ))}
+
+            {/* Top nav strip */}
+            <div className="relative z-10 flex items-center justify-between px-5 pt-4 pb-2">
+              <button
+                onClick={() => navigate(-1)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
+                style={{ background: "rgba(255,255,255,0.15)", color: "#fff" }}
+              >
+                <FiArrowLeft size={14} /> Back
+              </button>
+              <button
+                onClick={onShare}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
+                style={{ background: "rgba(255,255,255,0.15)", color: "#fff" }}
+              >
+                <FiShare2 size={14} /> Share
+              </button>
+            </div>
+
+            {/* Pet Photo + Info */}
+            <div className="relative z-10 flex flex-col items-center px-5 mt-4">
+              <div className="relative mb-3">
+                <div
+                  className="w-24 h-24 rounded-full overflow-hidden"
+                  style={{ boxShadow: "0 0 0 4px rgba(255,255,255,0.25)" }}
+                >
                   <img
                     src={pet?.image || '/default-pet.png'}
                     alt={pet?.name}
-                    className="w-full h-full rounded-full object-cover border-2 border-violet-200"
+                    className="w-full h-full object-cover"
                   />
-                  {birthday?.isToday && (
-                    <FaBirthdayCake className="absolute -top-1 -right-1 w-5 h-5 text-pink-500" />
-                  )}
                 </div>
-                <div>
-                  <h1 className="text-xl font-bold text-gray-900">{pet?.name}</h1>
-                  <p className="text-sm text-gray-600 capitalize">
-                    {pet?.breed} • {pet?.type}
-                  </p>
-                </div>
+                {birthday?.isToday && (
+                  <div className="absolute -top-1 -right-1 w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.2)" }}>
+                    <FaBirthdayCake className="w-4 h-4 text-pink-400" />
+                  </div>
+                )}
               </div>
-              <button
-                onClick={onShare}
-                className="p-2 text-violet-600 hover:bg-violet-50 rounded-lg"
-              >
-                <FiMessageCircle className="w-5 h-5" />
-              </button>
+              <h1 className="text-[22px] font-extrabold text-white leading-tight text-center">{pet?.name}</h1>
+              <p className="text-sm mt-0.5 capitalize text-center" style={{ color: "rgba(255,255,255,0.7)" }}>
+                {[pet?.breed, pet?.type].filter(Boolean).join(" · ")}
+              </p>
+              {birthday?.isToday && (
+                <div className="mt-2 px-3 py-1 rounded-full text-xs font-bold" style={{ background: "rgba(236,72,153,0.3)", color: "#fce7f3" }}>
+                  🎂 Birthday Today!
+                </div>
+              )}
+              {birthday && !birthday.isToday && (
+                <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.55)" }}>
+                  🎂 Birthday in {birthday.daysUntil} day{birthday.daysUntil !== 1 ? 's' : ''}
+                </p>
+              )}
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-4 pb-4">
-              <div className="text-center">
-                <div className="font-bold text-lg text-gray-900">{posts.length}</div>
-                <div className="text-xs text-gray-600">Posts</div>
-              </div>
-              <div className="text-center">
-                <div className="font-bold text-lg text-gray-900">
-                  {posts.reduce((sum, post) => sum + (post.likes?.length || 0), 0)}
+            {/* Stats strip */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="relative z-10 flex gap-3 px-5 mt-5"
+            >
+              {[
+                { value: posts.length, label: "Posts" },
+                { value: posts.reduce((s, p) => s + (p.likes?.length || 0), 0), label: "Likes" },
+                { value: events?.length || 0, label: "Events", onClick: () => setActiveTab('events') },
+              ].map((stat, i) => (
+                <div
+                  key={i}
+                  className={`flex-1 rounded-2xl px-3 py-2.5 text-center${stat.onClick ? ' cursor-pointer' : ''}`}
+                  style={{ background: "rgba(255,255,255,0.13)" }}
+                  onClick={stat.onClick}
+                >
+                  <p className="text-xl font-extrabold text-white leading-none">{stat.value}</p>
+                  <p className="text-[10px] mt-0.5 font-medium" style={{ color: "rgba(255,255,255,0.65)" }}>{stat.label}</p>
                 </div>
-                <div className="text-xs text-gray-600">Likes</div>
-              </div>
-              <div 
-                className="text-center cursor-pointer"
-                onClick={() => setActiveTab('events')}
-              >
-                <div className="font-bold text-lg text-gray-900">
-                  {events?.length || 0}
-                </div>
-                <div className="text-xs text-gray-600">Events</div>
-              </div>
-            </div>
+              ))}
+            </motion.div>
 
-            {/* Birthday Alert */}
-            {birthday?.isToday && (
-              <div className="bg-gradient-to-r from-pink-50 to-purple-50 border border-pink-200 rounded-lg p-3 mb-4">
-                <div className="flex items-center text-sm font-medium text-pink-700">
-                  <FaBirthdayCake className="w-4 h-4 mr-2" />
-                  🎉 It's {pet?.name}'s Birthday Today!
-                </div>
-              </div>
-            )}
+            {/* Curved bottom */}
+            <div className="absolute bottom-0 left-0 right-0 h-7 bg-[#f4f1fb]" style={{ borderRadius: "40px 40px 0 0" }} />
           </div>
 
-          {/* View Toggle & Create Button */}
-          <div className="px-4 pb-3 flex items-center justify-between border-b border-gray-200">
-            <div className="flex items-center space-x-1">
-              <button
-                onClick={() => setActiveTab('posts')}
-                className={`px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
-                  activeTab === 'posts'
-                    ? 'bg-violet-100 text-violet-600'
-                    : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                Posts
-              </button>
-              <button
-                onClick={() => setActiveTab('events')}
-                className={`px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
-                  activeTab === 'events'
-                    ? 'bg-violet-100 text-violet-600'
-                    : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                Events
-              </button>
+          {/* Tab bar */}
+          <div className="px-4 pt-2 pb-3" style={{ marginTop: -4, background: "#f4f1fb" }}>
+            <div
+              className="rounded-2xl p-1.5 flex gap-1"
+              style={{ background: "#fff", boxShadow: "0 2px 12px rgba(109,93,183,0.08)" }}
+            >
+              {['posts', 'events'].map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-semibold capitalize transition-colors"
+                  style={
+                    activeTab === tab
+                      ? { background: "linear-gradient(135deg, #7c3aed, #4f46e5)", color: "#fff" }
+                      : { color: "#64748b" }
+                  }
+                >
+                  {tab}
+                </button>
+              ))}
+              {isOwner && activeTab === 'posts' && (
+                <button
+                  onClick={() => setShowCreatePost(true)}
+                  className="flex items-center gap-1 px-4 py-2.5 rounded-xl text-sm font-semibold"
+                  style={{ background: "#ede9f6", color: "#7c3aed" }}
+                >
+                  <FiPlus size={14} /> Post
+                </button>
+              )}
             </div>
-            {isOwner && activeTab === 'posts' && (
-              <button
-                onClick={() => setShowCreatePost(true)}
-                className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors flex items-center text-sm"
-              >
-                <FiPlus className="w-4 h-4 mr-1" />
-                New Post
-              </button>
-            )}
           </div>
         </div>
       )}
 
       {/* Mobile Events Tab Content */}
       {isMobile && activeTab === 'events' && (
-        <div className="p-4">
+        <div className="p-4" style={{ background: "#f4f1fb", minHeight: "50vh" }}>
           <PetEventsTimeline
             events={events}
             pet={pet}
@@ -143,7 +185,7 @@ const PetPostsFeed = ({
 
       {/* Mobile Posts Tab Content */}
       {isMobile && activeTab === 'posts' && (
-        <>
+        <div style={{ background: "#f4f1fb", minHeight: "50vh" }}>
           {/* Pet Age Card for Mobile */}
           <div className="p-4 pb-0">
             <PetAgeCard pet={pet} compact={true} />
@@ -177,7 +219,7 @@ const PetPostsFeed = ({
               ))
             )}
           </div>
-        </>
+        </div>
       )}
 
       {/* Desktop Header */}
