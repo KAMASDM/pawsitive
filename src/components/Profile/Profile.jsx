@@ -656,6 +656,14 @@ const Profile = () => {
     }
   }, [user, fetchMatingRequests]);
 
+  // Handle navigation state — activate tab directly (e.g. messages from PetDashboard)
+  useEffect(() => {
+    if (location.state?.tab) {
+      setActiveTab(location.state.tab);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state?.tab, navigate, location.pathname]);
+
   // Handle navigation state from PetProfile (open edit dialog)
   useEffect(() => {
     if (location.state?.editPetId && location.state?.openEditDialog && pets.length > 0) {

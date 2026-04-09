@@ -1,34 +1,38 @@
-import React, { useEffect } from "react";
+import React, { useEffect, lazy, Suspense } from "react";
 import { Route, Routes, Navigate, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import Home from "./components/Home/Home";
+
+// Eagerly loaded — tiny, always needed on first paint
 import Login from "./components/Login/Login";
 import Header from "./components/Header/Header";
-import Profile from "./components/Profile/Profile";
+import Footer from "./components/Footer/Footer";
 import NotFound from "./components/NotFound/NotFound";
-import NearbyMates from "./components/NearbyMates/NearbyMates";
-import AdoptPet from "./components/AdoptPet/AdoptPet";
-import PetDetail from "./components/NearbyMates/PetDetail";
-import PetProfile from "./components/PetProfile/PetProfile";
-import PetDetailsPage from "./components/PetDetails/PetDetailsPage";
 import PR from "./components/PR/PR";
 import ScrollToTop from "./UI/ScrollToTop";
-import Footer from "./components/Footer/Footer";
-import AboutUs from "./components/AboutUs/AboutUs";
-import ContactUs from "./components/ContactUs/ContactUs";
-import OurTeam from "./components/OurTeam/OurTeam";
-import PrivacyPolicy from "./components/PrivacyPolicy/PrivacyPolicy";
-import TermsAndConditions from "./components/TermsAndConditions/TermsAndConditions";
-import CookiePolicy from "./components/CookiePolicy/CookiePolicy";
-import ResourcesPage from "./components/Resources/Resources";
-import ResourceDetail from "./components/Resources/ResourceDetail";
-import FAQ from "./components/FAQ/FAQ";
-import TestNotifications from "./components/TestNotifications/TestNotifications";
-import LostAndFound from "./components/LostAndFound/LostAndFound";
 import UpdateNotification from "./components/PWA/UpdateNotification";
-import PetSelector from "./components/MyPets/PetSelector";
-import PetDashboard from "./components/MyPets/PetDashboard";
-import PlaceTaggingPage from "./components/PlaceTagging/PlaceTaggingPage";
+
+// Lazy-loaded route chunks — only downloaded when the route is visited
+const Home              = lazy(() => import("./components/Home/Home"));
+const Profile           = lazy(() => import("./components/Profile/Profile"));
+const NearbyMates       = lazy(() => import("./components/NearbyMates/NearbyMates"));
+const AdoptPet          = lazy(() => import("./components/AdoptPet/AdoptPet"));
+const PetDetail         = lazy(() => import("./components/NearbyMates/PetDetail"));
+const PetProfile        = lazy(() => import("./components/PetProfile/PetProfile"));
+const PetDetailsPage    = lazy(() => import("./components/PetDetails/PetDetailsPage"));
+const AboutUs           = lazy(() => import("./components/AboutUs/AboutUs"));
+const ContactUs         = lazy(() => import("./components/ContactUs/ContactUs"));
+const OurTeam           = lazy(() => import("./components/OurTeam/OurTeam"));
+const PrivacyPolicy     = lazy(() => import("./components/PrivacyPolicy/PrivacyPolicy"));
+const TermsAndConditions= lazy(() => import("./components/TermsAndConditions/TermsAndConditions"));
+const CookiePolicy      = lazy(() => import("./components/CookiePolicy/CookiePolicy"));
+const ResourcesPage     = lazy(() => import("./components/Resources/Resources"));
+const ResourceDetail    = lazy(() => import("./components/Resources/ResourceDetail"));
+const FAQ               = lazy(() => import("./components/FAQ/FAQ"));
+const TestNotifications = lazy(() => import("./components/TestNotifications/TestNotifications"));
+const LostAndFound      = lazy(() => import("./components/LostAndFound/LostAndFound"));
+const PetSelector       = lazy(() => import("./components/MyPets/PetSelector"));
+const PetDashboard      = lazy(() => import("./components/MyPets/PetDashboard"));
+const PlaceTaggingPage  = lazy(() => import("./components/PlaceTagging/PlaceTaggingPage"));
 import { useVaccinationReminder } from "./hooks/useVaccinationReminder";
 import { initializeBadgeManagement } from "./services/badgeService";
 
@@ -76,7 +80,15 @@ function App() {
               }}
               className="will-change-[opacity,transform]"
             >
-              <Routes location={location}>
+              <Suspense fallback={
+                <div className="min-h-screen flex items-center justify-center">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-12 h-12 rounded-full border-4 border-violet-200 border-t-violet-500 animate-spin" />
+                    <span className="text-sm text-violet-400 font-medium">Loading…</span>
+                  </div>
+                </div>
+              }>
+                <Routes location={location}>
                 <Route path="/" element={<Login />} />
 
             {/* Pet-first landing — replaces /dashboard */}
@@ -242,6 +254,7 @@ function App() {
             />
             <Route path="*" element={<NotFound />} />
               </Routes>
+              </Suspense>
             </motion.div>
           </AnimatePresence>
         </main>

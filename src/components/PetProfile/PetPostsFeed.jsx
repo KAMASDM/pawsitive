@@ -18,7 +18,8 @@ const PetPostsFeed = ({
   onViewModeChange,
   birthday,
   events,
-  onShare
+  onShare,
+  embedded
 }) => {
   const navigate = useNavigate();
   const [showCreatePost, setShowCreatePost] = useState(false);
@@ -30,7 +31,7 @@ const PetPostsFeed = ({
   return (
     <div className="w-full">
       {/* ── Mobile Hero ── */}
-      {isMobile && (
+      {!embedded && isMobile && (
         <div>
           {/* Hero Header */}
           <div
@@ -171,6 +172,40 @@ const PetPostsFeed = ({
         </div>
       )}
 
+      {/* Embedded mobile tab bar (no hero) */}
+      {embedded && isMobile && (
+        <div className="px-4 py-3">
+          <div
+            className="rounded-2xl p-1.5 flex gap-1"
+            style={{ background: "#fff", boxShadow: "0 2px 12px rgba(109,93,183,0.08)" }}
+          >
+            {['posts', 'events'].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className="flex-1 py-2.5 rounded-xl text-sm font-semibold capitalize transition-colors"
+                style={
+                  activeTab === tab
+                    ? { background: "linear-gradient(135deg, #7c3aed, #4f46e5)", color: "#fff" }
+                    : { color: "#64748b" }
+                }
+              >
+                {tab}
+              </button>
+            ))}
+            {isOwner && activeTab === 'posts' && (
+              <button
+                onClick={() => setShowCreatePost(true)}
+                className="flex items-center gap-1 px-4 py-2.5 rounded-xl text-sm font-semibold"
+                style={{ background: "#ede9f6", color: "#7c3aed" }}
+              >
+                <FiPlus size={14} /> Post
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Mobile Events Tab Content */}
       {isMobile && activeTab === 'events' && (
         <div className="p-4" style={{ background: "#f4f1fb", minHeight: "50vh" }}>
@@ -223,7 +258,7 @@ const PetPostsFeed = ({
       )}
 
       {/* Desktop Header */}
-      {!isMobile && (
+      {!isMobile && !embedded && (
         <div className="bg-white rounded-xl shadow-sm mb-6 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-bold text-gray-900">Posts</h2>
@@ -240,8 +275,79 @@ const PetPostsFeed = ({
         </div>
       )}
 
+      {/* Desktop Embedded — Posts + Events with tabs */}
+      {!isMobile && embedded && (
+        <div>
+          {/* Tab bar */}
+          <div className="flex gap-1 bg-white rounded-2xl border border-violet-100 shadow-sm p-1.5 mb-6">
+            {[
+              { id: 'posts', label: `📸 Posts (${posts.length})` },
+              { id: 'events', label: `📅 Events (${events?.length || 0})` },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                  activeTab === tab.id
+                    ? 'bg-gradient-to-r from-violet-500 to-indigo-500 text-white shadow-md'
+                    : 'text-gray-500 hover:bg-violet-50'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {activeTab === 'posts' && (
+            <>
+              {isOwner && (
+                <button
+                  onClick={() => setShowCreatePost(true)}
+                  className="w-full flex items-center gap-3 bg-white border border-violet-100 rounded-2xl px-5 py-4 mb-5 shadow-sm hover:border-violet-300 transition-colors"
+                >
+                  <div className="w-9 h-9 rounded-full overflow-hidden bg-violet-100 flex items-center justify-center flex-shrink-0">
+                    {pet?.image
+                      ? <img src={pet.image} alt="" className="w-full h-full object-cover" />
+                      : <span className="text-sm">🐾</span>}
+                  </div>
+                  <span className="text-sm text-gray-400 flex-1 text-left">Share a moment with {pet?.name}…</span>
+                </button>
+              )}
+              {posts.length === 0 ? (
+                <div className="text-center py-20 text-gray-400">
+                  <div className="text-5xl mb-4">📸</div>
+                  <p className="font-medium text-gray-500">No posts yet</p>
+                </div>
+              ) : (
+                <div className="space-y-5">
+                  {posts.map((post) => (
+                    <PostCard
+                      key={post.id}
+                      post={post}
+                      pet={pet}
+                      owner={owner}
+                      isOwner={isOwner}
+                      currentUser={currentUser}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {activeTab === 'events' && (
+            <PetEventsTimeline
+              events={events}
+              pet={pet}
+              isOwner={isOwner}
+              birthday={birthday}
+            />
+          )}
+        </div>
+      )}
+
       {/* Desktop Posts - Always Feed View */}
-      {!isMobile && (
+      {!isMobile && !embedded && (
         <div className="space-y-6">
           {posts.length === 0 ? (
             <div className="bg-white rounded-xl shadow-sm text-center py-12">

@@ -65,7 +65,7 @@ const PetEventsTimeline = ({ events, pet, isOwner, birthday }) => {
   const pastEvents = events.filter(e => new Date(e.date) <= new Date());
 
   return (
-    <div className="bg-white rounded-xl shadow-sm sticky top-8">
+    <div className="bg-white rounded-xl shadow-sm">
       <div className="p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-gray-900">Events</h2>

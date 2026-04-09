@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiHeart, FiMessageCircle, FiX, FiSend, FiMoreVertical, FiTrash2 } from 'react-icons/fi';
+import { FiHeart, FiMessageCircle, FiX, FiSend, FiMoreVertical, FiTrash2, FiShare2 } from 'react-icons/fi';
 import { FaHeart } from 'react-icons/fa';
 import { ref, update, push, remove, get } from 'firebase/database';
 import { database } from '../../firebase';
@@ -12,6 +12,26 @@ const PostCard = ({ post, pet, owner, isOwner, currentUser, isModal, onClose }) 
   const [newComment, setNewComment] = useState('');
   const [showComments, setShowComments] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
+
+  const handleShare = async () => {
+    const profileUrl = pet?.slug
+      ? `${window.location.origin}/pet/${pet.slug}`
+      : window.location.href;
+    const shareText = post.caption
+      ? `${pet?.name}: ${post.caption}`
+      : `Check out ${pet?.name}'s post on Pawppy!`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: pet?.name, text: shareText, url: profileUrl });
+      } catch (_) { /* user cancelled */ }
+    } else {
+      await navigator.clipboard.writeText(profileUrl).catch(() => {});
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+    }
+  };
 
   useEffect(() => {
     // Check if current user has liked this post
@@ -130,7 +150,7 @@ const PostCard = ({ post, pet, owner, isOwner, currentUser, isModal, onClose }) 
   const PostContent = () => (
     <div className={`bg-white ${!isModal ? 'rounded-xl shadow-sm' : ''}`}>
       {/* Post Header */}
-      <div className="p-4 flex items-center justify-between border-b border-gray-100">
+      <div className="p-4 flex items-center justify-between border-b border-violet-100 bg-violet-50/60 rounded-t-xl">
         <div className="flex items-center">
           <img
             src={pet?.image || '/default-pet.png'}
@@ -183,7 +203,7 @@ const PostCard = ({ post, pet, owner, isOwner, currentUser, isModal, onClose }) 
       </div>
 
       {/* Post Actions */}
-      <div className="p-4">
+      <div className="p-4 bg-slate-50/70">
         <div className="flex items-center space-x-4 mb-3">
           <button
             onClick={handleLike}
@@ -200,6 +220,17 @@ const PostCard = ({ post, pet, owner, isOwner, currentUser, isModal, onClose }) 
             className="flex items-center space-x-1 group"
           >
             <FiMessageCircle className="w-6 h-6 text-gray-700 group-hover:text-violet-600 transition-colors" />
+          </button>
+          <button
+            onClick={handleShare}
+            className="flex items-center space-x-1 group ml-auto"
+            title="Share post"
+          >
+            {shareCopied ? (
+              <span className="text-xs text-violet-600 font-semibold">Link copied!</span>
+            ) : (
+              <FiShare2 className="w-6 h-6 text-gray-700 group-hover:text-violet-600 transition-colors" />
+            )}
           </button>
         </div>
 

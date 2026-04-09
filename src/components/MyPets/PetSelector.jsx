@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { signOut } from "firebase/auth";
 import { auth, database } from "../../firebase";
@@ -222,6 +222,8 @@ export default function PetSelector() {
 // ---- Mobile Component ----
 function PetSelectorMobile() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isPicker = searchParams.get("picker") === "true";
   const user = auth.currentUser;
   const [pets, setPets] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -247,6 +249,14 @@ function PetSelectorMobile() {
       .catch((err) => console.error(err))
       .finally(() => setIsLoading(false));
   }, [user]);
+
+  // Auto-redirect to last viewed (or first) pet unless the user explicitly opened the picker
+  useEffect(() => {
+    if (isLoading || isPicker || pets.length === 0) return;
+    const lastId = localStorage.getItem("pawppy_last_pet_id");
+    const target = pets.find((p) => p.id === lastId) || pets[0];
+    navigate(`/my-pets/${target.id}`, { replace: true });
+  }, [pets, isLoading, isPicker, navigate]);
 
   useEffect(() => {
     if (!user) return;
