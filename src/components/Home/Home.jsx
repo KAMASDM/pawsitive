@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { FaSearch, FaDog, FaCat, FaArrowRight, FaHeart, FaPlus } from "react-icons/fa";
 import { IoIosArrowForward } from "react-icons/io";
-import { FiActivity, FiHeart as FiHeartEmpty, FiUsers, FiShield, FiMapPin } from "react-icons/fi";
+import { FiActivity, FiHeart as FiHeartEmpty, FiUsers, FiShield, FiMapPin, FiCamera, FiBookOpen } from "react-icons/fi";
 import { auth, database } from "../../firebase";
 import { ref, get } from "firebase/database";
 import SiteTour from "../Tour/SiteTour";
@@ -39,14 +39,17 @@ const desktopQuickActions = [
   { icon: FiHeartEmpty, title: "Adopt", description: "Browse verified pets looking for loving homes", route: "/adopt-pets" },
   { icon: FiUsers, title: "Mates", description: "Connect with nearby pets for responsible breeding", route: "/nearby-mates" },
   { icon: FiMapPin, title: "Lost & Found", description: "Report lost/found pets and help reunite families", route: "/lost-and-found" },
-  { icon: FiShield, title: "Care", description: "Complete healthcare and wellness services", route: "/resource", state: { category: "all", subCategory: "Nutrition" } }
+  { icon: FiCamera, title: "Challenge", description: "Weekly pet photo challenge — submit & vote!", route: "/challenge" },
+  { icon: FiBookOpen, title: "Quiz", description: "Test your pet knowledge and climb the leaderboard", route: "/quiz" }
 ];
 
 const desktopServices = [
   { icon: FiActivity, title: "Emergency Care", details: "Round-the-clock emergency care with certified veterinarians", stat: "50+ Vets Available", route: "/resource", state: { category: "all", subCategory: "Health & Wellness" } },
   { icon: FiHeartEmpty, title: "Pet Adoption", details: "Verified pets with health checkups and adoption support", stat: "500+ Happy Adoptions", route: "/resource", state: { category: "all", subCategory: "Adoption" } },
   { icon: FiUsers, title: "Pet Mating", details: "Health-verified pets with breed matching services", stat: "200+ Successful Matches", route: "/nearby-mates" },
-  { icon: FiMapPin, title: "Lost & Found Pets", details: "Report lost/found pets with smart matching and map tracking", stat: "Reunite Families", route: "/lost-and-found" }
+  { icon: FiMapPin, title: "Lost & Found Pets", details: "Report lost/found pets with smart matching and map tracking", stat: "Reunite Families", route: "/lost-and-found" },
+  { icon: FiCamera, title: "Weekly Challenge", details: "Submit your pet's best photo and let the community vote for a winner", stat: "New every Tuesday", route: "/challenge" },
+  { icon: FiBookOpen, title: "Weekly Quiz", details: "Answer pet trivia, earn XP and compete on the leaderboard", stat: "New every Monday", route: "/quiz" }
 ];
 // --- END NEW DATA ---
 

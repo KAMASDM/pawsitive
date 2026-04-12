@@ -13,6 +13,11 @@
   directory = "netlify/functions"
   node_bundler = "esbuild"
 
+# check-and-notify runs hourly: queries Firestore for newly active challenges/quizzes
+# (isActive=true, notificationSent=false) and broadcasts FCM topic notifications.
+[functions."check-and-notify"]
+  schedule = "@hourly"
+
 # Note: Scheduled functions need to be configured via Netlify UI or API
 # Schedule: 30 3 * * * (3:30 AM UTC = 9:00 AM IST daily)
 

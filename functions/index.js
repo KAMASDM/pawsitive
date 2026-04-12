@@ -1,6 +1,7 @@
 const {onValueCreated} = require('firebase-functions/v2/database');
 const {onCall} = require('firebase-functions/v2/https');
 const {onSchedule} = require('firebase-functions/v2/scheduler');
+const {onDocumentWritten} = require('firebase-functions/v2/firestore');
 const admin = require('firebase-admin');
 
 admin.initializeApp();
@@ -667,3 +668,277 @@ async function getUserWeeklyActivity(db, userId, sinceTimestamp) {
     };
   }
 }
+
+// ============================================================================
+// WEEKLY PET CHALLENGE — activates every Tuesday 09:00 IST
+// ============================================================================
+
+const { getFirestore, FieldValue } = require('firebase-admin/firestore');
+
+// Returns the ISO week number for a date
+function getISOWeekNumber(date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+}
+
+exports.activateTuesdayChallenge = onSchedule(
+  {
+    schedule: '0 3 * * 2', // Every Tuesday 03:30 UTC = 09:00 IST
+    timeZone: 'Asia/Kolkata',
+    region: 'asia-south1',
+  },
+  async () => {
+    console.log('[Challenge] Starting weekly challenge activation...');
+    const fs = getFirestore();
+    const now = new Date();
+    const weekNumber = getISOWeekNumber(now);
+    const year = now.getFullYear();
+
+    try {
+      // 1. Mark all currently active challenges as inactive and set winner
+      const activeSnap = await fs.collection('challenges').where('isActive', '==', true).get();
+      const batch = fs.batch();
+
+      for (const d of activeSnap.docs) {
+        const entriesSnap = await fs
+          .collection('challenges').doc(d.id)
+          .collection('entries')
+          .orderBy('voteCount', 'desc')
+          .limit(1)
+          .get();
+
+        const winnerId = entriesSnap.empty ? null : entriesSnap.docs[0].id;
+        batch.update(d.ref, { isActive: false, winnerId, endedAt: FieldValue.serverTimestamp() });
+      }
+
+      // 2. Pick next challenge template (rotate by week number)
+      const templateSnap = await fs.collection('challengeTemplates').get();
+      const templates = templateSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      if (templates.length === 0) {
+        console.error('[Challenge] No templates found — aborting');
+        return;
+      }
+
+      const templateIndex = (weekNumber - 1) % templates.length;
+      const template = templates[templateIndex];
+
+      // Challenge runs Tue–Mon (6 days)
+      const startTime = new Date();
+      const endTime = new Date(startTime.getTime() + 6 * 24 * 60 * 60 * 1000);
+
+      const newChallengeRef = fs.collection('challenges').doc();
+      batch.set(newChallengeRef, {
+        isActive: true,
+        prompt: template.prompt,
+        theme: template.theme,
+        emoji: template.emoji || '🐾',
+        weekNumber,
+        year,
+        entryCount: 0,
+        winnerId: null,
+        startTime: FieldValue.serverTimestamp(),
+        endTime: endTime.toISOString(),
+        createdAt: FieldValue.serverTimestamp(),
+      });
+
+      await batch.commit();
+      console.log(`[Challenge] Activated challenge for week ${year}-W${weekNumber}: "${template.theme}"`);
+    } catch (err) {
+      console.error('[Challenge] Error activating challenge:', err);
+    }
+  }
+);
+
+// ============================================================================
+// WEEKLY PET QUIZ — activates every Monday 09:00 IST
+// ============================================================================
+
+// Returns "YYYY-WNN" string
+function getWeekId(date = new Date()) {
+  const w = getISOWeekNumber(date);
+  const y = date.getFullYear();
+  return `${y}-W${String(w).padStart(2, '0')}`;
+}
+
+exports.activateWeeklyQuiz = onSchedule(
+  {
+    schedule: '0 3 * * 1', // Every Monday 03:30 UTC = 09:00 IST
+    timeZone: 'Asia/Kolkata',
+    region: 'asia-south1',
+  },
+  async () => {
+    console.log('[Quiz] Starting weekly quiz activation...');
+    const fs = getFirestore();
+    const now = new Date();
+    const weekId = getWeekId(now);
+
+    try {
+      // 1. De-activate previous active quizzes
+      const activeSnap = await fs.collection('weeklyQuiz').where('isActive', '==', true).get();
+      const batch = fs.batch();
+      for (const d of activeSnap.docs) {
+        batch.update(d.ref, { isActive: false });
+      }
+
+      // 2. Check if this week's quiz already activated
+      const existing = await fs.collection('weeklyQuiz').doc(weekId).get();
+      if (existing.exists && existing.data().isActive) {
+        console.log('[Quiz] This week already active — skipping');
+        await batch.commit();
+        return;
+      }
+
+      // 3. Load from quizBank (use weekId like "W01"–"W08", rotating)
+      const weekNum = getISOWeekNumber(now);
+      const bankKey = `W${String(((weekNum - 1) % 8) + 1).padStart(2, '0')}`;
+      const bankSnap = await fs.collection('quizBank').doc(bankKey).get();
+
+      if (!bankSnap.exists) {
+        console.error(`[Quiz] No quiz in bank for key ${bankKey}`);
+        await batch.commit();
+        return;
+      }
+
+      const bankData = bankSnap.data();
+      const expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+      batch.set(fs.collection('weeklyQuiz').doc(weekId), {
+        ...bankData,
+        weekId,
+        isActive: true,
+        publishedAt: FieldValue.serverTimestamp(),
+        expiresAt: expiresAt.toISOString(),
+      });
+
+      await batch.commit();
+      console.log(`[Quiz] Activated quiz "${bankData.title}" for ${weekId}`);
+    } catch (err) {
+      console.error('[Quiz] Error activating quiz:', err);
+    }
+  }
+);
+
+// ============================================================================
+// PUSH NOTIFICATIONS — NEW CHALLENGE / NEW QUIZ
+// ============================================================================
+
+/**
+ * Callable Function: Subscribe a device token to FCM topics.
+ * Call from the client after FCM permission is granted:
+ *   subscribeToNotifications({ token: '<fcm-token>' })
+ */
+exports.subscribeToNotifications = onCall(async (request) => {
+  if (!request.auth) throw new Error('Must be authenticated');
+  const { token } = request.data;
+  if (!token || typeof token !== 'string') throw new Error('Missing FCM token');
+
+  await Promise.all([
+    admin.messaging().subscribeToTopic([token], 'new-challenges'),
+    admin.messaging().subscribeToTopic([token], 'new-quizzes'),
+  ]);
+
+  console.log(`[FCM] Subscribed token to topics for user ${request.auth.uid}`);
+  return { success: true };
+});
+
+/**
+ * Firestore trigger: When a challenge document's isActive flips to true,
+ * broadcast a push notification to all subscribers of the 'new-challenges' topic.
+ */
+exports.notifyNewChallenge = onDocumentWritten(
+  'challenges/{challengeId}',
+  async (event) => {
+    try {
+      const before = event.data?.before?.data();
+      const after = event.data?.after?.data();
+
+      // Only fire when isActive transitions false → true
+      if (!after?.isActive || before?.isActive === true) return null;
+
+      const theme = after.theme || 'New Challenge';
+      const prompt = after.prompt || 'Show us your pet!';
+
+      await admin.messaging().send({
+        topic: 'new-challenges',
+        notification: {
+          title: `🏆 New Pawppy Challenge!`,
+          body: `${theme}: "${prompt}"`,
+        },
+        webpush: {
+          notification: {
+            icon: '/favicon.png',
+            badge: '/favicon.png',
+            requireInteraction: false,
+          },
+          fcm_options: {
+            link: `${process.env.VITE_BASE_URL || 'https://pawppy.in'}/challenge`,
+          },
+        },
+        data: {
+          type: 'new_challenge',
+          challengeId: event.params.challengeId,
+          click_action: '/challenge',
+        },
+      });
+
+      console.log(`[notifyNewChallenge] Sent push for challenge ${event.params.challengeId}`);
+      return null;
+    } catch (err) {
+      console.error('[notifyNewChallenge] Error:', err);
+      return null;
+    }
+  }
+);
+
+/**
+ * Firestore trigger: When a weeklyQuiz document's isActive flips to true,
+ * broadcast a push notification to all subscribers of the 'new-quizzes' topic.
+ */
+exports.notifyNewQuiz = onDocumentWritten(
+  'weeklyQuiz/{quizId}',
+  async (event) => {
+    try {
+      const before = event.data?.before?.data();
+      const after = event.data?.after?.data();
+
+      // Only fire when isActive transitions false → true
+      if (!after?.isActive || before?.isActive === true) return null;
+
+      const title = after.title || 'New Quiz';
+      const topic = after.topic || 'Pet Knowledge';
+
+      await admin.messaging().send({
+        topic: 'new-quizzes',
+        notification: {
+          title: `🧠 New Weekly Quiz!`,
+          body: `${title} — ${topic}. Can you get 5/5? 🌟`,
+        },
+        webpush: {
+          notification: {
+            icon: '/favicon.png',
+            badge: '/favicon.png',
+            requireInteraction: false,
+          },
+          fcm_options: {
+            link: `${process.env.VITE_BASE_URL || 'https://pawppy.in'}/quiz`,
+          },
+        },
+        data: {
+          type: 'new_quiz',
+          quizId: event.params.quizId,
+          click_action: '/quiz',
+        },
+      });
+
+      console.log(`[notifyNewQuiz] Sent push for quiz ${event.params.quizId}`);
+      return null;
+    } catch (err) {
+      console.error('[notifyNewQuiz] Error:', err);
+      return null;
+    }
+  }
+);

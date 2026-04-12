@@ -1050,8 +1050,23 @@ export const requestNotificationPermission = async (userId) => {
       const db = getDatabase();
       const tokenRef = ref(db, `users/${userId}/fcmToken`);
       await set(tokenRef, token);
-      
+
       console.log('FCM Token saved to database');
+
+      // Subscribe this device to broadcast topics via Netlify function
+      try {
+        const res = await fetch('/.netlify/functions/subscribe-notifications', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        console.log('[FCM] Subscribed to new-challenges + new-quizzes topics');
+      } catch (topicErr) {
+        // Non-fatal — token is saved, topics subscription failed silently
+        console.warn('[FCM] Topic subscription failed:', topicErr.message);
+      }
+
       return { success: true, token };
     } else {
       console.log('Notification permission denied');

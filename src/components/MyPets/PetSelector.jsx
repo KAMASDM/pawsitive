@@ -19,6 +19,7 @@ import {
   FiChevronRight,
   FiAlertTriangle,
   FiHome,
+  FiAward,
 } from "react-icons/fi";
 import { MdPets } from "react-icons/md";
 import { usePetOperations } from "../../hooks/usePetOperations";
@@ -125,6 +126,15 @@ const FEATURES = [
     icon: MdPets,
     bg: "linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)",
     paw: false,
+  },
+  {
+    id: "activity",
+    label: "My Activity",
+    sub: "Challenges & quizzes",
+    path: "/activity",
+    icon: FiAward,
+    bg: "linear-gradient(135deg, #4a3d7d 0%, #9966ff 100%)",
+    paw: true,
   },
 ];
 
@@ -239,18 +249,34 @@ function PetSelectorMobile() {
 
   useEffect(() => {
     if (!user) return;
+
+    // Fast path: if we already know the last pet id, navigate immediately
+    // without waiting for Firebase. PetDashboard will load its own data.
+    if (!isPicker) {
+      const lastId = localStorage.getItem("pawppy_last_pet_id");
+      if (lastId) {
+        navigate(`/my-pets/${lastId}`, { replace: true });
+        return;
+      }
+    }
+
     get(ref(database, `userPets/${user.uid}`))
       .then((snap) => {
         if (snap.exists()) {
           const data = snap.val();
-          setPets(Object.keys(data).map((id) => ({ id, ...data[id] })));
+          const list = Object.keys(data).map((id) => ({ id, ...data[id] }));
+          setPets(list);
+          // If no last-visited id was stored, redirect to the first pet
+          if (!isPicker && list.length > 0) {
+            navigate(`/my-pets/${list[0].id}`, { replace: true });
+          }
         }
       })
       .catch((err) => console.error(err))
       .finally(() => setIsLoading(false));
-  }, [user]);
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-redirect to last viewed (or first) pet unless the user explicitly opened the picker
+  // Redirect once pets load (only needed when picker=true was set then cleared)
   useEffect(() => {
     if (isLoading || isPicker || pets.length === 0) return;
     const lastId = localStorage.getItem("pawppy_last_pet_id");
@@ -278,6 +304,19 @@ function PetSelectorMobile() {
 
   const handleLogout = async () => { await signOut(auth); navigate("/"); };
   const hasPets = !isLoading && pets.length > 0;
+
+  // While loading and not in picker mode, show nothing — the redirect will fire
+  // almost immediately and we don't want to flash the full selector screen.
+  if (isLoading && !isPicker) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "#f4f1fb" }}>
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-12 h-12 rounded-full border-4 border-violet-200 border-t-violet-500 animate-spin" />
+          <span className="text-sm text-violet-400 font-medium">Loading your pets…</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen" style={{ background: "#f4f1fb" }}>

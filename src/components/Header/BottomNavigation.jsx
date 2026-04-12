@@ -1,36 +1,31 @@
 import React from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { auth } from "../../firebase";
-import { FiHome, FiUser, FiLogOut, FiHelpCircle } from "react-icons/fi";
+import { FiUser, FiAward } from "react-icons/fi";
 import { BsGrid3X3Gap } from "react-icons/bs";
 import { FaPaw } from "react-icons/fa";
+import { HiOutlineLightBulb } from "react-icons/hi";
 
 const MENUS = [
-  { id: "faq",      label: "FAQ",      Icon: FiHelpCircle,   path: "/faq"      },
-  { id: "resource", label: "Resources",Icon: BsGrid3X3Gap,   path: "/resource" },
-  { id: "home",     label: "Home",     Icon: FaPaw,          path: "/my-pets", featured: true },
-  { id: "profile",  label: "Profile",  Icon: FiUser,         path: "/profile"  },
-  { id: "logout",   label: "Logout",   Icon: FiLogOut,       path: "/"         },
+  { id: "challenge", label: "Challenge", Icon: FiAward,            path: "/challenge"  },
+  { id: "resource",  label: "Resources", Icon: BsGrid3X3Gap,       path: "/resource"   },
+  { id: "home",      label: "Home",      Icon: FaPaw,              path: "/my-pets", featured: true },
+  { id: "quiz",      label: "Quiz",      Icon: HiOutlineLightBulb, path: "/quiz"       },
+  { id: "profile",   label: "Profile",   Icon: FiUser,             path: "/profile"    },
 ];
 
 const matchId = (pathname) => {
-  if (pathname === "/faq")                                         return "faq";
+  if (pathname.startsWith("/challenge"))                           return "challenge";
   if (pathname.startsWith("/resource"))                            return "resource";
   if (pathname === "/my-pets" || pathname.startsWith("/my-pets/")) return "home";
+  if (pathname.startsWith("/quiz"))                                return "quiz";
   if (pathname === "/profile")                                     return "profile";
   return null;
 };
 
 const BottomNavigation = () => {
   const location = useLocation();
-  const navigate = useNavigate();
   const activeId = matchId(location.pathname);
-
-  const handleLogout = () => {
-    auth.signOut();
-    navigate("/");
-  };
 
   return (
     <div
@@ -53,7 +48,6 @@ const BottomNavigation = () => {
                 key={menu.id}
                 menu={menu}
                 isActive={isActive}
-                onLogout={menu.id === "logout" ? handleLogout : null}
               />
             );
           })}
@@ -64,7 +58,7 @@ const BottomNavigation = () => {
 };
 
 /* ── Individual nav item ── */
-const NavItem = ({ menu, isActive, onLogout }) => {
+const NavItem = ({ menu, isActive }) => {
   const { Icon, label, path, featured } = menu;
 
   if (featured) {
@@ -72,7 +66,6 @@ const NavItem = ({ menu, isActive, onLogout }) => {
       <li className="flex items-center justify-center flex-shrink-0">
         <Link
           to={path}
-          onClick={onLogout || undefined}
           className="flex flex-col items-center justify-center select-none relative -top-4"
           style={{ WebkitTapHighlightColor: "transparent" }}
           aria-label={label}
@@ -104,7 +97,6 @@ const NavItem = ({ menu, isActive, onLogout }) => {
     <li className="flex-1 flex items-center justify-center min-w-0">
       <Link
         to={path}
-        onClick={onLogout || undefined}
         className="flex flex-col items-center justify-center gap-1 w-full h-[58px] select-none py-1"
         style={{ WebkitTapHighlightColor: "transparent" }}
         aria-label={label}

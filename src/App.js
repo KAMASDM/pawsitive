@@ -33,6 +33,21 @@ const LostAndFound      = lazy(() => import("./components/LostAndFound/LostAndFo
 const PetSelector       = lazy(() => import("./components/MyPets/PetSelector"));
 const PetDashboard      = lazy(() => import("./components/MyPets/PetDashboard"));
 const PlaceTaggingPage  = lazy(() => import("./components/PlaceTagging/PlaceTaggingPage"));
+
+// Challenge feature
+const ChallengeHomeBanner   = lazy(() => import("./features/challenge/components/ChallengeHomeBanner"));
+const ChallengeSubmitScreen = lazy(() => import("./features/challenge/components/ChallengeSubmitScreen"));
+const ChallengeFeed         = lazy(() => import("./features/challenge/components/ChallengeFeed"));
+const ChallengeLeaderboard  = lazy(() => import("./features/challenge/components/ChallengeLeaderboard"));
+
+// Quiz feature
+const QuizScreen      = lazy(() => import("./features/quiz/components/QuizScreen"));
+const QuizResults     = lazy(() => import("./features/quiz/components/QuizResults"));
+const QuizLeaderboard = lazy(() => import("./features/quiz/components/QuizLeaderboard"));
+
+// Activity page
+const ActivityPage = lazy(() => import("./features/activity/ActivityPage"));
+
 import { useVaccinationReminder } from "./hooks/useVaccinationReminder";
 import { initializeBadgeManagement } from "./services/badgeService";
 
@@ -252,6 +267,21 @@ function App() {
                 </PR>
               }
             />
+            {/* Challenge routes */}
+            <Route path="/challenge" element={<PR><ChallengeHomeBanner /></PR>} />
+            <Route path="/challenge/submit" element={<PR><ChallengeSubmitScreen /></PR>} />
+            <Route path="/challenge/feed" element={<PR><ChallengeFeed /></PR>} />
+            <Route path="/challenge/leaderboard" element={<PR><ChallengeLeaderboard /></PR>} />
+
+            {/* Quiz routes */}
+            <Route path="/quiz" element={<PR><QuizScreen /></PR>} />
+            <Route path="/quiz/play" element={<PR><QuizScreen /></PR>} />
+            <Route path="/quiz/results" element={<PR><QuizResults /></PR>} />
+            <Route path="/quiz/leaderboard" element={<PR><QuizLeaderboard /></PR>} />
+
+            {/* Activity history */}
+            <Route path="/activity" element={<PR><ActivityPage /></PR>} />
+
             <Route path="*" element={<NotFound />} />
               </Routes>
               </Suspense>

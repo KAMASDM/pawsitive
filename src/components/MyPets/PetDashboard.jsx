@@ -918,14 +918,14 @@ export default function PetDashboard() {
           open={petOps.openPetDialog}
           onClose={() => petOps.setOpenPetDialog(false)}
           pet={petOps.currentPet}
-          onPetChange={petOps.setCurrentPet}
+          setPet={petOps.setCurrentPet}
           onSave={petOps.handleSavePet}
           isEditMode={petOps.isEditMode}
           onAddVaccination={petOps.handleAddVaccination}
           onEditVaccination={petOps.handleEditVaccination}
           onDeleteVaccination={petOps.handleDeleteVaccination}
           tabValue={petOps.tabValue}
-          setTabValue={petOps.setTabValue}
+          onTabChange={(_, val) => petOps.setTabValue(val)}
         />
       )}
       {petOps.openVaccinationDialog && (

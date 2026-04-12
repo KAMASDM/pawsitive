@@ -1,0 +1,14 @@
+[
+  {
+    "origin": ["http://localhost:3000", "http://localhost:5173", "https://pawsitive.app", "https://sweekar-af756.web.app", "https://sweekar-af756.firebaseapp.com"],
+    "method": ["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"],
+    "maxAgeSeconds": 3600,
+    "responseHeader": [
+      "Content-Type",
+      "Content-Length",
+      "Authorization",
+      "x-goog-resumable",
+      "x-firebase-storage-version"
+    ]
+  }
+]
