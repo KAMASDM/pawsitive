@@ -76,9 +76,15 @@ export default function GlobalSearch() {
     const unsubscribeBroadcasts = onValue(broadcastsRef, (snapshot) => {
       broadcasts = snapshot.val() || {};
       updateBroadcastUnread();
+    }, () => {
+      broadcasts = {};
+      updateBroadcastUnread();
     });
     const unsubscribeReads = onValue(readsRef, (snapshot) => {
       reads = snapshot.val() || {};
+      updateBroadcastUnread();
+    }, () => {
+      reads = {};
       updateBroadcastUnread();
     });
 

@@ -106,7 +106,7 @@ export default function NotificationsInbox() {
         setLoading((current) => ({ ...current, reads: false }));
       },
       () => {
-        setError("We could not load notification read state.");
+        setBroadcastReads({});
         setLoading((current) => ({ ...current, reads: false }));
       }
     );
@@ -129,7 +129,7 @@ export default function NotificationsInbox() {
         setError("");
       },
       () => {
-        setError("We could not load Pawppy updates.");
+        setBroadcastRecords([]);
         setLoading((current) => ({ ...current, broadcast: false }));
       }
     );
@@ -157,12 +157,16 @@ export default function NotificationsInbox() {
   const markRead = async (item) => {
     if (!user || item.read) return;
     if (item.source === "broadcast") {
+      setBroadcastReads((current) => ({
+        ...current,
+        [item.id]: { read: true, readAt: Date.now() },
+      }));
       await update(ref(database), {
         [`notificationReads/${user.uid}/${item.id}`]: {
           read: true,
           readAt: Date.now(),
         },
-      });
+      }).catch(() => {});
       return;
     }
     await update(ref(database), {
@@ -181,7 +185,14 @@ export default function NotificationsInbox() {
         updates[`notifications/${user.uid}/${item.id}/read`] = true;
       }
     });
-    await update(ref(database), updates);
+    setBroadcastReads((current) => {
+      const next = { ...current };
+      broadcastItems.forEach((item) => {
+        next[item.id] = { read: true, readAt: Date.now() };
+      });
+      return next;
+    });
+    await update(ref(database), updates).catch(() => {});
     await clearUnreadNotifications(user.uid);
   };
 

@@ -110,6 +110,16 @@
         ".write": "auth != null"
       }
     },
+    "broadcastNotifications": {
+      ".read": "auth != null",
+      ".write": "false"
+    },
+    "notificationReads": {
+      "$userId": {
+        ".read": "auth != null && auth.uid == $userId",
+        ".write": "auth != null && auth.uid == $userId"
+      }
+    },
     "lostPets": {
       ".read": "true",
       "$reportId": {
