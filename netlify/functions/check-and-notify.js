@@ -18,6 +18,7 @@ const { getMessaging } = require('firebase-admin/messaging');
 const { credential } = require('firebase-admin');
 
 const BASE_URL = process.env.URL || 'https://pawppy.in';
+const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
 
 function getFirebaseApp() {
   if (getApps().length > 0) return getApp();
@@ -28,6 +29,40 @@ function getFirebaseApp() {
       privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
     }),
   });
+}
+
+function toDate(value) {
+  if (!value) return null;
+  if (typeof value.toDate === 'function') return value.toDate();
+  if (value instanceof Date) return value;
+  if (typeof value === 'string' || typeof value === 'number') {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+  return null;
+}
+
+function isStaleActiveDocument(data, nowDate) {
+  const start = toDate(data.startTime);
+  const end = toDate(data.endTime);
+
+  if (end) return end < nowDate;
+  if (!start) return true;
+
+  const maxActiveMs = 8 * 24 * 60 * 60 * 1000;
+  return nowDate.getTime() - start.getTime() > maxActiveMs;
+}
+
+function isCurrentActiveDocument(data, nowDate) {
+  const start = toDate(data.startTime);
+  const end = toDate(data.endTime);
+
+  if (start && start > nowDate) return false;
+  if (end) return end >= nowDate;
+  if (!start) return false;
+
+  const maxActiveMs = 8 * 24 * 60 * 60 * 1000;
+  return nowDate.getTime() - start.getTime() <= maxActiveMs;
 }
 
 /**
@@ -49,8 +84,9 @@ async function syncCollection(db, collectionName, now) {
     const data = doc.data();
     // Skip if already notified (covers edge case of re-seeded docs)
     if (data.notificationSent) continue;
-    const start = data.startTime?.toDate?.();
-    if (start && start <= nowDate) {
+    const start = toDate(data.startTime);
+    const end = toDate(data.endTime);
+    if (start && start <= nowDate && (!end || end >= nowDate)) {
       batch.update(doc.ref, { isActive: true, notificationSent: true });
       justActivated.push({ id: doc.id, ...data });
       console.log(`[check-and-notify] Activating ${collectionName}/${doc.id} (started ${start.toISOString()})`);
@@ -65,15 +101,103 @@ async function syncCollection(db, collectionName, now) {
 
   for (const doc of activeSnap.docs) {
     const data = doc.data();
-    const end = data.endTime?.toDate?.();
-    if (end && end < nowDate) {
+    if (isStaleActiveDocument(data, nowDate)) {
       batch.update(doc.ref, { isActive: false });
-      console.log(`[check-and-notify] Deactivating ${collectionName}/${doc.id} (ended ${end.toISOString()})`);
+      console.log(`[check-and-notify] Deactivating stale ${collectionName}/${doc.id}`);
     }
   }
 
   await batch.commit();
   return justActivated;
+}
+
+function getISOWeekNumber(date) {
+  const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+}
+
+function getChallengeWindow(nowDate) {
+  const istNow = new Date(nowDate.getTime() + IST_OFFSET_MS);
+  const day = istNow.getUTCDay(); // 0=Sun, 1=Mon, 2=Tue
+  let daysSinceTuesday = (day - 2 + 7) % 7;
+
+  const startIstMs = Date.UTC(
+    istNow.getUTCFullYear(),
+    istNow.getUTCMonth(),
+    istNow.getUTCDate() - daysSinceTuesday,
+    9,
+    0,
+    0,
+    0
+  );
+
+  let startUtcMs = startIstMs - IST_OFFSET_MS;
+  if (nowDate.getTime() < startUtcMs) {
+    startUtcMs -= 7 * 24 * 60 * 60 * 1000;
+  }
+
+  const endUtcMs = startUtcMs + (7 * 24 * 60 * 60 * 1000) - 1;
+  const startTime = new Date(startUtcMs);
+  const endTime = new Date(endUtcMs);
+
+  return {
+    startTime,
+    endTime,
+    weekNumber: getISOWeekNumber(startTime),
+    year: new Date(startTime.getTime() + IST_OFFSET_MS).getUTCFullYear(),
+  };
+}
+
+async function ensureCurrentChallenge(db, now) {
+  const nowDate = now.toDate();
+  const activeSnap = await db
+    .collection('challenges')
+    .where('isActive', '==', true)
+    .get();
+
+  if (activeSnap.docs.some((doc) => isCurrentActiveDocument(doc.data(), nowDate))) {
+    return [];
+  }
+
+  const { startTime, endTime, weekNumber, year } = getChallengeWindow(nowDate);
+  if (nowDate < startTime || nowDate > endTime) return [];
+
+  const challengeRef = db.collection('challenges').doc(`challenge-${year}-W${String(weekNumber).padStart(2, '0')}`);
+  const existing = await challengeRef.get();
+  if (existing.exists) return [];
+
+  const templatesSnap = await db.collection('challengeTemplates').get();
+  if (templatesSnap.empty) {
+    console.warn('[check-and-notify] No challengeTemplates found; cannot create fallback challenge');
+    return [];
+  }
+
+  const templates = templatesSnap.docs
+    .map((doc) => ({ id: doc.id, ...doc.data() }))
+    .sort((a, b) => Number(a.weekOffset || a.id) - Number(b.weekOffset || b.id));
+  const template = templates[(weekNumber - 1) % templates.length];
+
+  const challenge = {
+    isActive: true,
+    notificationSent: true,
+    prompt: template.prompt,
+    theme: template.theme,
+    emoji: template.emoji || '🐾',
+    weekNumber,
+    year,
+    entryCount: 0,
+    winnerId: null,
+    startTime: Timestamp.fromDate(startTime),
+    endTime: Timestamp.fromDate(endTime),
+    createdAt: now,
+  };
+
+  await challengeRef.set(challenge);
+  console.log(`[check-and-notify] Created fallback challenge ${challengeRef.id}: "${challenge.theme}"`);
+  return [{ id: challengeRef.id, ...challenge }];
 }
 
 async function sendChallengeNotifications(messaging, newChallenges) {
@@ -133,10 +257,13 @@ exports.handler = async () => {
     const messaging = getMessaging(app);
     const now = Timestamp.now();
 
-    const [newChallenges, newQuizzes] = await Promise.all([
+    const [scheduledChallenges, newQuizzes] = await Promise.all([
       syncCollection(db, 'challenges', now),
       syncCollection(db, 'weeklyQuiz', now),
     ]);
+
+    const fallbackChallenges = await ensureCurrentChallenge(db, now);
+    const newChallenges = [...scheduledChallenges, ...fallbackChallenges];
 
     const [challengesSent, quizzesSent] = await Promise.all([
       sendChallengeNotifications(messaging, newChallenges),

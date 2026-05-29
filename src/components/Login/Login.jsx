@@ -88,6 +88,11 @@ const Login = () => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const isNewUser = await createUserProfile(result.user);
+      if (!isNewUser) {
+        requestNotificationPermission(result.user.uid).catch(err =>
+          console.log('Notification permission not granted:', err)
+        );
+      }
       
       // Navigate to pet-first landing after login
       navigate("/my-pets");
@@ -128,10 +133,9 @@ const Login = () => {
         return;
       }
       
-      // Check if user needs tour
-      const userRef = ref(database, `users/${result.user.uid}`);
-      const snapshot = await get(userRef);
-      const userData = snapshot.val();
+      requestNotificationPermission(result.user.uid).catch(err =>
+        console.log('Notification permission not granted:', err)
+      );
       
       navigate("/my-pets");
     } catch (error) {

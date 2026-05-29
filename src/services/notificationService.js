@@ -1,6 +1,6 @@
 import emailjs from '@emailjs/browser';
 import { getDatabase, ref, set, push, get } from 'firebase/database';
-import { getMessaging, getToken } from 'firebase/messaging';
+import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 
 // EmailJS Configuration
 const EMAILJS_SERVICE_ID = 'service_zdt4u0q';
@@ -16,6 +16,41 @@ const EMAIL_TEMPLATES = {
 
 // Initialize EmailJS
 emailjs.init(EMAILJS_PUBLIC_KEY);
+
+let foregroundMessageUnsubscribe = null;
+
+export const initializeForegroundNotifications = () => {
+  if (foregroundMessageUnsubscribe) return foregroundMessageUnsubscribe;
+  if (!('Notification' in window)) return null;
+
+  try {
+    const messaging = getMessaging();
+    foregroundMessageUnsubscribe = onMessage(messaging, (payload) => {
+      if (Notification.permission !== 'granted') return;
+
+      const title = payload.notification?.title || 'New Pawppy update';
+      const body = payload.notification?.body || 'Open Pawppy to see what is new.';
+      const clickAction = payload.data?.click_action || '/';
+
+      const notification = new Notification(title, {
+        body,
+        icon: payload.notification?.icon || '/favicon.png',
+        badge: '/favicon.png',
+        data: payload.data || {},
+      });
+
+      notification.onclick = () => {
+        window.focus();
+        window.location.assign(clickAction);
+        notification.close();
+      };
+    });
+  } catch (error) {
+    console.warn('[FCM] Foreground notification listener unavailable:', error.message);
+  }
+
+  return foregroundMessageUnsubscribe;
+};
 
 /**
  * Get user notification preferences

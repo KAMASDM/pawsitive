@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { auth, database } from "../../firebase";
@@ -345,6 +345,9 @@ export default function PetDashboard() {
   const [events, setEvents] = useState([]);
   const [showQR, setShowQR] = useState(false);
   const [openMessageDialog, setOpenMessageDialog] = useState(false);
+  const healthRef = useRef(null);
+  const requestsRef = useRef(null);
+  const feedRef = useRef(null);
   const [currentMessage, setCurrentMessage] = useState({
     conversationId: null,
     recipientId: null,
@@ -507,6 +510,10 @@ export default function PetDashboard() {
 
   const publicUrl = pet?.slug ? `${window.location.origin}/pet/${pet.slug}` : "";
 
+  const scrollToSection = useCallback((sectionRef) => {
+    sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
+
   const shareProfile = () => {
     if (navigator.share && publicUrl) {
       navigator.share({ title: pet.name, url: publicUrl }).catch(() => {});
@@ -514,6 +521,15 @@ export default function PetDashboard() {
       navigator.clipboard?.writeText(publicUrl).catch(() => {});
     }
   };
+
+  const petType = pet?.type?.toLowerCase() ?? "";
+
+  const navToMates = () => navigate("/nearby-mates", { state: { selectedPetId: petId } });
+  const navToReportLost = () => navigate("/lost-and-found", { state: { openTab: "report-lost", petId } });
+  const navToAdopt = () => navigate("/adopt-pets", { state: { petType } });
+  const navToResources = () => navigate("/resource", { state: { category: petType === "dog" ? "dog" : petType === "cat" ? "cat" : "all" } });
+  const navToPlaces = () => navigate("/place-tagging");
+  const navToMessages = () => navigate("/profile", { state: { tab: "messages" } });
 
   if (isLoading) {
     return (
@@ -528,16 +544,6 @@ export default function PetDashboard() {
   }
 
   if (!pet) return null;
-
-  const petType = pet.type?.toLowerCase() ?? "";
-
-  const navToMates = () => navigate("/nearby-mates", { state: { selectedPetId: petId } });
-  const navToLostFound = () => navigate("/lost-and-found");
-  const navToReportLost = () => navigate("/lost-and-found", { state: { openTab: "report-lost", petId } });
-  const navToAdopt = () => navigate("/adopt-pets", { state: { petType } });
-  const navToResources = () => navigate("/resource", { state: { category: petType === "dog" ? "dog" : petType === "cat" ? "cat" : "all" } });
-  const navToPlaces = () => navigate("/place-tagging");
-  const navToMessages = () => navigate("/profile", { state: { tab: "messages" } });
 
   // ---- Shared pill/chip ----
   const InfoChip = ({ label }) => (
@@ -685,9 +691,9 @@ export default function PetDashboard() {
             { emoji: "📚", label: "Resources",    onClick: navToResources                                       },
             { emoji: "📍", label: "Tag Place",    onClick: navToPlaces                                          },
             { emoji: "💬", label: "Messages",     onClick: navToMessages,  badge: 0                             },
-            { emoji: "🏥", label: "Health",       onClick: () => openEditPet(pet, "vaccinations")               },
-            { emoji: "❤️", label: "Requests",     onClick: () => {},       badge: pendingCount                   },
-          ].map(({ emoji, label, onClick, badge, grad }) => (
+            { emoji: "🏥", label: "Health",       onClick: () => scrollToSection(healthRef)                     },
+            { emoji: "❤️", label: "Requests",     onClick: () => scrollToSection(requestsRef), badge: pendingCount },
+          ].map(({ emoji, label, onClick, badge }) => (
             <button
               key={label}
               onClick={onClick}
@@ -709,32 +715,8 @@ export default function PetDashboard() {
         </div>
       </div>
 
-      {/* Health Widget */}
-      {(pet.vaccinations?.length ?? 0) > 0 && (
-        <div className="px-4 mt-4">
-          <HealthWidget
-            pet={pet}
-            onAdd={petOps.handleAddVaccination}
-            onEdit={petOps.handleEditVaccination}
-            onDelete={petOps.handleDeleteVaccination}
-            onViewAll={() => openEditPet(pet, "vaccinations")}
-          />
-        </div>
-      )}
-
-      {/* Inline Mating Requests Banner */}
-      {pendingCount > 0 && (
-        <div className="px-4 mt-4">
-          <RequestsInline
-            requests={matingRequests}
-            onAccept={(r) => handleUpdateRequest(r, "accepted")}
-            onDecline={(r) => handleUpdateRequest(r, "declined")}
-          />
-        </div>
-      )}
-
       {/* Feed Section: Posts + Events */}
-      <div className="mt-6">
+      <div ref={feedRef} className="mt-4 scroll-mt-20">
         <PetPostsFeed
           embedded
           posts={posts}
@@ -744,6 +726,44 @@ export default function PetDashboard() {
           currentUser={{ uid: user?.uid, name: user?.displayName, email: user?.email }}
         />
       </div>
+
+      {/* Health Widget */}
+      <div ref={healthRef} className="px-4 mt-5 scroll-mt-20">
+        {(pet.vaccinations?.length ?? 0) > 0 ? (
+          <HealthWidget
+            pet={pet}
+            onAdd={petOps.handleAddVaccination}
+            onEdit={petOps.handleEditVaccination}
+            onDelete={petOps.handleDeleteVaccination}
+            onViewAll={() => openEditPet(pet, "vaccinations")}
+          />
+        ) : (
+          <button
+            onClick={petOps.handleAddVaccination}
+            className="w-full rounded-2xl border border-dashed border-violet-200 bg-white px-4 py-4 text-left active:scale-[0.99] transition-all"
+          >
+            <p className="text-sm font-bold text-slate-800">Start {pet.name}'s health record</p>
+            <p className="text-xs text-gray-400 mt-1">Add vaccinations once and Pawppy can surface reminders here.</p>
+          </button>
+        )}
+      </div>
+
+      {/* Inline Mating Requests Banner */}
+      <div ref={requestsRef} className="px-4 mt-4 scroll-mt-20">
+        {pendingCount > 0 ? (
+          <RequestsInline
+            requests={matingRequests}
+            onAccept={(r) => handleUpdateRequest(r, "accepted")}
+            onDecline={(r) => handleUpdateRequest(r, "declined")}
+          />
+        ) : (
+          <div className="rounded-2xl border border-violet-100 bg-white px-4 py-4">
+            <p className="text-sm font-bold text-slate-800">No pending requests</p>
+            <p className="text-xs text-gray-400 mt-1">Mating and adoption conversations will appear here when they need your attention.</p>
+          </div>
+        )}
+      </div>
+
     </div>
   );
 
@@ -831,7 +851,8 @@ export default function PetDashboard() {
           </div>
 
           {/* Health widget */}
-          {(pet.vaccinations?.length ?? 0) > 0 && (
+          <div ref={healthRef} className="scroll-mt-24">
+            {(pet.vaccinations?.length ?? 0) > 0 ? (
             <HealthWidget
               pet={pet}
               onAdd={petOps.handleAddVaccination}
@@ -839,16 +860,32 @@ export default function PetDashboard() {
               onDelete={petOps.handleDeleteVaccination}
               onViewAll={() => openEditPet(pet, "vaccinations")}
             />
-          )}
+            ) : (
+              <button
+                onClick={petOps.handleAddVaccination}
+                className="w-full rounded-2xl border border-dashed border-violet-200 bg-white px-4 py-4 text-left hover:bg-violet-50 transition-colors"
+              >
+                <p className="text-sm font-bold text-slate-800">Start health record</p>
+                <p className="text-xs text-gray-400 mt-1">Add vaccinations and reminders.</p>
+              </button>
+            )}
+          </div>
 
           {/* Pending requests */}
-          {pendingCount > 0 && (
+          <div ref={requestsRef} className="scroll-mt-24">
+            {pendingCount > 0 ? (
             <RequestsInline
               requests={matingRequests}
               onAccept={(r) => handleUpdateRequest(r, "accepted")}
               onDecline={(r) => handleUpdateRequest(r, "declined")}
             />
-          )}
+            ) : (
+              <div className="rounded-2xl border border-violet-100 bg-white px-4 py-4">
+                <p className="text-sm font-bold text-slate-800">No pending requests</p>
+                <p className="text-xs text-gray-400 mt-1">New request decisions appear here.</p>
+              </div>
+            )}
+          </div>
 
           {/* Feature nav */}
           <div className="bg-white rounded-2xl border border-violet-100 shadow-sm overflow-hidden">
@@ -864,7 +901,7 @@ export default function PetDashboard() {
                 { emoji: "📍", label: "Tag a Place",  onClick: navToPlaces                                     },
                 { emoji: "💬", label: "Messages",     onClick: navToMessages                                   },
                 { emoji: "🏥", label: "Health Log",   onClick: () => openEditPet(pet, "vaccinations")          },
-              ].map(({ emoji, label, onClick, grad }) => (
+              ].map(({ emoji, label, onClick }) => (
                 <button
                   key={label}
                   onClick={onClick}
@@ -890,14 +927,16 @@ export default function PetDashboard() {
 
         {/* Main feed column */}
         <main className="flex-1 min-w-0">
-          <PetPostsFeed
-            embedded
-            posts={posts}
-            events={events}
-            pet={pet}
-            isOwner={true}
-            currentUser={{ uid: user?.uid, name: user?.displayName, email: user?.email }}
-          />
+          <div ref={feedRef} className="scroll-mt-24">
+            <PetPostsFeed
+              embedded
+              posts={posts}
+              events={events}
+              pet={pet}
+              isOwner={true}
+              currentUser={{ uid: user?.uid, name: user?.displayName, email: user?.email }}
+            />
+          </div>
         </main>
       </div>
     </div>

@@ -50,6 +50,8 @@ const ActivityPage = lazy(() => import("./features/activity/ActivityPage"));
 
 import { useVaccinationReminder } from "./hooks/useVaccinationReminder";
 import { initializeBadgeManagement } from "./services/badgeService";
+import { initializeForegroundNotifications, requestNotificationPermission } from "./services/notificationService";
+import { auth } from "./firebase";
 
 function App() {
   // Initialize vaccination reminder checker
@@ -64,16 +66,31 @@ function App() {
 
     // Initialize badge management for PWA
     initializeBadgeManagement();
+    initializeForegroundNotifications();
+
+    const unsubscribeAuth = auth.onAuthStateChanged((user) => {
+      if (!user || !('Notification' in window) || Notification.permission === 'denied') return;
+
+      const setupKey = `pawppy_push_setup_${user.uid}`;
+      if (sessionStorage.getItem(setupKey)) return;
+      sessionStorage.setItem(setupKey, 'true');
+
+      requestNotificationPermission(user.uid).catch((err) =>
+        console.log('Notification permission not granted:', err)
+      );
+    });
     
     // Check if Google Maps script is already loaded or being loaded
     if (!window.google && !document.querySelector('script[src*="maps.googleapis.com"]')) {
       const script = document.createElement("script");
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&libraries=places`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&libraries=places&loading=async`;
       script.async = true;
       script.defer = true;
       script.id = "google-maps-script";
       document.body.appendChild(script);
     }
+
+    return () => unsubscribeAuth();
   }, []);
 
   return (
