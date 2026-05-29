@@ -240,6 +240,7 @@ function PetSelectorMobile() {
   const [pets, setPets] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [discoveryPets, setDiscoveryPets] = useState([]);
+  const [isDiscoveryLoading, setIsDiscoveryLoading] = useState(true);
   const petOps = usePetOperations(pets, setPets);
   const greeting = (() => {
     const h = new Date().getHours();
@@ -287,7 +288,12 @@ function PetSelectorMobile() {
   }, [pets, isLoading, isPicker, navigate]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setDiscoveryPets([]);
+      setIsDiscoveryLoading(false);
+      return;
+    }
+    setIsDiscoveryLoading(true);
     get(ref(database, "userPets")).then((snap) => {
       if (!snap.exists()) return;
       const found = [];
@@ -301,7 +307,9 @@ function PetSelectorMobile() {
         if (found.length >= 12) break;
       }
       setDiscoveryPets(found);
-    }).catch(() => {});
+    }).catch(() => {
+      setDiscoveryPets([]);
+    }).finally(() => setIsDiscoveryLoading(false));
   }, [user]);
 
   const handleLogout = async () => { await signOut(auth); navigate("/"); };
@@ -453,39 +461,34 @@ function PetSelectorMobile() {
           </section>
         )}
 
-        <OnboardingChecklist
-          pets={pets}
-          onAddPet={petOps.handleAddPet}
-          onEnableNotifications={() => user && requestNotificationPermission(user.uid)}
-        />
-
-        {/* ── Explore Features ── */}
-        <section>
-          <div className="flex items-center gap-2 mb-3">
-            <PawPrint size={16} color="#7c3aed" opacity={0.6} />
-            <h2 className="font-extrabold text-slate-800 text-base">Explore</h2>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            {FEATURES.map((feat, i) => (
-              <FeatureCard key={feat.id} feat={feat} navigate={navigate} index={i} />
-            ))}
-          </div>
-        </section>
-
         {/* ── Discover Nearby ── */}
-        {discoveryPets.length > 0 && (
+        {(isDiscoveryLoading || discoveryPets.length > 0) && (
           <section>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <PawPrint size={16} color="#7c3aed" opacity={0.6} />
-                <h2 className="font-extrabold text-slate-800 text-base">Discover Nearby</h2>
+                <h2 className="font-extrabold text-slate-800 text-base">Discover Nearby Pets</h2>
               </div>
-              <button onClick={() => navigate("/nearby-mates")} className="flex items-center gap-0.5 text-xs font-semibold" style={{ color: "#7c3aed" }}>
-                See all <FiChevronRight size={13} />
-              </button>
+              {!isDiscoveryLoading && (
+                <button onClick={() => navigate("/nearby-mates")} className="flex items-center gap-0.5 text-xs font-semibold" style={{ color: "#7c3aed" }}>
+                  See all <FiChevronRight size={13} />
+                </button>
+              )}
             </div>
             <div className="flex gap-3 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
-              {discoveryPets.map((pet, i) => (
+              {isDiscoveryLoading ? [1, 2, 3].map((item) => (
+                <div
+                  key={item}
+                  className="flex-shrink-0 overflow-hidden animate-pulse"
+                  style={{ width: 112, borderRadius: 18, background: "#fff", boxShadow: "0 2px 12px rgba(109,93,183,0.08)" }}
+                >
+                  <div className="h-24" style={{ background: "linear-gradient(135deg, #ede9f6, #dde8ff)" }} />
+                  <div className="px-2.5 py-2 space-y-2">
+                    <div className="h-3 rounded-full w-16" style={{ background: "#e8e4f3" }} />
+                    <div className="h-2.5 rounded-full w-12" style={{ background: "#f3f1f9" }} />
+                  </div>
+                </div>
+              )) : discoveryPets.map((pet, i) => (
                 <motion.button
                   key={`${pet.ownerId}-${pet.id}`}
                   onClick={() => navigate(`/pet/${pet.slug}`)}
@@ -511,6 +514,25 @@ function PetSelectorMobile() {
             </div>
           </section>
         )}
+
+        <OnboardingChecklist
+          pets={pets}
+          onAddPet={petOps.handleAddPet}
+          onEnableNotifications={() => user && requestNotificationPermission(user.uid)}
+        />
+
+        {/* ── Explore Features ── */}
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <PawPrint size={16} color="#7c3aed" opacity={0.6} />
+            <h2 className="font-extrabold text-slate-800 text-base">Explore</h2>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {FEATURES.map((feat, i) => (
+              <FeatureCard key={feat.id} feat={feat} navigate={navigate} index={i} />
+            ))}
+          </div>
+        </section>
 
         {/* ── App features banner ── */}
         <motion.div
