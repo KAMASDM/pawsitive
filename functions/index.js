@@ -6,6 +6,34 @@ const admin = require('firebase-admin');
 
 admin.initializeApp();
 
+const writeUserNotification = async (userId, notification) => {
+  if (!userId) return null;
+
+  const ref = admin.database().ref(`notifications/${userId}`).push();
+  const payload = {
+    ...notification,
+    timestamp: admin.database.ServerValue.TIMESTAMP,
+    read: false,
+  };
+
+  await ref.set(payload);
+  return { id: ref.key, ...payload };
+};
+
+const writeBroadcastNotification = async (id, notification) => {
+  if (!id) return null;
+
+  const ref = admin.database().ref(`broadcastNotifications/${id}`);
+  const payload = {
+    ...notification,
+    timestamp: admin.database.ServerValue.TIMESTAMP,
+    active: true,
+  };
+
+  await ref.set(payload);
+  return payload;
+};
+
 /**
  * Send push notification when a mating request is created
  * Triggered by database write to /matingRequests/{requestId}
@@ -27,11 +55,6 @@ exports.sendMatingRequestNotification = onValueCreated(
       
       const fcmToken = receiverTokenSnapshot.val();
 
-      if (!fcmToken) {
-        console.log('No FCM token found for user:', receiverId);
-        return null;
-      }
-
       // Get sender's details
       const senderSnapshot = await admin.database()
         .ref(`users/${senderId}`)
@@ -45,23 +68,33 @@ exports.sendMatingRequestNotification = onValueCreated(
         .once('value');
       
       const petData = petSnapshot.val();
+      const title = 'New Mating Request';
+      const body = `${senderData?.displayName || 'Someone'} wants to mate their ${petData?.breed || 'pet'} with yours!`;
+      const data = {
+        type: 'mating_request',
+        requestId: requestId,
+        senderId: senderId,
+        receiverId: receiverId,
+        click_action: '/profile?tab=requests',
+      };
+
+      await writeUserNotification(receiverId, {
+        type: 'mating_request',
+        title,
+        body,
+        data,
+      });
 
       // Prepare notification payload
       const message = {
         token: fcmToken,
         notification: {
-          title: '💕 New Mating Request',
-          body: `${senderData.displayName || 'Someone'} wants to mate their ${petData.breed || 'pet'} with yours!`,
+          title: `💕 ${title}`,
+          body,
           icon: '/favicon.png',
           badge: '/favicon.png',
         },
-        data: {
-          type: 'mating_request',
-          requestId: requestId,
-          senderId: senderId,
-          receiverId: receiverId, // Added for badge update
-          click_action: '/profile?tab=requests',
-        },
+        data,
         webpush: {
           fcm_options: {
             link: `${process.env.VITE_BASE_URL || 'https://pawppy.in'}/profile?tab=requests`,
@@ -70,8 +103,13 @@ exports.sendMatingRequestNotification = onValueCreated(
       };
 
       // Send the notification
-      const response = await admin.messaging().send(message);
-      console.log('Successfully sent mating request notification:', response);
+      let response = null;
+      if (fcmToken) {
+        response = await admin.messaging().send(message);
+        console.log('Successfully sent mating request notification:', response);
+      } else {
+        console.log('No FCM token found for user, inbox notification saved:', receiverId);
+      }
 
       // Increment unread count for badge
       await admin.database()
@@ -123,34 +161,40 @@ exports.sendMessageNotification = onValueCreated(
       
       const fcmToken = receiverTokenSnapshot.val();
 
-      if (!fcmToken) {
-        console.log('No FCM token found for user:', receiverId);
-        return null;
-      }
-
       // Get sender's details
       const senderSnapshot = await admin.database()
         .ref(`users/${senderId}`)
         .once('value');
       
       const senderData = senderSnapshot.val();
+      const title = senderData?.displayName || 'New message';
+      const messageText = String(text || 'Open Pawppy to view the new message.');
+      const body = messageText.length > 100 ? messageText.substring(0, 100) + '...' : messageText;
+      const data = {
+        type: 'message',
+        conversationId: conversationId,
+        senderId: senderId,
+        receiverId: receiverId,
+        click_action: '/profile?tab=messages',
+      };
+
+      await writeUserNotification(receiverId, {
+        type: 'message',
+        title,
+        body,
+        data,
+      });
 
       // Prepare notification payload
       const message = {
         token: fcmToken,
         notification: {
-          title: `💬 ${senderData.displayName || 'Someone'}`,
-          body: text.length > 100 ? text.substring(0, 100) + '...' : text,
-          icon: senderData.photoURL || '/favicon.png',
+          title: `💬 ${title}`,
+          body,
+          icon: senderData?.photoURL || '/favicon.png',
           badge: '/favicon.png',
         },
-        data: {
-          type: 'message',
-          conversationId: conversationId,
-          senderId: senderId,
-          receiverId: receiverId, // Added for badge update
-          click_action: '/profile?tab=messages',
-        },
+        data,
         webpush: {
           fcm_options: {
             link: `${process.env.VITE_BASE_URL || 'https://pawppy.in'}/profile?tab=messages`,
@@ -159,8 +203,13 @@ exports.sendMessageNotification = onValueCreated(
       };
 
       // Send the notification
-      const response = await admin.messaging().send(message);
-      console.log('Successfully sent message notification:', response);
+      let response = null;
+      if (fcmToken) {
+        response = await admin.messaging().send(message);
+        console.log('Successfully sent message notification:', response);
+      } else {
+        console.log('No FCM token found for user, inbox notification saved:', receiverId);
+      }
 
       // Increment unread count for badge
       await admin.database()
@@ -861,6 +910,18 @@ exports.notifyNewChallenge = onDocumentWritten(
 
       const theme = after.theme || 'New Challenge';
       const prompt = after.prompt || 'Show us your pet!';
+      const notificationId = `challenge_${event.params.challengeId}`;
+
+      await writeBroadcastNotification(notificationId, {
+        type: 'new_challenge',
+        title: 'New Pawppy Challenge!',
+        body: `${theme}: "${prompt}"`,
+        data: {
+          type: 'new_challenge',
+          challengeId: event.params.challengeId,
+          click_action: '/challenge',
+        },
+      });
 
       await admin.messaging().send({
         topic: 'new-challenges',
@@ -910,6 +971,18 @@ exports.notifyNewQuiz = onDocumentWritten(
 
       const title = after.title || 'New Quiz';
       const topic = after.topic || 'Pet Knowledge';
+      const notificationId = `quiz_${event.params.quizId}`;
+
+      await writeBroadcastNotification(notificationId, {
+        type: 'new_quiz',
+        title: 'New Weekly Quiz!',
+        body: `${title} — ${topic}. Can you get 5/5?`,
+        data: {
+          type: 'new_quiz',
+          quizId: event.params.quizId,
+          click_action: '/quiz',
+        },
+      });
 
       await admin.messaging().send({
         topic: 'new-quizzes',

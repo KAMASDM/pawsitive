@@ -40,6 +40,8 @@ import ConversationsList from "../Profile/components/ConversationsList";
 import PetPostsFeed from "../PetProfile/PetPostsFeed";
 import { sendMatingRequestAcceptedNotification } from "../../services/notificationService";
 import useResponsive from "../../hooks/useResponsive";
+import PetTimeline from "./PetTimeline";
+import ChallengeQuizCards from "./ChallengeQuizCards";
 
 // ---- Helpers ----
 
@@ -330,6 +332,43 @@ const RequestsInline = ({ requests, onAccept, onDecline }) => {
   );
 };
 
+const ActionSheet = ({ open, onClose, actions }) => {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-[210] bg-black/40 flex items-end md:items-center justify-center p-4" onClick={onClose}>
+      <div className="w-full max-w-md bg-white rounded-3xl p-4 shadow-2xl" onClick={(event) => event.stopPropagation()}>
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <p className="text-base font-extrabold text-slate-800">What do you want to do?</p>
+            <p className="text-xs text-gray-400">Quick actions for this pet.</p>
+          </div>
+          <button onClick={onClose} className="w-9 h-9 rounded-full bg-gray-50 text-gray-500 flex items-center justify-center">
+            <FiX size={17} />
+          </button>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          {actions.map(({ label, detail, Icon, onClick }) => (
+            <button
+              key={label}
+              onClick={() => {
+                onClick();
+                onClose();
+              }}
+              className="rounded-2xl border border-violet-100 bg-violet-50/40 text-left p-3 min-h-[92px]"
+            >
+              <span className="w-10 h-10 rounded-xl bg-white text-violet-600 flex items-center justify-center">
+                <Icon size={17} />
+              </span>
+              <span className="block text-sm font-bold text-slate-700 mt-2">{label}</span>
+              <span className="block text-[11px] text-gray-400 mt-0.5">{detail}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ---- Main Component ----
 
 export default function PetDashboard() {
@@ -345,6 +384,9 @@ export default function PetDashboard() {
   const [events, setEvents] = useState([]);
   const [showQR, setShowQR] = useState(false);
   const [openMessageDialog, setOpenMessageDialog] = useState(false);
+  const [openActions, setOpenActions] = useState(false);
+  const [postComposerSignal, setPostComposerSignal] = useState(0);
+  const [eventComposerSignal, setEventComposerSignal] = useState(0);
   const healthRef = useRef(null);
   const requestsRef = useRef(null);
   const feedRef = useRef(null);
@@ -530,6 +572,22 @@ export default function PetDashboard() {
   const navToResources = () => navigate("/resource", { state: { category: petType === "dog" ? "dog" : petType === "cat" ? "cat" : "all" } });
   const navToPlaces = () => navigate("/place-tagging");
   const navToMessages = () => navigate("/profile", { state: { tab: "messages" } });
+  const openPostComposer = () => {
+    scrollToSection(feedRef);
+    setPostComposerSignal((value) => value + 1);
+  };
+  const openEventComposer = () => {
+    scrollToSection(feedRef);
+    setEventComposerSignal((value) => value + 1);
+  };
+  const petActions = [
+    { Icon: FiMessageSquare, label: "Add post", detail: "Share a pet moment", onClick: openPostComposer },
+    { Icon: FiActivity, label: "Add event", detail: "Log a memory or appointment", onClick: openEventComposer },
+    { Icon: FaSyringe, label: "Add vaccine", detail: "Update health records", onClick: petOps.handleAddVaccination },
+    { Icon: FiAlertCircle, label: "Report lost", detail: "Start a lost pet report", onClick: navToReportLost },
+    { Icon: FiHeart, label: "Find mate", detail: "Browse nearby matches", onClick: navToMates },
+    { Icon: FaQrcode, label: "Show QR", detail: "Share this pet profile", onClick: () => setShowQR(true) },
+  ];
 
   if (isLoading) {
     return (
@@ -724,8 +782,22 @@ export default function PetDashboard() {
           pet={pet}
           isOwner={true}
           currentUser={{ uid: user?.uid, name: user?.displayName, email: user?.email }}
+          openComposerSignal={postComposerSignal}
+          openEventSignal={eventComposerSignal}
         />
       </div>
+
+      <PetTimeline
+        pet={pet}
+        posts={posts}
+        events={events}
+        requests={matingRequests}
+        onHealth={() => scrollToSection(healthRef)}
+        onRequests={() => scrollToSection(requestsRef)}
+        onFeed={() => scrollToSection(feedRef)}
+      />
+
+      <ChallengeQuizCards />
 
       {/* Health Widget */}
       <div ref={healthRef} className="px-4 mt-5 scroll-mt-20">
@@ -935,8 +1007,22 @@ export default function PetDashboard() {
               pet={pet}
               isOwner={true}
               currentUser={{ uid: user?.uid, name: user?.displayName, email: user?.email }}
+              openComposerSignal={postComposerSignal}
+              openEventSignal={eventComposerSignal}
             />
           </div>
+          <div className="mt-6">
+            <PetTimeline
+              pet={pet}
+              posts={posts}
+              events={events}
+              requests={matingRequests}
+              onHealth={() => scrollToSection(healthRef)}
+              onRequests={() => scrollToSection(requestsRef)}
+              onFeed={() => scrollToSection(feedRef)}
+            />
+          </div>
+          <ChallengeQuizCards />
         </main>
       </div>
     </div>
@@ -945,6 +1031,20 @@ export default function PetDashboard() {
   return (
     <>
       {isDesktop ? desktopLayout : mobileLayout}
+
+      <button
+        onClick={() => setOpenActions(true)}
+        className="fixed right-4 bottom-36 md:bottom-20 z-40 w-14 h-14 rounded-full bg-violet-600 text-white shadow-xl flex items-center justify-center active:scale-95 transition-transform"
+        aria-label="Pet actions"
+      >
+        <FaPlus size={18} />
+      </button>
+
+      <ActionSheet
+        open={openActions}
+        onClose={() => setOpenActions(false)}
+        actions={petActions}
+      />
 
       {/* QR modal */}
       {showQR && publicUrl && (

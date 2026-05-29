@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { FiArrowLeft, FiShare2, FiPlus } from 'react-icons/fi';
@@ -19,7 +19,9 @@ const PetPostsFeed = ({
   birthday,
   events,
   onShare,
-  embedded
+  embedded,
+  openComposerSignal,
+  openEventSignal
 }) => {
   const navigate = useNavigate();
   const [showCreatePost, setShowCreatePost] = useState(false);
@@ -27,6 +29,17 @@ const PetPostsFeed = ({
   const [activeTab, setActiveTab] = useState('posts'); // 'posts' or 'events'
 
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 1024;
+
+  useEffect(() => {
+    if (!openComposerSignal) return;
+    setActiveTab('posts');
+    setShowCreatePost(true);
+  }, [openComposerSignal]);
+
+  useEffect(() => {
+    if (!openEventSignal) return;
+    setActiveTab('events');
+  }, [openEventSignal]);
 
   return (
     <div className="w-full">
@@ -341,6 +354,7 @@ const PetPostsFeed = ({
               pet={pet}
               isOwner={isOwner}
               birthday={birthday}
+              openEventSignal={openEventSignal}
             />
           )}
         </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { FiCalendar, FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import { FaBirthdayCake, FaPaw, FaHeart, FaStar } from 'react-icons/fa';
@@ -6,7 +6,7 @@ import CreateEventModal from './CreateEventModal';
 import { ref, remove } from 'firebase/database';
 import { database } from '../../firebase';
 
-const PetEventsTimeline = ({ events, pet, isOwner, birthday }) => {
+const PetEventsTimeline = ({ events, pet, isOwner, birthday, openEventSignal }) => {
   const [showCreateEvent, setShowCreateEvent] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
 
@@ -23,6 +23,12 @@ const PetEventsTimeline = ({ events, pet, isOwner, birthday }) => {
     setEditingEvent(event);
     setShowCreateEvent(true);
   };
+
+  useEffect(() => {
+    if (!openEventSignal || !isOwner) return;
+    setEditingEvent(null);
+    setShowCreateEvent(true);
+  }, [openEventSignal, isOwner]);
 
   const getEventIcon = (type) => {
     switch (type) {

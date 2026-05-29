@@ -27,6 +27,8 @@ import {
   PetDialog,
   VaccinationDialog,
 } from "../Profile/components";
+import OnboardingChecklist from "./OnboardingChecklist";
+import { requestNotificationPermission } from "../../services/notificationService";
 
 // ---- helpers ----
 
@@ -451,6 +453,12 @@ function PetSelectorMobile() {
           </section>
         )}
 
+        <OnboardingChecklist
+          pets={pets}
+          onAddPet={petOps.handleAddPet}
+          onEnableNotifications={() => user && requestNotificationPermission(user.uid)}
+        />
+
         {/* ── Explore Features ── */}
         <section>
           <div className="flex items-center gap-2 mb-3">
@@ -557,4 +565,3 @@ function PetSelectorMobile() {
     </div>
   );
 }
-

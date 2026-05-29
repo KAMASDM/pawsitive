@@ -10,6 +10,7 @@ import NotFound from "./components/NotFound/NotFound";
 import PR from "./components/PR/PR";
 import ScrollToTop from "./UI/ScrollToTop";
 import UpdateNotification from "./components/PWA/UpdateNotification";
+import GlobalSearch from "./components/Search/GlobalSearch";
 
 // Lazy-loaded route chunks — only downloaded when the route is visited
 const Home              = lazy(() => import("./components/Home/Home"));
@@ -33,6 +34,7 @@ const LostAndFound      = lazy(() => import("./components/LostAndFound/LostAndFo
 const PetSelector       = lazy(() => import("./components/MyPets/PetSelector"));
 const PetDashboard      = lazy(() => import("./components/MyPets/PetDashboard"));
 const PlaceTaggingPage  = lazy(() => import("./components/PlaceTagging/PlaceTaggingPage"));
+const NotificationsInbox = lazy(() => import("./components/Notifications/NotificationsInbox"));
 
 // Challenge feature
 const ChallengeHomeBanner   = lazy(() => import("./features/challenge/components/ChallengeHomeBanner"));
@@ -97,6 +99,7 @@ function App() {
     <div>
       <ScrollToTop />
       <UpdateNotification />
+      {location.pathname !== "/" && <GlobalSearch />}
       <div className="min-h-screen bg-lavender-50 flex flex-col">
         <Header />
         <main className="flex-grow mb-[62px] sm:mb-0">
@@ -157,6 +160,14 @@ function App() {
               element={
                 <PR>
                   <Profile />
+                </PR>
+              }
+            />
+            <Route
+              path="/notifications"
+              element={
+                <PR>
+                  <NotificationsInbox />
                 </PR>
               }
             />

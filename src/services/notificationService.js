@@ -460,15 +460,9 @@ export const sendMatingRequestNotification = async (receiverData, senderData, re
     results.email = await sendEmail(emailParams, EMAIL_TEMPLATES.MATING_REQUEST);
   }
   
-  // Send Push Notification
-  if (sendPushPref) {
-    results.push = await sendPushNotification(
-      receiverData.uid,
-      `💕 New Mating Request`,
-      `${senderData.displayName} wants to connect ${requestData.senderPetName} with ${requestData.receiverPetName}`,
-      { type: 'mating_request', requestId: requestData.id }
-    );
-  }
+  // Push and in-app inbox delivery for mating requests is handled by the
+  // Cloud Function triggered from /matingRequests/{requestId}.
+  results.push = sendPushPref ? { delegated: true } : { skipped: true };
   
   return results;
 };
