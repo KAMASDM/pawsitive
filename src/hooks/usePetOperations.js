@@ -173,11 +173,24 @@ export function usePetOperations(pets, setPets) {
         });
       }
       setCurrentPet(updatedPet);
+      if (user && isEditMode && updatedPet.id) {
+        await set(
+          ref(database, `userPets/${user.uid}/${updatedPet.id}/vaccinations`),
+          updatedPet.vaccinations
+        );
+        setPets((prev) =>
+          prev.map((pet) =>
+            pet.id === updatedPet.id
+              ? { ...pet, vaccinations: updatedPet.vaccinations }
+              : pet
+          )
+        );
+      }
       setOpenVaccinationDialog(false);
     } finally {
       setIsSavingVaccination(false);
     }
-  }, [currentPet, currentVaccination, vaccinationEditIndex]);
+  }, [currentPet, currentVaccination, isEditMode, setPets, user, vaccinationEditIndex]);
 
   const handleDeleteVaccination = useCallback((index) => {
     setCurrentPet((prev) => {

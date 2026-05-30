@@ -122,14 +122,34 @@ const VaccinationDialog = ({
     return `${year}-${month}-${day}`;
   };
 
+  const todayForInput = formatDateForInput(new Date());
+
   const handleDateChange = (e) => {
     const newDate = e.target.value ? new Date(e.target.value) : null;
     setDateError("");
+
+    if (!newDate) {
+      setCurrentVaccination({
+        ...currentVaccination,
+        date: null,
+      });
+      return;
+    }
+
+    const administeredDate = new Date(newDate);
+    administeredDate.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (administeredDate > today) {
+      setDateError("Date administered cannot be in the future");
+    }
     
     // Validate that vaccination date is not before pet's date of birth
-    if (newDate && petDateOfBirth) {
+    if (petDateOfBirth) {
       const birthDate = new Date(petDateOfBirth);
-      if (newDate < birthDate) {
+      birthDate.setHours(0, 0, 0, 0);
+      if (administeredDate < birthDate) {
         setDateError("Vaccination date cannot be before the pet's date of birth");
       }
     }
@@ -336,6 +356,7 @@ const VaccinationDialog = ({
                     type="date"
                     value={formatDateForInput(currentVaccination?.date)}
                     onChange={handleDateChange}
+                    max={todayForInput}
                     className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent pr-10 ${
                       dateError
                         ? 'border-red-500 focus:ring-red-500'

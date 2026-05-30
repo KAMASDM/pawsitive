@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";
 import { onValue, ref } from "firebase/database";
+import { motion, AnimatePresence } from "framer-motion";
 import { FiBell, FiCommand, FiSearch, FiX } from "react-icons/fi";
 import { auth, database } from "../../firebase";
 
@@ -114,10 +115,10 @@ export default function GlobalSearch() {
 
   return (
     <>
-      <div className="fixed right-4 bottom-20 md:bottom-5 z-40 flex flex-col gap-2">
+      <div className="fixed right-4 bottom-[118px] md:bottom-5 z-40 flex items-center gap-2 rounded-full border border-white/70 bg-white/90 p-1.5 shadow-[0_16px_36px_rgba(51,38,92,0.18)] backdrop-blur-xl">
         <button
           onClick={() => navigate("/notifications")}
-          className="relative w-11 h-11 rounded-full bg-white border border-violet-100 text-violet-600 shadow-lg flex items-center justify-center"
+          className="relative w-11 h-11 rounded-full bg-violet-50 text-slate-600 flex items-center justify-center active:scale-95 transition-transform"
           aria-label="Notifications"
         >
           <FiBell size={18} />
@@ -129,17 +130,31 @@ export default function GlobalSearch() {
         </button>
         <button
           onClick={() => setOpen(true)}
-          className="w-11 h-11 rounded-full bg-violet-600 text-white shadow-lg flex items-center justify-center"
+          className="w-11 h-11 rounded-full bg-gradient-to-br from-violet-600 to-indigo-700 text-white shadow-[0_10px_24px_rgba(91,67,170,0.28)] flex items-center justify-center active:scale-95 transition-transform"
           aria-label="Search"
         >
           <FiSearch size={18} />
         </button>
       </div>
 
-      {open && (
-        <div className="fixed inset-0 z-[220] bg-black/40 backdrop-blur-sm p-4 flex items-start justify-center pt-20" onClick={() => setOpen(false)}>
-          <div className="w-full max-w-xl rounded-2xl bg-white shadow-2xl overflow-hidden" onClick={(event) => event.stopPropagation()}>
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-violet-100">
+      <AnimatePresence>
+        {open && (
+        <motion.div
+          className="fixed inset-0 z-[220] bg-slate-950/45 backdrop-blur-sm p-4 flex items-start justify-center pt-20"
+          onClick={() => setOpen(false)}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          <motion.div
+            className="w-full max-w-xl rounded-[28px] bg-white/95 border border-white/70 shadow-[0_24px_70px_rgba(30,24,55,0.28)] overflow-hidden"
+            onClick={(event) => event.stopPropagation()}
+            initial={{ opacity: 0, y: 18, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 12, scale: 0.98 }}
+            transition={{ type: "spring", stiffness: 360, damping: 30 }}
+          >
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-violet-100 bg-gradient-to-r from-violet-50 to-white">
               <FiSearch className="text-violet-500" size={18} />
               <input
                 autoFocus
@@ -148,10 +163,10 @@ export default function GlobalSearch() {
                 placeholder="Search pets, resources, challenges..."
                 className="flex-1 outline-none text-sm text-slate-800"
               />
-              <span className="hidden sm:flex items-center gap-1 text-[10px] text-gray-400 bg-gray-50 rounded px-2 py-1">
+              <span className="hidden sm:flex items-center gap-1 text-[10px] text-slate-400 bg-white border border-violet-100 rounded-full px-2 py-1">
                 <FiCommand size={11} /> K
               </span>
-              <button onClick={() => setOpen(false)} className="text-gray-400 hover:text-gray-600">
+              <button onClick={() => setOpen(false)} className="w-8 h-8 rounded-full bg-white text-slate-400 hover:text-slate-600 flex items-center justify-center">
                 <FiX size={18} />
               </button>
             </div>
@@ -163,7 +178,7 @@ export default function GlobalSearch() {
                   <button
                     key={`${item.path}-${item.label}`}
                     onClick={() => go(item.path)}
-                    className="w-full rounded-xl px-3 py-3 text-left hover:bg-violet-50 transition-colors"
+                    className="w-full rounded-2xl px-3 py-3 text-left hover:bg-violet-50 transition-colors"
                   >
                     <span className="block text-sm font-bold text-slate-800">{item.label}</span>
                     <span className="block text-xs text-gray-400 mt-0.5">{item.detail}</span>
@@ -171,9 +186,10 @@ export default function GlobalSearch() {
                 ))
               )}
             </div>
-          </div>
-        </div>
-      )}
+          </motion.div>
+        </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

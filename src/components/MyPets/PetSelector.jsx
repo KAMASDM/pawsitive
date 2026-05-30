@@ -314,6 +314,15 @@ function PetSelectorMobile() {
 
   const handleLogout = async () => { await signOut(auth); navigate("/"); };
   const hasPets = !isLoading && pets.length > 0;
+  const openHealthRecordSetup = () => {
+    const targetPet = pets.find((pet) => (pet.vaccinations || []).length === 0) || pets[0];
+    if (targetPet) {
+      const supportsVaccines = ["dog", "cat"].includes(targetPet.type?.toLowerCase());
+      petOps.handleEditPet(targetPet, supportsVaccines ? "vaccinations" : "basic");
+      return;
+    }
+    petOps.handleAddPet();
+  };
 
   // While loading and not in picker mode, show nothing — the redirect will fire
   // almost immediately and we don't want to flash the full selector screen.
@@ -518,6 +527,7 @@ function PetSelectorMobile() {
         <OnboardingChecklist
           pets={pets}
           onAddPet={petOps.handleAddPet}
+          onAddHealthRecord={openHealthRecordSetup}
           onEnableNotifications={() => user && requestNotificationPermission(user.uid)}
         />
 
@@ -579,9 +589,12 @@ function PetSelectorMobile() {
           open={petOps.openVaccinationDialog}
           onClose={() => petOps.setOpenVaccinationDialog(false)}
           vaccination={petOps.currentVaccination}
-          onVaccinationChange={petOps.setCurrentVaccination}
+          setVaccination={petOps.setCurrentVaccination}
           onSave={petOps.handleSaveVaccination}
-          isSaving={petOps.isSavingVaccination}
+          isEditMode={petOps.vaccinationEditIndex >= 0}
+          petType={petOps.currentPet?.type}
+          petDateOfBirth={petOps.currentPet?.dateOfBirth}
+          loading={petOps.isSavingVaccination}
         />
       )}
     </div>

@@ -1,7 +1,7 @@
 import React from "react";
-import { FiBell, FiCheck, FiPlus, FiShare2 } from "react-icons/fi";
+import { FiActivity, FiBell, FiCheck, FiPlus, FiShare2 } from "react-icons/fi";
 
-export default function OnboardingChecklist({ pets = [], onAddPet, onEnableNotifications }) {
+export default function OnboardingChecklist({ pets = [], onAddPet, onAddHealthRecord, onEnableNotifications }) {
   const hasPet = pets.length > 0;
   const hasHealthRecord = pets.some((pet) => (pet.vaccinations || []).length > 0);
   const hasSharedProfile = pets.some((pet) => Boolean(pet.slug));
@@ -18,9 +18,9 @@ export default function OnboardingChecklist({ pets = [], onAddPet, onEnableNotif
     {
       label: "Add a health record",
       done: hasHealthRecord,
-      action: onAddPet,
+      action: onAddHealthRecord || onAddPet,
       actionLabel: "Open",
-      Icon: FiCheck,
+      Icon: FiActivity,
     },
     {
       label: "Enable reminders",

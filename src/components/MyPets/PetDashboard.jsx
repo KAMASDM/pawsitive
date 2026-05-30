@@ -1034,7 +1034,7 @@ export default function PetDashboard() {
 
       <button
         onClick={() => setOpenActions(true)}
-        className="fixed right-4 bottom-36 md:bottom-20 z-40 w-14 h-14 rounded-full bg-violet-600 text-white shadow-xl flex items-center justify-center active:scale-95 transition-transform"
+        className="fixed right-4 bottom-[190px] md:bottom-20 z-40 w-14 h-14 rounded-full border-4 border-white bg-gradient-to-br from-violet-600 to-indigo-700 text-white shadow-[0_16px_34px_rgba(91,67,170,0.32)] flex items-center justify-center active:scale-95 transition-transform"
         aria-label="Pet actions"
       >
         <FaPlus size={18} />
@@ -1072,9 +1072,12 @@ export default function PetDashboard() {
           open={petOps.openVaccinationDialog}
           onClose={() => petOps.setOpenVaccinationDialog(false)}
           vaccination={petOps.currentVaccination}
-          onVaccinationChange={petOps.setCurrentVaccination}
+          setVaccination={petOps.setCurrentVaccination}
           onSave={petOps.handleSaveVaccination}
-          isSaving={petOps.isSavingVaccination}
+          isEditMode={petOps.vaccinationEditIndex >= 0}
+          petType={petOps.currentPet?.type}
+          petDateOfBirth={petOps.currentPet?.dateOfBirth}
+          loading={petOps.isSavingVaccination}
         />
       )}
       {openMessageDialog && (
