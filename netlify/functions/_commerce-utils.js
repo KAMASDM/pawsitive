@@ -29,6 +29,17 @@ function jsonResponse(statusCode, event, body) {
   };
 }
 
+function getFirebasePrivateKey() {
+  let key = process.env.FIREBASE_PRIVATE_KEY || '';
+  // Strip surrounding quotes if accidentally included when pasting in Netlify UI
+  if ((key.startsWith('"') && key.endsWith('"')) || (key.startsWith("'") && key.endsWith("'"))) {
+    key = key.slice(1, -1);
+  }
+  // Convert any escaped \n sequences to real newlines (handles both single and double escaping)
+  key = key.replace(/\\n/g, '\n');
+  return key;
+}
+
 function getFirebaseApp() {
   if (getApps().length > 0) return getApp();
 
@@ -36,7 +47,7 @@ function getFirebaseApp() {
     credential: cert({
       projectId: process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID,
       clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+      privateKey: getFirebasePrivateKey(),
     }),
     databaseURL: process.env.FIREBASE_DATABASE_URL || process.env.VITE_FIREBASE_DATABASE_URL,
   });
