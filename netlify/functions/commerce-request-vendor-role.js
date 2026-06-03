@@ -87,8 +87,9 @@ exports.handler = async (event) => {
       }, { merge: true });
     });
 
+    const existingClaims = userRecord.customClaims || {};
     await auth.setCustomUserClaims(uid, {
-      ...(decoded || {}),
+      ...existingClaims,
       role: 'vendor',
       vendorId,
     });

@@ -22,8 +22,9 @@ exports.handler = async (event) => {
     const { auth, db } = getServices();
     const userRecord = await auth.getUser(decoded.uid);
 
+    const existingClaims = userRecord.customClaims || {};
     await auth.setCustomUserClaims(decoded.uid, {
-      ...(decoded || {}),
+      ...existingClaims,
       role: 'admin',
       admin: true,
     });
