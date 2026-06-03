@@ -35,6 +35,29 @@ const PetSelector       = lazy(() => import("./components/MyPets/PetSelector"));
 const PetDashboard      = lazy(() => import("./components/MyPets/PetDashboard"));
 const PlaceTaggingPage  = lazy(() => import("./components/PlaceTagging/PlaceTaggingPage"));
 const NotificationsInbox = lazy(() => import("./components/Notifications/NotificationsInbox"));
+const Storefront = lazy(() => import("./features/ecommerce/components/Storefront"));
+const CommerceMarketplace = lazy(() => import("./features/commerce/shop/CommerceMarketplace"));
+const ProductDetail = lazy(() => import("./features/commerce/shop/ProductDetail"));
+const StorePage = lazy(() => import("./features/commerce/shop/StorePage"));
+const CartPage = lazy(() => import("./features/commerce/shop/CartPage"));
+const CheckoutPage = lazy(() => import("./features/commerce/shop/CheckoutPage"));
+const OrdersPage = lazy(() => import("./features/commerce/shop/OrdersPage"));
+const OrderDetail = lazy(() => import("./features/commerce/shop/OrdersPage").then((module) => ({ default: module.OrderDetail })));
+const VendorRegister = lazy(() => import("./features/commerce/vendor/VendorRegister"));
+const VendorOnboarding = lazy(() => import("./features/commerce/vendor/VendorOnboarding"));
+const VendorStatus = lazy(() => import("./features/commerce/vendor/VendorStatus"));
+const AdminVendors = lazy(() => import("./features/commerce/admin/AdminVendors"));
+const AdminVendorDetail = lazy(() => import("./features/commerce/admin/AdminVendorDetail"));
+const SellerDashboard = lazy(() => import("./features/commerce/vendor/SellerDashboard"));
+const VendorProducts = lazy(() => import("./features/commerce/vendor/VendorProducts"));
+const ProductEditor = lazy(() => import("./features/commerce/vendor/ProductEditor"));
+const VendorOrders = lazy(() => import("./features/commerce/vendor/VendorOrders"));
+const StoreProfileEditor = lazy(() => import("./features/commerce/vendor/StoreProfileEditor"));
+const AdminOrders = lazy(() => import("./features/commerce/admin/AdminOrders"));
+const AdminCarts = lazy(() => import("./features/commerce/admin/AdminCarts"));
+const AdminProducts = lazy(() => import("./features/commerce/admin/AdminProducts"));
+const AdminCommerceDashboard = lazy(() => import("./features/commerce/admin/AdminCommerceDashboard"));
+const AdminCoupons = lazy(() => import("./features/commerce/admin/AdminCoupons"));
 
 // Challenge feature
 const ChallengeHomeBanner   = lazy(() => import("./features/challenge/components/ChallengeHomeBanner"));
@@ -54,11 +77,14 @@ import { useVaccinationReminder } from "./hooks/useVaccinationReminder";
 import { initializeBadgeManagement } from "./services/badgeService";
 import { initializeForegroundNotifications, requestNotificationPermission } from "./services/notificationService";
 import { auth } from "./firebase";
+import { getStoreSlugFromHost } from "./features/ecommerce/services/ecommerceService";
+import { RequireApprovedVendor, RequireAuth, RequireRole } from "./features/commerce/auth/commerceGuards";
 
 function App() {
   // Initialize vaccination reminder checker
   useVaccinationReminder();
   const location = useLocation();
+  const subdomainStoreSlug = getStoreSlugFromHost();
   
   useEffect(() => {
     // Hide the inline HTML splash screen now that React has mounted
@@ -123,6 +149,9 @@ function App() {
                   </div>
                 </div>
               }>
+                {subdomainStoreSlug ? (
+                  <Storefront subdomainSlug={subdomainStoreSlug} />
+                ) : (
                 <Routes location={location}>
                 <Route path="/" element={<Login />} />
 
@@ -207,6 +236,45 @@ function App() {
                 </PR>
               }
             />
+            <Route
+              path="/shop"
+              element={
+                <PR>
+                  <CommerceMarketplace />
+                </PR>
+              }
+            />
+            <Route path="/products/:slug" element={<PR><ProductDetail /></PR>} />
+            <Route path="/store/:slug" element={<PR><StorePage /></PR>} />
+            <Route
+              path="/shop/seller"
+              element={
+                <Navigate to="/vendor/register" replace />
+              }
+            />
+            <Route path="/cart" element={<RequireAuth><CartPage /></RequireAuth>} />
+            <Route path="/checkout" element={<RequireAuth><CheckoutPage /></RequireAuth>} />
+            <Route path="/orders" element={<RequireAuth><OrdersPage /></RequireAuth>} />
+            <Route path="/orders/:id" element={<RequireAuth><OrderDetail /></RequireAuth>} />
+            <Route path="/shop/store/:storeSlug" element={<PR><Storefront /></PR>} />
+            <Route path="/shop/:storeSlug/:productId" element={<PR><Storefront /></PR>} />
+            <Route path="/pawppy-admin/vendors" element={<Navigate to="/admin/vendors" replace />} />
+            <Route path="/vendor/register" element={<VendorRegister />} />
+            <Route path="/vendor/onboarding" element={<RequireRole role="vendor"><VendorOnboarding /></RequireRole>} />
+            <Route path="/vendor/status" element={<RequireAuth><VendorStatus /></RequireAuth>} />
+            <Route path="/vendor/dashboard" element={<RequireApprovedVendor><SellerDashboard /></RequireApprovedVendor>} />
+            <Route path="/vendor/products" element={<RequireApprovedVendor><VendorProducts /></RequireApprovedVendor>} />
+            <Route path="/vendor/products/new" element={<RequireApprovedVendor><ProductEditor /></RequireApprovedVendor>} />
+            <Route path="/vendor/products/:id/edit" element={<RequireApprovedVendor><ProductEditor /></RequireApprovedVendor>} />
+            <Route path="/vendor/orders" element={<RequireApprovedVendor><VendorOrders /></RequireApprovedVendor>} />
+            <Route path="/vendor/store" element={<RequireApprovedVendor><StoreProfileEditor /></RequireApprovedVendor>} />
+            <Route path="/admin/vendors" element={<RequireRole role="admin"><AdminVendors /></RequireRole>} />
+            <Route path="/admin/vendors/:id" element={<RequireRole role="admin"><AdminVendorDetail /></RequireRole>} />
+            <Route path="/admin/commerce" element={<RequireRole role="admin"><AdminCommerceDashboard /></RequireRole>} />
+            <Route path="/admin/orders" element={<RequireRole role="admin"><AdminOrders /></RequireRole>} />
+            <Route path="/admin/carts" element={<RequireRole role="admin"><AdminCarts /></RequireRole>} />
+            <Route path="/admin/products" element={<RequireRole role="admin"><AdminProducts /></RequireRole>} />
+            <Route path="/admin/coupons" element={<RequireRole role="admin"><AdminCoupons /></RequireRole>} />
             <Route
               path="/resources/:id"
               element={
@@ -312,6 +380,7 @@ function App() {
 
             <Route path="*" element={<NotFound />} />
               </Routes>
+                )}
               </Suspense>
             </motion.div>
           </AnimatePresence>

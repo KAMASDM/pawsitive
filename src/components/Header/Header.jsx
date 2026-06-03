@@ -387,6 +387,7 @@ import {
   FiHelpCircle,
   FiArrowRight,
   FiInbox,
+  FiShoppingBag,
 } from "react-icons/fi";
 import { BsGrid } from "react-icons/bs";
 
@@ -708,6 +709,12 @@ const Header = () => {
                 <FiHome className="mr-1" /> My Pets
               </NavLink>
               <NavLink
+                to="/shop"
+                className={getNavLinkClasses(location.pathname.startsWith("/shop"))}
+              >
+                <FiShoppingBag className="mr-1" /> Shop
+              </NavLink>
+              <NavLink
                 to="/resource"
                 className={getNavLinkClasses(location.pathname === "/resource")}
               >
@@ -804,6 +811,13 @@ const Header = () => {
                 className={getMobileNavLinkClasses(location.pathname === "/my-pets" || location.pathname.startsWith("/my-pets/"))}
               >
                 <FiHome className="mr-2" /> My Pets
+              </MobileNavLink>
+              <MobileNavLink
+                to="/shop"
+                onClick={() => setIsMenuOpen(false)}
+                className={getMobileNavLinkClasses(location.pathname.startsWith("/shop"))}
+              >
+                <FiShoppingBag className="mr-2" /> Shop
               </MobileNavLink>
               <MobileNavLink
                 to="/resource"

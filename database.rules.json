@@ -120,6 +120,62 @@
         ".write": "auth != null && auth.uid == $userId"
       }
     },
+    "vendorApplications": {
+      ".read": "auth != null && auth.token.email == 'anantsoftcomputing@gmail.com'",
+      "$userId": {
+        ".read": "auth != null && auth.uid == $userId",
+        ".write": "auth != null && (auth.token.email == 'anantsoftcomputing@gmail.com' || (auth.uid == $userId && (!newData.child('status').exists() || newData.child('status').val() == 'pending')))"
+      }
+    },
+    "vendorApprovals": {
+      ".read": "auth != null && auth.token.email == 'anantsoftcomputing@gmail.com'",
+      "$userId": {
+        ".read": "auth != null && auth.uid == $userId",
+        ".write": "auth != null && auth.token.email == 'anantsoftcomputing@gmail.com'"
+      }
+    },
+    "vendorDocuments": {
+      "$vendorId": {
+        ".read": "auth != null && (auth.token.role == 'admin' || auth.token.vendorId == $vendorId)",
+        "$documentType": {
+          ".write": "auth != null && (auth.token.role == 'admin' || auth.token.vendorId == $vendorId)"
+        }
+      }
+    },
+    "vendorStores": {
+      ".read": "true",
+      "$storeId": {
+        ".write": "auth != null && root.child('vendorApprovals').child(auth.uid).child('approved').val() == true && (!data.exists() || data.child('ownerId').val() == auth.uid || newData.child('ownerId').val() == auth.uid)"
+      }
+    },
+    "vendorStoreSlugs": {
+      ".read": "true",
+      "$slug": {
+        ".write": "auth != null && root.child('vendorApprovals').child(auth.uid).child('approved').val() == true && (!data.exists() || data.child('ownerId').val() == auth.uid)"
+      }
+    },
+    "vendorProducts": {
+      ".read": "true",
+      "$storeId": {
+        "$productId": {
+          ".write": "auth != null && root.child('vendorStores').child($storeId).child('ownerId').val() == auth.uid"
+        }
+      }
+    },
+    "buyerOrders": {
+      "$userId": {
+        ".read": "auth != null && auth.uid == $userId",
+        ".write": "auth != null && auth.uid == $userId"
+      }
+    },
+    "vendorOrders": {
+      "$storeId": {
+        ".read": "auth != null && root.child('vendorStores').child($storeId).child('ownerId').val() == auth.uid",
+        "$orderId": {
+          ".write": "auth != null && (root.child('vendorStores').child($storeId).child('ownerId').val() == auth.uid || newData.child('buyerId').val() == auth.uid)"
+        }
+      }
+    },
     "lostPets": {
       ".read": "true",
       "$reportId": {

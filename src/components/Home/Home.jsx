@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { FaSearch, FaDog, FaCat, FaArrowRight, FaHeart, FaPlus } from "react-icons/fa";
 import { IoIosArrowForward } from "react-icons/io";
-import { FiActivity, FiHeart as FiHeartEmpty, FiUsers, FiShield, FiMapPin, FiCamera, FiBookOpen } from "react-icons/fi";
+import { FiActivity, FiHeart as FiHeartEmpty, FiUsers, FiShield, FiMapPin, FiCamera, FiBookOpen, FiShoppingBag } from "react-icons/fi";
 import { auth, database } from "../../firebase";
 import { ref, get } from "firebase/database";
 import SiteTour from "../Tour/SiteTour";
@@ -190,6 +190,25 @@ const MobileVersion = ({ activeTab, setActiveTab, showSearchOptions, setShowSear
 
       {/* Upcoming Reminders Section */}
       <UpcomingReminders />
+
+      <motion.button
+        onClick={() => navigate("/vendor/register")}
+        className="mb-6 w-full bg-slate-950 text-white rounded-2xl p-4 shadow-md flex items-center justify-between"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.08 }}
+      >
+        <span className="flex items-center gap-3 text-left">
+          <span className="w-11 h-11 rounded-2xl bg-white/10 flex items-center justify-center">
+            <FiShoppingBag />
+          </span>
+          <span>
+            <span className="block font-bold">Sell on Pawppy</span>
+            <span className="block text-xs text-violet-100">Register your pet-products business</span>
+          </span>
+        </span>
+        <FaArrowRight />
+      </motion.button>
 
       <motion.div className="mb-6" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}>
         <div className="grid grid-cols-4 gap-3">
@@ -389,6 +408,13 @@ const DesktopVersion = ({ showSearchOptions, setShowSearchOptions, handlePetType
                 <span className="text-slate-800">Resources</span>
               </h1>
               <p className="text-xl text-gray-600 mb-8 max-w-lg">Everything your beloved pet needs - from emergency care to finding companions, all in one beautiful platform.</p>
+
+              <button
+                onClick={() => navigate("/vendor/register")}
+                className="mb-5 rounded-full bg-slate-950 text-white px-5 py-3 text-sm font-black inline-flex items-center gap-2 shadow-lg hover:bg-slate-800 transition-colors"
+              >
+                <FiShoppingBag /> Sell pet products on Pawppy
+              </button>
 
               <div className="mb-8">
                 <AnimatePresence mode="wait">

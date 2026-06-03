@@ -2,9 +2,218 @@ const {onValueCreated} = require('firebase-functions/v2/database');
 const {onCall} = require('firebase-functions/v2/https');
 const {onSchedule} = require('firebase-functions/v2/scheduler');
 const {onDocumentWritten} = require('firebase-functions/v2/firestore');
+const functionsV1 = require('firebase-functions/v1');
 const admin = require('firebase-admin');
 
 admin.initializeApp();
+
+const firestore = admin.firestore();
+const serverTimestamp = admin.firestore.FieldValue.serverTimestamp;
+const arrayUnion = admin.firestore.FieldValue.arrayUnion;
+const COMMERCE_ADMIN_EMAIL = 'anantsoftcomputing@gmail.com';
+const HttpsError = functionsV1.https.HttpsError;
+
+const getCallableAuth = (contextOrRequest) => contextOrRequest.auth || null;
+
+const assertAuthed = (contextOrRequest) => {
+  if (!getCallableAuth(contextOrRequest)) {
+    throw new HttpsError('unauthenticated', 'Sign in to continue.');
+  }
+};
+
+const assertAdmin = (contextOrRequest) => {
+  assertAuthed(contextOrRequest);
+  const authContext = getCallableAuth(contextOrRequest);
+  const email = authContext.token.email || '';
+  if (authContext.token.role !== 'admin' && email.toLowerCase() !== COMMERCE_ADMIN_EMAIL) {
+    throw new HttpsError('permission-denied', 'Admin access required.');
+  }
+};
+
+exports.onUserCreate = functionsV1.auth.user().onCreate(async (user) => {
+  if (!user?.uid) return null;
+
+  const role = user.email?.toLowerCase() === COMMERCE_ADMIN_EMAIL ? 'admin' : 'customer';
+  const claims = { role };
+  if (role === 'admin') claims.admin = true;
+
+  await admin.auth().setCustomUserClaims(user.uid, claims);
+  await firestore.doc(`users/${user.uid}`).set({
+    role,
+    displayName: user.displayName || user.email?.split('@')[0] || '',
+    email: user.email || '',
+    phone: user.phoneNumber || '',
+    photoURL: user.photoURL || '',
+    vendorId: null,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  }, { merge: true });
+
+  return null;
+});
+
+exports.requestVendorRole = functionsV1.https.onCall(async (data, context) => {
+  assertAuthed(context);
+  const uid = context.auth.uid;
+  const userRecord = await admin.auth().getUser(uid);
+  const existingUser = await firestore.doc(`users/${uid}`).get();
+  const existingVendorId = existingUser.data()?.vendorId || context.auth.token.vendorId;
+
+  if (existingVendorId) {
+    return { vendorId: existingVendorId, status: 'existing' };
+  }
+
+  const vendorRef = firestore.collection('vendors').doc();
+  const vendorId = vendorRef.id;
+  const nowHistory = {
+    from: null,
+    to: 'pending',
+    note: 'Vendor registration started.',
+    changedBy: uid,
+    changedAt: admin.firestore.Timestamp.now(),
+  };
+
+  await firestore.runTransaction(async (transaction) => {
+    transaction.set(vendorRef, {
+      ownerUid: uid,
+      businessName: '',
+      legalName: '',
+      ownerName: userRecord.displayName || '',
+      email: userRecord.email || '',
+      phone: userRecord.phoneNumber || '',
+      gstin: '',
+      pan: '',
+      address: {
+        line1: '',
+        line2: '',
+        city: '',
+        state: '',
+        pincode: '',
+        country: 'India',
+      },
+      categories: [],
+      description: '',
+      logoUrl: '',
+      bannerUrl: '',
+      website: '',
+      socials: {},
+      documents: [],
+      status: 'pending',
+      statusHistory: [nowHistory],
+      bankDetails: {
+        accountName: '',
+        accountNumber: '',
+        ifsc: '',
+      },
+      productCount: 0,
+      orderCount: 0,
+      rating: 0,
+      approvedAt: null,
+      approvedBy: null,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+    transaction.set(firestore.doc(`users/${uid}`), {
+      role: 'vendor',
+      displayName: userRecord.displayName || userRecord.email?.split('@')[0] || '',
+      email: userRecord.email || '',
+      phone: userRecord.phoneNumber || '',
+      photoURL: userRecord.photoURL || '',
+      vendorId,
+      createdAt: existingUser.exists ? existingUser.data().createdAt : serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+  });
+
+  await admin.auth().setCustomUserClaims(uid, {
+    ...(context.auth.token || {}),
+    role: 'vendor',
+    vendorId,
+  });
+
+  return { vendorId, status: 'created' };
+});
+
+exports.provisionCommerceAdmin = functionsV1.https.onCall(async (data, context) => {
+  assertAuthed(context);
+  const email = (context.auth.token.email || '').toLowerCase();
+  if (email !== COMMERCE_ADMIN_EMAIL) {
+    throw new HttpsError('permission-denied', 'Only the configured Pawppy admin can provision admin access.');
+  }
+
+  const uid = context.auth.uid;
+  const userRecord = await admin.auth().getUser(uid);
+  await admin.auth().setCustomUserClaims(uid, {
+    ...(context.auth.token || {}),
+    role: 'admin',
+    admin: true,
+  });
+  await firestore.doc(`users/${uid}`).set({
+    role: 'admin',
+    displayName: userRecord.displayName || userRecord.email?.split('@')[0] || '',
+    email: userRecord.email || '',
+    phone: userRecord.phoneNumber || '',
+    photoURL: userRecord.photoURL || '',
+    updatedAt: serverTimestamp(),
+    createdAt: serverTimestamp(),
+  }, { merge: true });
+
+  return { success: true, role: 'admin' };
+});
+
+exports.setVendorStatus = functionsV1.https.onCall(async (data, context) => {
+  assertAdmin(context);
+  const {vendorId, status, note = ''} = data || {};
+  const allowedStatuses = ['pending', 'documentation_required', 'under_review', 'approved', 'rejected', 'suspended'];
+
+  if (!vendorId || !allowedStatuses.includes(status)) {
+    throw new HttpsError('invalid-argument', 'Valid vendorId and status are required.');
+  }
+
+  const vendorRef = firestore.doc(`vendors/${vendorId}`);
+  const vendorSnap = await vendorRef.get();
+  if (!vendorSnap.exists) {
+    throw new HttpsError('not-found', 'Vendor not found.');
+  }
+
+  const vendor = vendorSnap.data();
+  const historyItem = {
+    from: vendor.status || null,
+    to: status,
+    note,
+    changedBy: context.auth.uid,
+    changedAt: admin.firestore.Timestamp.now(),
+  };
+  const update = {
+    status,
+    reviewNote: note,
+    statusHistory: arrayUnion(historyItem),
+    updatedAt: serverTimestamp(),
+  };
+
+  if (status === 'approved') {
+    update.approvedAt = serverTimestamp();
+    update.approvedBy = context.auth.uid;
+  }
+
+  await vendorRef.update(update);
+
+  if (vendor.ownerUid) {
+    await writeUserNotification(vendor.ownerUid, {
+      type: 'vendor_status',
+      title: `Vendor ${status.replace(/_/g, ' ')}`,
+      body: note || `Your Pawppy vendor status is now ${status.replace(/_/g, ' ')}.`,
+      data: {
+        type: 'vendor_status',
+        vendorId,
+        status,
+        click_action: '/vendor/status',
+      },
+    });
+  }
+
+  return { success: true, vendorId, status };
+});
 
 const writeUserNotification = async (userId, notification) => {
   if (!userId) return null;

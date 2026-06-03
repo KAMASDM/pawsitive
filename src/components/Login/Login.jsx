@@ -995,6 +995,15 @@ const Login = () => {
                   Continue with Google
                 </button>
 
+                <button
+                  type="button"
+                  onClick={() => navigate("/vendor/register")}
+                  className="mt-3 w-full bg-violet-50 border-2 border-violet-100 text-violet-700 py-3 lg:py-4 rounded-xl font-semibold hover:bg-violet-100 transition-all flex items-center justify-center group"
+                >
+                  Register as a Vendor
+                  <FiArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
+                </button>
+
                 <div className="mt-4 lg:mt-6 text-center">
                   <button
                     onClick={() => {

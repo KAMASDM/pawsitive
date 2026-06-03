@@ -3,6 +3,7 @@ import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getDatabase } from "firebase/database";
 import { getStorage } from "firebase/storage";
+import { getFunctions } from "firebase/functions";
 
 // Firebase configuration
 // In production (Netlify), these will be injected via environment variables
@@ -24,6 +25,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const database = getDatabase(app);
 const storage = getStorage(app);
+const functions = getFunctions(app);
 const googleProvider = new GoogleAuthProvider();
 
-export { googleProvider, signInWithPopup, database, auth, db, storage };
+export { googleProvider, signInWithPopup, database, auth, db, storage, functions };

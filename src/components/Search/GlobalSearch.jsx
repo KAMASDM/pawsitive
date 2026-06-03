@@ -9,6 +9,8 @@ import { auth, database } from "../../firebase";
 const QUICK_LINKS = [
   { label: "My pets", detail: "Open your pet dashboard", path: "/my-pets", keywords: "home pets dashboard" },
   { label: "Resources", detail: "Find vets, stores and services", path: "/resource", keywords: "vet resource groomer store" },
+  { label: "Pawppy Market", detail: "Shop vetted pet products", path: "/shop", keywords: "shop market ecommerce products food toys treats" },
+  { label: "Seller Studio", detail: "Apply or manage your vendor store", path: "/shop/seller", keywords: "seller vendor store business ecommerce" },
   { label: "Nearby mates", detail: "Find matching pets", path: "/nearby-mates", keywords: "mate mating nearby" },
   { label: "Adoption", detail: "Browse pets for adoption", path: "/adopt-pets", keywords: "adopt adoption" },
   { label: "Lost & found", detail: "Report or browse lost pets", path: "/lost-and-found", keywords: "lost found report" },

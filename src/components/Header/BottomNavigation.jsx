@@ -1,13 +1,13 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiAward, FiGrid, FiUser } from "react-icons/fi";
+import { FiAward, FiShoppingBag, FiUser } from "react-icons/fi";
 import { FaPaw } from "react-icons/fa";
 import { HiOutlineLightBulb } from "react-icons/hi";
 
 const MENUS = [
   { id: "challenge", label: "Challenge", Icon: FiAward,            path: "/challenge"  },
-  { id: "resource",  label: "Explore",   Icon: FiGrid,             path: "/resource"   },
+  { id: "shop",      label: "Shop",      Icon: FiShoppingBag,      path: "/shop"       },
   { id: "home",      label: "Home",      Icon: FaPaw,              path: "/my-pets?picker=true", featured: true },
   { id: "quiz",      label: "Quiz",      Icon: HiOutlineLightBulb, path: "/quiz"       },
   { id: "profile",   label: "Profile",   Icon: FiUser,             path: "/profile"    },
@@ -15,7 +15,7 @@ const MENUS = [
 
 const matchId = (pathname) => {
   if (pathname.startsWith("/challenge"))                           return "challenge";
-  if (pathname.startsWith("/resource"))                            return "resource";
+  if (pathname.startsWith("/shop") || pathname.startsWith("/store") || pathname.startsWith("/products") || pathname.startsWith("/cart") || pathname.startsWith("/checkout") || pathname.startsWith("/orders")) return "shop";
   if (pathname === "/my-pets" || pathname.startsWith("/my-pets/")) return "home";
   if (pathname.startsWith("/quiz"))                                return "quiz";
   if (pathname === "/profile")                                     return "profile";
