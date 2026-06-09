@@ -22,9 +22,9 @@ const SkeletonCard = () => (
 
 export default function ChallengeFeed() {
   const navigate = useNavigate();
-  const { challenge, loading: challengeLoading } = useCurrentChallenge();
-  const { entries, loading: entriesLoading } = useChallengeEntries(challenge?.id);
-  const { votedEntryId } = useUserVote(challenge?.id);
+  const { challenge, loading: challengeLoading, error: challengeError } = useCurrentChallenge();
+  const { entries, loading: entriesLoading, error: entriesError } = useChallengeEntries(challenge?.id);
+  const { votedEntryId, error: voteError } = useUserVote(challenge?.id);
 
   const loading = challengeLoading || entriesLoading;
   const [left, right] = masonryColumns(entries);
@@ -83,6 +83,24 @@ export default function ChallengeFeed() {
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
               {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
             </div>
+          ) : challengeError || entriesError ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <span className="text-5xl mb-3">⚠️</span>
+              <p className="font-bold text-slate-700">Could not load the challenge feed</p>
+              <p className="text-sm text-gray-400 mt-1">Please refresh and try again.</p>
+            </div>
+          ) : !challenge ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <span className="text-5xl mb-3">📸</span>
+              <p className="font-bold text-slate-700">No active challenge</p>
+              <p className="text-sm text-gray-400 mt-1">Come back when the next weekly prompt goes live.</p>
+              <button
+                onClick={() => navigate("/challenge")}
+                className="mt-5 bg-violet-600 text-white text-sm font-semibold px-5 py-2.5 rounded-full"
+              >
+                Back to Challenge
+              </button>
+            </div>
           ) : entries.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <span className="text-5xl mb-3">📸</span>
@@ -127,6 +145,12 @@ export default function ChallengeFeed() {
                 ))}
               </div>
             </div>
+          )}
+
+          {voteError && (
+            <p className="mt-4 text-center text-xs text-red-400">
+              Vote status could not be loaded. Refresh before voting.
+            </p>
           )}
         </div>
       </div>

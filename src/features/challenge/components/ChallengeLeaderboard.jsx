@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   collection,
   query,
@@ -9,6 +9,8 @@ import {
   onSnapshot,
   where,
   getDocs,
+  getDoc,
+  doc,
 } from "firebase/firestore";
 import { db } from "../../../firebase";
 import { useCurrentChallenge } from "../hooks/useCurrentChallenge";
@@ -39,23 +41,39 @@ export default function ChallengeLeaderboard() {
 
   // This week — real-time
   useEffect(() => {
+    if (challengeLoading) return;
+    if (!challengeLoading && !challenge?.id) {
+      setEntries([]);
+      if (tab === "thisWeek") setLoading(false);
+      return;
+    }
     if (!challenge?.id) return;
     const q = query(
       collection(db, "challenges", challenge.id, "entries"),
       orderBy("voteCount", "desc"),
       limit(10)
     );
-    const unsub = onSnapshot(q, (snap) => {
-      setEntries(snap.docs.map((d, i) => ({ ...d.data(), id: d.id, rank: i + 1 })));
-      setLoading(false);
-    });
+    if (tab === "thisWeek") setLoading(true);
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        setEntries(snap.docs.map((d, i) => ({ ...d.data(), id: d.id, rank: i + 1 })));
+        if (tab === "thisWeek") setLoading(false);
+      },
+      (error) => {
+        console.error("Failed to load challenge leaderboard:", error);
+        setEntries([]);
+        if (tab === "thisWeek") setLoading(false);
+      }
+    );
     return unsub;
-  }, [challenge?.id]);
+  }, [challenge?.id, challengeLoading, tab]);
 
   // All-time champions
   useEffect(() => {
     if (tab !== "allTime") return;
     setLoading(true);
+    let cancelled = false;
     getDocs(
       query(
         collection(db, "challenges"),
@@ -69,25 +87,26 @@ export default function ChallengeLeaderboard() {
       for (const d of snap.docs) {
         const data = d.data();
         if (!data.winnerId) continue;
-        const eSnap = await getDocs(
-          query(
-            collection(db, "challenges", d.id, "entries"),
-            where("id", "==", data.winnerId),
-            limit(1)
-          )
-        );
-        if (!eSnap.empty) {
+        const eSnap = await getDoc(doc(db, "challenges", d.id, "entries", data.winnerId));
+        if (eSnap.exists()) {
           results.push({
-            ...eSnap.docs[0].data(),
-            id: eSnap.docs[0].id,
+            ...eSnap.data(),
+            id: eSnap.id,
             challengeTheme: data.theme,
             weekNumber: data.weekNumber,
           });
         }
       }
+      if (cancelled) return;
       setChampions(results);
       setLoading(false);
+    }).catch((error) => {
+      if (cancelled) return;
+      console.error("Failed to load challenge champions:", error);
+      setChampions([]);
+      setLoading(false);
     });
+    return () => { cancelled = true; };
   }, [tab]);
 
   const displayList = tab === "thisWeek" ? entries : champions;
@@ -142,7 +161,9 @@ export default function ChallengeLeaderboard() {
             Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)
           ) : displayList.length === 0 ? (
             <div className="py-16 text-center">
-              <p className="text-gray-400 text-sm">No entries yet this week.</p>
+              <p className="text-gray-400 text-sm">
+                {tab === "thisWeek" ? "No entries yet this week." : "No champions yet."}
+              </p>
             </div>
           ) : (
             displayList.map((entry, i) => (

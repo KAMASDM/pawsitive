@@ -1,24 +1,23 @@
 import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   collection,
-  addDoc,
   doc,
-  updateDoc,
-  increment,
-  query,
-  where,
   getDocs,
+  increment,
   limit,
+  query,
   serverTimestamp,
+  setDoc,
+  updateDoc,
+  where,
 } from "firebase/firestore";
 import imageCompression from "browser-image-compression";
 import { db, auth } from "../../../firebase";
 import { useCurrentChallenge } from "../hooks/useCurrentChallenge";
-import { FiCamera, FiX, FiCheck, FiArrowLeft, FiUpload } from "react-icons/fi";
+import { FiCamera, FiX, FiArrowLeft, FiUpload } from "react-icons/fi";
 import { XP } from "../../../utils/xpSystem";
-import { updateDoc as fsUpdate, doc as fsDoc, setDoc } from "firebase/firestore";
 
 const MAX_CAPTION = 150;
 
@@ -45,7 +44,9 @@ export default function ChallengeSubmitScreen() {
       where("uid", "==", user.uid),
       limit(1)
     );
-    getDocs(q).then((s) => { if (!s.empty) setAlreadyEntered(true); });
+    getDocs(q)
+      .then((s) => { if (!s.empty) setAlreadyEntered(true); })
+      .catch((err) => console.error("Failed to check challenge entry:", err));
   }, [challenge?.id, user]);
 
   const handleFile = async (e) => {
@@ -66,11 +67,22 @@ export default function ChallengeSubmitScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!file || !challenge || !user) return;
+    if (!file || !challenge || !user || uploading || alreadyEntered) return;
     setUploading(true);
     setError(null);
 
     try {
+      const existingEntryQuery = query(
+        collection(db, "challenges", challenge.id, "entries"),
+        where("uid", "==", user.uid),
+        limit(1)
+      );
+      const existingEntrySnap = await getDocs(existingEntryQuery);
+      if (!existingEntrySnap.empty) {
+        setAlreadyEntered(true);
+        return;
+      }
+
       // Convert compressed image to base64 data URL and store in Firestore
       const photoUrl = await new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -91,21 +103,21 @@ export default function ChallengeSubmitScreen() {
         petName = first[1].name || "";
       }
 
-      const entryRef = await addDoc(
-        collection(db, "challenges", challenge.id, "entries"),
-        {
-          uid: user.uid,
-          petId,
-          petName,
-          ownerDisplayName: user.displayName || "Pawppy User",
-          petPhotoUrl: photoUrl,
-          caption: caption.trim(),
-          voteCount: 0,
-          timestamp: serverTimestamp(),
-        }
-      );
+      const entryRef = doc(collection(db, "challenges", challenge.id, "entries"));
+      await setDoc(entryRef, {
+        id: entryRef.id,
+        uid: user.uid,
+        petId,
+        petName,
+        ownerDisplayName: user.displayName || "Pawppy User",
+        petPhotoUrl: photoUrl,
+        caption: caption.trim(),
+        voteCount: 0,
+        timestamp: serverTimestamp(),
+      });
 
       // Entry saved — show success immediately
+      setAlreadyEntered(true);
       setDone(true);
 
       // Best-effort: update challenge entry count
@@ -114,12 +126,12 @@ export default function ChallengeSubmitScreen() {
       }).catch(() => {});
 
       // Best-effort: award XP to user
-      updateDoc(fsDoc(db, "users", user.uid, "quizStats", "stats"), {
+      updateDoc(doc(db, "users", user.uid, "quizStats", "stats"), {
         totalXP: increment(XP.CHALLENGE_SUBMITTED),
       }).catch(() => {});
 
       // Best-effort: write user's challenge history record for ActivityPage
-      setDoc(fsDoc(db, "users", user.uid, "challengeHistory", challenge.id), {
+      setDoc(doc(db, "users", user.uid, "challengeHistory", challenge.id), {
         challengeId: challenge.id,
         theme: challenge.theme,
         prompt: challenge.prompt,

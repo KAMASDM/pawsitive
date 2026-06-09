@@ -1,28 +1,34 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   doc,
   writeBatch,
   increment,
   serverTimestamp,
-  getDoc,
 } from "firebase/firestore";
 import { db, auth } from "../../../firebase";
 import { FiHeart, FiShare2 } from "react-icons/fi";
 import { FaHeart } from "react-icons/fa";
-import { XP } from "../../../utils/xpSystem";
 
 export default function VoteButton({ challengeId, entry, votedEntryId, onShareClick }) {
   const user = auth.currentUser;
   const isVoted = votedEntryId === entry.id;
   const hasVotedElsewhere = votedEntryId !== null && !isVoted;
+  const isOwnEntry = user?.uid === entry.uid;
   const [optimisticCount, setOptimisticCount] = useState(entry.voteCount || 0);
   const [optimisticVoted, setOptimisticVoted] = useState(isVoted);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    setOptimisticCount(entry.voteCount || 0);
+    setOptimisticVoted(isVoted);
+  }, [entry.voteCount, isVoted]);
 
   const handleVote = async () => {
-    if (!user || loading || hasVotedElsewhere || optimisticVoted) return;
+    if (!user || loading || hasVotedElsewhere || optimisticVoted || isOwnEntry) return;
     setLoading(true);
+    setError("");
 
     // Optimistic update
     setOptimisticCount((v) => v + 1);
@@ -39,18 +45,13 @@ export default function VoteButton({ challengeId, entry, votedEntryId, onShareCl
       batch.update(doc(db, "challenges", challengeId, "entries", entry.id), {
         voteCount: increment(1),
       });
-      // Award XP to entry owner (best-effort — don't block)
-      batch.set(
-        doc(db, "users", entry.uid, "quizStats", "stats"),
-        { totalXP: increment(XP.CHALLENGE_VOTE_RECEIVED) },
-        { merge: true }
-      );
       await batch.commit();
     } catch (err) {
       console.error("Vote failed:", err);
       // Roll back
       setOptimisticCount((v) => v - 1);
       setOptimisticVoted(false);
+      setError("Vote failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -61,12 +62,13 @@ export default function VoteButton({ challengeId, entry, votedEntryId, onShareCl
       <motion.button
         whileTap={{ scale: 0.88 }}
         onClick={handleVote}
-        disabled={loading || hasVotedElsewhere || optimisticVoted}
+        disabled={loading || hasVotedElsewhere || optimisticVoted || isOwnEntry}
         aria-label={`Vote for ${entry.petName}, currently ${optimisticCount} votes`}
+        title={isOwnEntry ? "You cannot vote for your own entry" : error || undefined}
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold transition-colors ${
           optimisticVoted
             ? "bg-red-50 text-red-500"
-            : hasVotedElsewhere
+            : hasVotedElsewhere || isOwnEntry
             ? "bg-gray-50 text-gray-300 cursor-not-allowed"
             : "bg-violet-50 text-violet-600 hover:bg-violet-100"
         }`}
