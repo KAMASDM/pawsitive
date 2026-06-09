@@ -103,9 +103,20 @@ async function notifyUser(userId, { type, title, body, data = {} }) {
     );
     await admin.messaging().send({
       token: fcmToken,
-      notification: { title, body, icon: '/favicon.png', badge: '/favicon.png' },
+      notification: { title, body },
       data: stringData,
-      webpush: { fcm_options: { link: `${BASE_URL}${clickAction}` } },
+      webpush: {
+        notification: {
+          icon: `${BASE_URL}/favicon.png`,
+          badge: `${BASE_URL}/favicon.png`,
+          vibrate: [200, 100, 200],
+          requireInteraction: false,
+        },
+        fcm_options: { link: `${BASE_URL}${clickAction}` },
+      },
+      android: {
+        notification: { icon: 'ic_notification', color: '#7c3aed', clickAction: `${BASE_URL}${clickAction}` },
+      },
     });
   } catch (err) {
     if (err.code === 'messaging/registration-token-not-registered') {
@@ -623,7 +634,7 @@ exports.notifyNewChallenge = functions.firestore
         topic: 'new-challenges',
         notification: { title, body },
         webpush: {
-          notification: { icon: '/favicon.png', badge: '/favicon.png', requireInteraction: false },
+          notification: { icon: `${BASE_URL}/favicon.png`, badge: `${BASE_URL}/favicon.png`, requireInteraction: false },
           fcm_options: { link: `${BASE_URL}/challenge` },
         },
         data: { type: 'new_challenge', challengeId: context.params.challengeId, click_action: '/challenge' },
@@ -679,7 +690,7 @@ exports.challengeEndingReminder = functions
           topic: 'new-challenges',
           notification: { title, body },
           webpush: {
-            notification: { icon: '/favicon.png', badge: '/favicon.png' },
+            notification: { icon: `${BASE_URL}/favicon.png`, badge: `${BASE_URL}/favicon.png` },
             fcm_options: { link: `${BASE_URL}/challenge/feed` },
           },
           data: { type: 'challenge_ending', challengeId: doc.id, click_action: '/challenge/feed' },
@@ -749,7 +760,7 @@ exports.notifyNewQuiz = functions.firestore
         topic: 'new-quizzes',
         notification: { title, body },
         webpush: {
-          notification: { icon: '/favicon.png', badge: '/favicon.png' },
+          notification: { icon: `${BASE_URL}/favicon.png`, badge: `${BASE_URL}/favicon.png` },
           fcm_options: { link: `${BASE_URL}/quiz` },
         },
         data: { type: 'new_quiz', quizId: context.params.quizId, click_action: '/quiz' },
@@ -1629,8 +1640,8 @@ exports.checkAndNotify = functions
       ]);
 
       await Promise.all([
-        ...newChallenges.map((data) => messaging.send({ topic: 'new-challenges', notification: { title: '🏆 New Pawppy Challenge!', body: `${data.theme || 'New Challenge'}: "${data.prompt || 'Show us your pet!'}"` }, webpush: { notification: { icon: '/favicon.png', badge: '/favicon.png' }, fcm_options: { link: `${BASE_URL}/challenge` } }, data: { type: 'new_challenge', challengeId: data.id, click_action: '/challenge' } }).catch((e) => console.warn('[checkAndNotify] challenge push:', e.message))),
-        ...newQuizzes.map((data) => messaging.send({ topic: 'new-quizzes', notification: { title: '🧠 New Weekly Quiz!', body: `${data.title || 'New Quiz'} — ${data.topic || 'Pet Knowledge'}` }, webpush: { notification: { icon: '/favicon.png', badge: '/favicon.png' }, fcm_options: { link: `${BASE_URL}/quiz` } }, data: { type: 'new_quiz', quizId: data.id, click_action: '/quiz' } }).catch((e) => console.warn('[checkAndNotify] quiz push:', e.message))),
+        ...newChallenges.map((data) => messaging.send({ topic: 'new-challenges', notification: { title: '🏆 New Pawppy Challenge!', body: `${data.theme || 'New Challenge'}: "${data.prompt || 'Show us your pet!'}"` }, webpush: { notification: { icon: `${BASE_URL}/favicon.png`, badge: `${BASE_URL}/favicon.png` }, fcm_options: { link: `${BASE_URL}/challenge` } }, data: { type: 'new_challenge', challengeId: data.id, click_action: '/challenge' } }).catch((e) => console.warn('[checkAndNotify] challenge push:', e.message))),
+        ...newQuizzes.map((data) => messaging.send({ topic: 'new-quizzes', notification: { title: '🧠 New Weekly Quiz!', body: `${data.title || 'New Quiz'} — ${data.topic || 'Pet Knowledge'}` }, webpush: { notification: { icon: `${BASE_URL}/favicon.png`, badge: `${BASE_URL}/favicon.png` }, fcm_options: { link: `${BASE_URL}/quiz` } }, data: { type: 'new_quiz', quizId: data.id, click_action: '/quiz' } }).catch((e) => console.warn('[checkAndNotify] quiz push:', e.message))),
       ]);
 
       console.log(`[checkAndNotify] Activated ${newChallenges.length} challenge(s), ${newQuizzes.length} quiz(zes)`);

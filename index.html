@@ -6,14 +6,14 @@
   <link rel="icon" href="/favicon.png" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#7c3aed" />
-  
+
   <!-- Primary Meta Tags -->
   <title>Pawppy - Your Pet's Complete Care Platform</title>
   <meta name="title" content="Pawppy - Your Pet's Complete Care Platform" />
   <meta name="description" content="Everything your beloved pet needs in one beautiful platform. Track health records, find pet-friendly places, connect with other pet parents, and explore pet resources near you." />
   <meta name="keywords" content="pet care, pet health, pet tracking, veterinary, pet community, pet resources, dog care, cat care, pet adoption" />
   <meta name="author" content="Pawppy" />
-  
+
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://pawppy.in/" />
@@ -23,29 +23,29 @@
   <meta property="og:image:alt" content="Pawppy Logo" />
   <meta property="og:site_name" content="Pawppy" />
   <meta property="og:locale" content="en_US" />
-  
+
   <!-- Twitter -->
   <meta property="twitter:card" content="summary_large_image" />
   <meta property="twitter:url" content="https://pawppy.in/" />
   <meta property="twitter:title" content="Pawppy - Your Pet's Complete Care Platform" />
   <meta property="twitter:description" content="Everything your beloved pet needs in one beautiful platform. Track health records, find pet-friendly places, connect with other pet parents, and explore pet resources near you." />
   <meta property="twitter:image" content="https://pawppy.in/favicon.png" />
-  
+
   <!-- Apple-specific meta tags for a better PWA experience -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Pawppy" />
-  
+
   <!-- Icons -->
   <link rel="apple-touch-icon" href="/favicon.png" />
   <link rel="icon" href="/favicon.png" sizes="192x192" type="image/png" />
   <link rel="icon" href="/favicon.png" sizes="256x256" type="image/png" />
   <link rel="icon" href="/favicon.png" sizes="384x384" type="image/png" />
   <link rel="icon" href="/favicon.png" sizes="512x512" type="image/png" />
-  
+
   <!-- Web App metadata for iOS -->
   <meta name="format-detection" content="telephone=no" />
-  
+
   <!-- Additional PWA Meta Tags -->
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="application-name" content="Pawppy" />
@@ -57,93 +57,15 @@
       padding: 0;
       width: 100%;
       height: 100%;
-    }
-    #app-splash {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      z-index: 99999;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      /* Match the React SplashScreen so there's no white flash before it mounts */
       background: linear-gradient(160deg, #6b5aad 0%, #4a3d7d 55%, #2e2550 100%);
-      transition: opacity 0.35s ease;
     }
-    #app-splash-inner {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      animation: splash-pop 0.44s cubic-bezier(0.34,1.56,0.64,1) both;
-    }
-    #app-splash-logo-ring {
-      width: 136px;
-      height: 136px;
-      border-radius: 50%;
-      background: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 0 0 6px rgba(255,255,255,0.18), 0 20px 56px rgba(0,0,0,0.32);
-      overflow: hidden;
-    }
-    #app-splash-logo-ring img {
-      width: 88%;
-      height: 88%;
-      object-fit: contain;
-      display: block;
-    }
-    #app-splash p.splash-name {
-      margin-top: 22px;
-      color: #fff;
-      font-family: 'Inter', system-ui, sans-serif;
-      font-size: 24px;
-      font-weight: 700;
-      letter-spacing: 0.07em;
-      line-height: 1;
-    }
-    #app-splash p.splash-tag {
-      margin-top: 6px;
-      color: #d1cae7;
-      font-family: 'Inter', system-ui, sans-serif;
-      font-size: 11px;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      font-weight: 500;
-      line-height: 1;
-    }
-    @keyframes splash-pop {
-      from { transform: scale(0.78) translateY(20px); opacity: 0; }
-      to   { transform: scale(1)    translateY(0);    opacity: 1; }
-    }
-    #app-splash.hidden { opacity: 0; pointer-events: none; }
   </style>
 </head>
 
 <body>
   <noscript>You need to enable JavaScript to run this app.</noscript>
-
-  <!-- Inline splash: visible instantly before React mounts -->
-  <div id="app-splash">
-    <div id="app-splash-inner">
-      <div id="app-splash-logo-ring">
-        <img src="/favicon.png" alt="Pawppy" />
-      </div>
-      <p class="splash-name">pawppy</p>
-      <p class="splash-tag">Pet Resources Finder</p>
-    </div>
-  </div>
-
   <div id="root"></div>
-  <script>
-    // Fade out the HTML splash once React is ready
-    window.__hideSplash = function() {
-      var s = document.getElementById('app-splash');
-      if (s) { s.classList.add('hidden'); setTimeout(function(){ s.remove(); }, 400); }
-    };
-  </script>
   <script type="module" src="/src/index.js"></script>
 </body>
 

@@ -61,6 +61,8 @@ importScripts('https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js
 importScripts('https://www.gstatic.com/firebasejs/10.13.2/firebase-messaging-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.13.2/firebase-database-compat.js');
 
+const BASE_URL = 'https://pawppy.in';
+
 firebase.initializeApp({
   apiKey: "${apiKey}",
   authDomain: "${authDomain}",
@@ -95,57 +97,63 @@ async function updateBadge(userId) {
 }
 
 messaging.onBackgroundMessage(async (payload) => {
-  console.log('[firebase-messaging-sw.js] Received background message ', payload);
   const userId = payload.data?.receiverId;
   let badgeCount = 0;
   if (userId) {
     badgeCount = await updateBadge(userId);
   }
-  const notificationTitle = payload.notification?.title || 'New Notification';
+  const notificationTitle = payload.notification?.title || 'Pawppy';
+  let notificationBody = payload.notification?.body || 'You have a new notification';
+  if (badgeCount > 0) {
+    notificationBody += \` (\${badgeCount} unread)\`;
+  }
   const notificationOptions = {
-    body: payload.notification?.body || 'You have a new notification',
-    icon: payload.notification?.icon || '/favicon.png',
-    badge: '/favicon.png',
+    body: notificationBody,
+    icon: BASE_URL + '/favicon.png',
+    badge: BASE_URL + '/favicon.png',
     data: payload.data || {},
-    actions: [
-      { action: 'open', title: 'Open App' }
-    ],
-    tag: payload.data?.notificationId || 'default',
+    actions: [{ action: 'open', title: 'Open Pawppy' }],
+    tag: payload.data?.notificationId || payload.data?.type || 'default',
     requireInteraction: false,
     vibrate: [200, 100, 200],
   };
-  if (badgeCount > 0) {
-    notificationOptions.body += \` (\${badgeCount} unread)\`;
-  }
   return self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
-self.addEventListener('notificationclick', async (event) => {
-  console.log('[Service Worker] Notification click received.', event);
+self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   if (event.action === 'open' || !event.action) {
-    const urlToOpen = event.notification.data?.click_action || '/';
+    // click_action is a path like "/challenge" — always resolve to an absolute URL
+    const path = event.notification.data?.click_action || '/';
+    const fullUrl = path.startsWith('http') ? path : BASE_URL + path;
     event.waitUntil(
-      clients.matchAll({ type: 'window', includeUncontrolled: true })
-        .then((windowClients) => {
-          for (let i = 0; i < windowClients.length; i++) {
-            const client = windowClients[i];
-            if (client.url === urlToOpen && 'focus' in client) {
+      clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+        // Focus an existing tab that matches the target path
+        for (const client of windowClients) {
+          try {
+            const clientPath = new URL(client.url).pathname;
+            const targetPath = new URL(fullUrl).pathname;
+            if (clientPath === targetPath && 'focus' in client) {
               return client.focus();
             }
+          } catch (_) {}
+        }
+        // Navigate any open Pawppy tab to the target URL
+        for (const client of windowClients) {
+          if (client.url.startsWith(BASE_URL) && 'navigate' in client) {
+            return client.navigate(fullUrl).then((c) => c && c.focus());
           }
-          if (clients.openWindow) {
-            return clients.openWindow(urlToOpen);
-          }
-        })
+        }
+        // No existing tab — open a new one
+        return clients.openWindow(fullUrl);
+      })
     );
   }
 });
 
 self.addEventListener('message', async (event) => {
   if (event.data && event.data.type === 'UPDATE_BADGE') {
-    const { userId } = event.data;
-    await updateBadge(userId);
+    await updateBadge(event.data.userId);
   }
 });
 `;
