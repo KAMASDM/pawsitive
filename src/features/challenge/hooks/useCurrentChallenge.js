@@ -2,9 +2,11 @@ import { useState, useEffect } from "react";
 import {
   collection,
   query,
+  where,
   orderBy,
   limit,
   onSnapshot,
+  Timestamp,
 } from "firebase/firestore";
 import { db } from "../../../firebase";
 
@@ -21,9 +23,10 @@ function toDate(value) {
 
 /**
  * Returns the current challenge by time window.
- * seed-year.js seeds all 52 challenges with isActive: false and relies on a
- * backend activator that never ran, so we ignore isActive and instead pick
- * the most-recently-started challenge whose endTime hasn't passed yet.
+ * seed-year.js seeds all 52 challenges with isActive: false so we ignore that
+ * flag and instead query: startTime <= now, ordered desc, limit 1.
+ * The single result is the most-recently-started challenge; we then check
+ * client-side that its endTime hasn't passed.
  */
 export function useCurrentChallenge() {
   const [challenge, setChallenge] = useState(null);
@@ -33,25 +36,24 @@ export function useCurrentChallenge() {
   useEffect(() => {
     const q = query(
       collection(db, "challenges"),
+      where("startTime", "<=", Timestamp.now()),
       orderBy("startTime", "desc"),
-      limit(20)
+      limit(1)
     );
 
     const unsub = onSnapshot(
       q,
       (snap) => {
-        const now = new Date();
-        const current = snap.docs
-          .map((doc) => ({ id: doc.id, ...doc.data() }))
-          .find((c) => {
-            const start = toDate(c.startTime);
-            const end = toDate(c.endTime);
-            if (!start || start > now) return false;
-            if (end && end < now) return false;
-            return true;
-          });
-
-        setChallenge(current || null);
+        if (snap.empty) {
+          setChallenge(null);
+          setLoading(false);
+          return;
+        }
+        const doc = snap.docs[0];
+        const data = { id: doc.id, ...doc.data() };
+        const end = toDate(data.endTime);
+        // Discard if the window has already closed
+        setChallenge(end && end < new Date() ? null : data);
         setLoading(false);
       },
       (err) => {
