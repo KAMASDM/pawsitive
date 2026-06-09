@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiX, FiUpload, FiImage, FiVideo } from 'react-icons/fi';
 import { ref as dbRef, push } from 'firebase/database';
@@ -101,13 +102,13 @@ const CreatePostModal = ({ isOpen, onClose, pet }) => {
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <AnimatePresence>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 bg-black bg-opacity-75 z-[500] flex items-center justify-center p-4"
         onClick={onClose}
       >
         <motion.div
@@ -235,7 +236,8 @@ const CreatePostModal = ({ isOpen, onClose, pet }) => {
           </div>
         </motion.div>
       </motion.div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };
 

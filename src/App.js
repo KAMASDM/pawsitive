@@ -124,7 +124,7 @@ function App() {
       {location.pathname !== "/" && <GlobalSearch />}
       <div className="min-h-screen bg-lavender-50 flex flex-col">
         <Header />
-        <main className="flex-grow mb-[62px] sm:mb-0">
+        <main className="flex-grow main-content">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={location.pathname}

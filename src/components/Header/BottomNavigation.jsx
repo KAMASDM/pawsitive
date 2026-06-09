@@ -38,7 +38,7 @@ const BottomNavigation = () => {
         <div className="absolute inset-x-7 top-0 h-px bg-gradient-to-r from-transparent via-violet-300 to-transparent" />
         <div className="absolute left-1/2 top-0 h-8 w-24 -translate-x-1/2 -translate-y-1/2 rounded-b-full bg-[#f4f1fb]" />
 
-        <ul className="relative z-10 grid grid-cols-5 items-end gap-1 px-2 pt-2 pb-2">
+        <ul className="relative z-10 grid grid-cols-5 items-end gap-1 px-2 pt-1 pb-2">
           {MENUS.map((menu) => {
             const isActive = activeId === menu.id;
             return (
@@ -63,7 +63,7 @@ const NavItem = ({ menu, isActive }) => {
       <li className="flex items-center justify-center">
         <Link
           to={path}
-          className="relative -top-6 flex h-[78px] min-w-0 flex-col items-center justify-start select-none"
+          className="relative -top-5 flex h-[68px] min-w-0 flex-col items-center justify-start select-none"
           style={{ WebkitTapHighlightColor: "transparent" }}
           aria-label={label}
         >
@@ -73,7 +73,7 @@ const NavItem = ({ menu, isActive }) => {
                 initial={{ scale: 0.7, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.7, opacity: 0 }}
-                className="absolute top-0.5 h-[68px] w-[68px] rounded-full bg-violet-200/60 blur-md"
+                className="absolute top-0.5 h-[58px] w-[58px] rounded-full bg-violet-200/60 blur-md"
               />
             )}
           </AnimatePresence>
@@ -81,7 +81,7 @@ const NavItem = ({ menu, isActive }) => {
             animate={{ y: isActive ? -2 : 0 }}
             whileTap={{ scale: 0.9 }}
             transition={{ type: "spring", stiffness: 500, damping: 30 }}
-            className={`relative z-10 w-16 h-16 rounded-full border-4 border-white shadow-[0_14px_30px_rgba(91,67,170,0.32)] flex items-center justify-center ${
+            className={`relative z-10 w-14 h-14 rounded-full border-4 border-white shadow-[0_14px_30px_rgba(91,67,170,0.32)] flex items-center justify-center ${
               isActive
                 ? "bg-gradient-to-br from-violet-600 to-indigo-700"
                 : "bg-gradient-to-br from-violet-500 to-purple-600"
@@ -106,7 +106,7 @@ const NavItem = ({ menu, isActive }) => {
     <li className="flex items-center justify-center min-w-0">
       <Link
         to={path}
-        className="relative flex h-[62px] w-full min-w-0 flex-col items-center justify-center gap-1 select-none rounded-2xl"
+        className="relative flex h-[52px] w-full min-w-0 flex-col items-center justify-center gap-1 select-none rounded-2xl"
         style={{ WebkitTapHighlightColor: "transparent" }}
         aria-label={label}
       >
