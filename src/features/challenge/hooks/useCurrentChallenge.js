@@ -1,5 +1,11 @@
 import { useState, useEffect } from "react";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
+import {
+  collection,
+  query,
+  orderBy,
+  limit,
+  onSnapshot,
+} from "firebase/firestore";
 import { db } from "../../../firebase";
 
 function toDate(value) {
@@ -13,20 +19,11 @@ function toDate(value) {
   return null;
 }
 
-function isCurrentChallenge(challenge, now) {
-  const start = toDate(challenge.startTime);
-  const end = toDate(challenge.endTime);
-
-  if (end) return end >= now;
-  if (!start) return false;
-
-  const maxAgeMs = 8 * 24 * 60 * 60 * 1000;
-  return now.getTime() - start.getTime() <= maxAgeMs;
-}
-
 /**
- * Returns the currently active challenge (isActive === true).
- * Ignores stale docs that were accidentally left with isActive === true.
+ * Returns the current challenge by time window.
+ * seed-year.js seeds all 52 challenges with isActive: false and relies on a
+ * backend activator that never ran, so we ignore isActive and instead pick
+ * the most-recently-started challenge whose endTime hasn't passed yet.
  */
 export function useCurrentChallenge() {
   const [challenge, setChallenge] = useState(null);
@@ -36,7 +33,8 @@ export function useCurrentChallenge() {
   useEffect(() => {
     const q = query(
       collection(db, "challenges"),
-      where("isActive", "==", true)
+      orderBy("startTime", "desc"),
+      limit(20)
     );
 
     const unsub = onSnapshot(
@@ -45,12 +43,13 @@ export function useCurrentChallenge() {
         const now = new Date();
         const current = snap.docs
           .map((doc) => ({ id: doc.id, ...doc.data() }))
-          .filter((candidate) => isCurrentChallenge(candidate, now))
-          .sort((a, b) => {
-            const aStart = toDate(a.startTime)?.getTime() || 0;
-            const bStart = toDate(b.startTime)?.getTime() || 0;
-            return bStart - aStart;
-          })[0];
+          .find((c) => {
+            const start = toDate(c.startTime);
+            const end = toDate(c.endTime);
+            if (!start || start > now) return false;
+            if (end && end < now) return false;
+            return true;
+          });
 
         setChallenge(current || null);
         setLoading(false);
