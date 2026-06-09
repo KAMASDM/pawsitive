@@ -376,7 +376,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { auth, database } from "../../firebase";
 import logo from "../../images/logo.png";
 import BottomNavigation from "./BottomNavigation";
-import { get, ref, update } from "firebase/database";
+import { get, onValue, ref, update } from "firebase/database";
 import {
   FiHome,
   FiUser,
@@ -384,12 +384,14 @@ import {
   FiMenu,
   FiX,
   FiBell,
+  FiSearch,
   FiHelpCircle,
   FiArrowRight,
   FiInbox,
   FiShoppingBag,
 } from "react-icons/fi";
 import { BsGrid } from "react-icons/bs";
+import { triggerSearch } from "../Search/GlobalSearch";
 
 // --- Notifications Popup Component (Fixed Click Issue) ---
 const NotificationsPopup = ({ requests, isOpen, onClose, onUpdateRequest }) => {
@@ -521,6 +523,7 @@ const Header = () => {
   const [matingRequests, setMatingRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [totalUnreadCount, setTotalUnreadCount] = useState(0);
 
   // Check if we're on the pet-first landing pages
   const isHomePage = location.pathname === "/my-pets" || location.pathname.startsWith("/my-pets/") || location.pathname === "/";
@@ -532,6 +535,13 @@ const Header = () => {
     });
     return () => unsubscribe();
   }, []);
+
+  // Subscribe to total unread notification count
+  useEffect(() => {
+    if (!user) { setTotalUnreadCount(0); return; }
+    const unreadRef = ref(database, `users/${user.uid}/unreadNotifications`);
+    return onValue(unreadRef, (snap) => setTotalUnreadCount(snap.val() || 0), () => setTotalUnreadCount(0));
+  }, [user]);
 
   // Scroll event listener
   useEffect(() => {
@@ -733,6 +743,14 @@ const Header = () => {
                 <FiHelpCircle className="mr-1" /> FAQ
               </NavLink>
 
+              <button
+                onClick={triggerSearch}
+                className={`flex items-center px-3 py-2 rounded-lg transition-all duration-300 ${getButtonClasses()}`}
+                aria-label="Search"
+              >
+                <FiSearch className="mr-1" /> Search
+              </button>
+
               <div className="relative">
                 <button
                   data-notification-toggle="true"
@@ -744,9 +762,9 @@ const Header = () => {
                 >
                   <FiBell className="mr-1" />
                   Notifications
-                  {pendingRequestsCount > 0 && (
+                  {totalUnreadCount > 0 && (
                     <span className="ml-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                      {pendingRequestsCount}
+                      {totalUnreadCount > 9 ? "9+" : totalUnreadCount}
                     </span>
                   )}
                 </button>
@@ -767,7 +785,14 @@ const Header = () => {
             </nav>
 
             {/* Mobile Controls */}
-            <div className="md:hidden flex items-center space-x-3">
+            <div className="md:hidden flex items-center space-x-2">
+              <button
+                onClick={triggerSearch}
+                className={`relative p-2 rounded-full transition-colors ${getMobileIconClasses()}`}
+                aria-label="Search"
+              >
+                <FiSearch size={20} />
+              </button>
               <div className="relative">
                 <button
                   data-notification-toggle="true"
@@ -775,12 +800,12 @@ const Header = () => {
                     e.stopPropagation();
                     setIsNotificationsOpen((prev) => !prev);
                   }}
-                  className={`transition-colors ${getMobileIconClasses()}`}
+                  className={`relative p-2 rounded-full transition-colors ${getMobileIconClasses()}`}
                 >
                   <FiBell size={20} />
-                  {pendingRequestsCount > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                      {pendingRequestsCount}
+                  {totalUnreadCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-0.5 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                      {totalUnreadCount > 9 ? "9+" : totalUnreadCount}
                     </span>
                   )}
                 </button>
@@ -793,7 +818,7 @@ const Header = () => {
               </div>
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className={`transition-colors ${getMobileIconClasses()}`}
+                className={`p-2 rounded-full transition-colors ${getMobileIconClasses()}`}
               >
                 {isMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
               </button>

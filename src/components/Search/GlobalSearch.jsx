@@ -3,8 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";
 import { onValue, ref } from "firebase/database";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiBell, FiCommand, FiSearch, FiX } from "react-icons/fi";
+import { FiCommand, FiSearch, FiX } from "react-icons/fi";
 import { auth, database } from "../../firebase";
+
+// Module-level singleton so Header can open the search without prop drilling
+let _openSearch = null;
+export const triggerSearch = () => _openSearch?.();
 
 const QUICK_LINKS = [
   { label: "My pets", detail: "Open your pet dashboard", path: "/my-pets", keywords: "home pets dashboard" },
@@ -25,8 +29,12 @@ export default function GlobalSearch() {
   const [query, setQuery] = useState("");
   const [pets, setPets] = useState([]);
   const [user, setUser] = useState(auth.currentUser);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [broadcastUnreadCount, setBroadcastUnreadCount] = useState(0);
+
+  // Register the module-level trigger so Header can open the modal
+  useEffect(() => {
+    _openSearch = () => setOpen(true);
+    return () => { _openSearch = null; };
+  }, []);
 
   useEffect(() => {
     const onKeyDown = (event) => {
@@ -43,27 +51,9 @@ export default function GlobalSearch() {
   useEffect(() => onAuthStateChanged(auth, setUser), []);
 
   useEffect(() => {
-    if (!user) {
-      setPets([]);
-      setUnreadCount(0);
-      setBroadcastUnreadCount(0);
-      return undefined;
-    }
-
+    if (!user) { setPets([]); return undefined; }
     const petsRef = ref(database, `userPets/${user.uid}`);
-    const unreadRef = ref(database, `users/${user.uid}/unreadNotifications`);
-    const broadcastsRef = ref(database, "broadcastNotifications");
-    const readsRef = ref(database, `notificationReads/${user.uid}`);
-    let broadcasts = {};
-    let reads = {};
-    const updateBroadcastUnread = () => {
-      const count = Object.entries(broadcasts).filter(([id, item]) => (
-        item?.active !== false && reads?.[id]?.read !== true
-      )).length;
-      setBroadcastUnreadCount(count);
-    };
-
-    const unsubscribePets = onValue(petsRef, (snapshot) => {
+    return onValue(petsRef, (snapshot) => {
       const value = snapshot.val() || {};
       setPets(Object.entries(value).map(([id, pet]) => ({
         label: pet.name || "Pet",
@@ -72,31 +62,6 @@ export default function GlobalSearch() {
         keywords: `${pet.name || ""} ${pet.breed || ""} ${pet.type || ""}`,
       })));
     });
-
-    const unsubscribeUnread = onValue(unreadRef, (snapshot) => {
-      setUnreadCount(snapshot.val() || 0);
-    });
-    const unsubscribeBroadcasts = onValue(broadcastsRef, (snapshot) => {
-      broadcasts = snapshot.val() || {};
-      updateBroadcastUnread();
-    }, () => {
-      broadcasts = {};
-      updateBroadcastUnread();
-    });
-    const unsubscribeReads = onValue(readsRef, (snapshot) => {
-      reads = snapshot.val() || {};
-      updateBroadcastUnread();
-    }, () => {
-      reads = {};
-      updateBroadcastUnread();
-    });
-
-    return () => {
-      unsubscribePets();
-      unsubscribeUnread();
-      unsubscribeBroadcasts();
-      unsubscribeReads();
-    };
   }, [user]);
 
   const results = useMemo(() => {
@@ -113,32 +78,8 @@ export default function GlobalSearch() {
     setQuery("");
     navigate(path);
   };
-  const totalUnreadCount = unreadCount + broadcastUnreadCount;
-
   return (
     <>
-      <div className="fixed right-4 bottom-[118px] md:bottom-5 z-40 flex items-center gap-2 rounded-full border border-white/70 bg-white/90 p-1.5 shadow-[0_16px_36px_rgba(51,38,92,0.18)] backdrop-blur-xl">
-        <button
-          onClick={() => navigate("/notifications")}
-          className="relative w-11 h-11 rounded-full bg-violet-50 text-slate-600 flex items-center justify-center active:scale-95 transition-transform"
-          aria-label="Notifications"
-        >
-          <FiBell size={18} />
-          {totalUnreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center">
-              {totalUnreadCount > 9 ? "9+" : totalUnreadCount}
-            </span>
-          )}
-        </button>
-        <button
-          onClick={() => setOpen(true)}
-          className="w-11 h-11 rounded-full bg-gradient-to-br from-violet-600 to-indigo-700 text-white shadow-[0_10px_24px_rgba(91,67,170,0.28)] flex items-center justify-center active:scale-95 transition-transform"
-          aria-label="Search"
-        >
-          <FiSearch size={18} />
-        </button>
-      </div>
-
       <AnimatePresence>
         {open && (
         <motion.div

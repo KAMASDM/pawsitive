@@ -11,6 +11,7 @@ import PR from "./components/PR/PR";
 import ScrollToTop from "./UI/ScrollToTop";
 import UpdateNotification from "./components/PWA/UpdateNotification";
 import GlobalSearch from "./components/Search/GlobalSearch";
+import PawLoader from "./components/Loaders/PawLoader";
 
 // Lazy-loaded route chunks — only downloaded when the route is visited
 const Home              = lazy(() => import("./components/Home/Home"));
@@ -136,14 +137,7 @@ function App() {
               }}
               className="will-change-[opacity,transform]"
             >
-              <Suspense fallback={
-                <div className="min-h-screen flex items-center justify-center">
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="w-12 h-12 rounded-full border-4 border-violet-200 border-t-violet-500 animate-spin" />
-                    <span className="text-sm text-violet-400 font-medium">Loading…</span>
-                  </div>
-                </div>
-              }>
+              <Suspense fallback={<PawLoader fullScreen />}>
                 {subdomainStoreSlug ? (
                   <Storefront subdomainSlug={subdomainStoreSlug} />
                 ) : (

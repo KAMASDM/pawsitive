@@ -110,27 +110,9 @@ const SplashScreen = () => {
         </p>
       </motion.div>
 
-      {/* Loading dots */}
-      <div className="absolute flex gap-2" style={{ bottom: 72 }}>
-        {[0, 1, 2].map((i) => (
-          <motion.span
-            key={i}
-            style={{
-              display: "block",
-              width: 7,
-              height: 7,
-              borderRadius: "50%",
-              background: "rgba(255,255,255,0.45)",
-            }}
-            animate={{ opacity: [0.25, 1, 0.25], scale: [0.75, 1.25, 0.75] }}
-            transition={{
-              duration: 1.1,
-              repeat: Infinity,
-              delay: i * 0.2,
-              ease: "easeInOut",
-            }}
-          />
-        ))}
+      {/* Paw animation */}
+      <div className="absolute" style={{ bottom: 52 }}>
+        <img src="/PawPrints.gif" alt="Loading" style={{ width: 80, height: 80, opacity: 0.85 }} />
       </div>
     </motion.div>
   );
