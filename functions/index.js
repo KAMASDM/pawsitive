@@ -289,24 +289,17 @@ exports.setVendorStatus = functions.https.onCall(async (data, context) => {
 // ============================================================================
 
 exports.sendMatingRequestNotification = functions.database
-  .ref('/matingRequests/{requestId}')
+  .ref('/matingRequests/received/{receiverId}/{requestId}')
   .onCreate(async (snapshot, context) => {
     try {
       const req = snapshot.val();
-      const { receiverId, senderId, senderPetId } = req;
+      const { receiverId, senderId, senderName, senderPetName, senderPetBreed } = req;
       const { requestId } = context.params;
 
-      const [senderSnap, petSnap] = await Promise.all([
-        admin.database().ref(`users/${senderId}`).once('value'),
-        admin.database().ref(`pets/${senderPetId}`).once('value'),
-      ]);
-      const sender = senderSnap.val() || {};
-      const pet = petSnap.val() || {};
+      const petLabel = senderPetName || (senderPetBreed ? `their ${senderPetBreed}` : 'their pet');
+      const displayName = senderName || 'Someone';
 
-      const { title, body } = T.mating_request({
-        senderName: sender.displayName || 'Someone',
-        petName: pet.name || (pet.breed ? `their ${pet.breed}` : 'their pet'),
-      });
+      const { title, body } = T.mating_request({ senderName: displayName, petName: petLabel });
       await notifyUser(receiverId, { type: 'mating_request', title, body, data: { type: 'mating_request', requestId, senderId, click_action: '/profile?tab=requests' } });
     } catch (err) {
       console.error('[sendMatingRequestNotification]', err);
@@ -323,27 +316,20 @@ exports.onMatingRequestStatusChange = functions.database
       if (!['accepted', 'declined'].includes(after.status)) return;
 
       const { receiverId } = context.params;
-      const { senderId, senderPetId, receiverPetId } = after;
+      const { senderId, senderPetName, receiverPetName } = after;
 
-      const [receiverSnap, receiverPetSnap, myPetSnap] = await Promise.all([
-        admin.database().ref(`users/${receiverId}`).once('value'),
-        receiverPetId ? admin.database().ref(`users/${receiverId}/pets/${receiverPetId}`).once('value') : Promise.resolve(null),
-        senderPetId ? admin.database().ref(`users/${senderId}/pets/${senderPetId}`).once('value') : Promise.resolve(null),
-      ]);
-
-      const receiver = receiverSnap.val() || {};
-      const receiverPet = receiverPetSnap?.val() || {};
-      const myPet = myPetSnap?.val() || {};
+      const receiverSnap = await admin.database().ref(`users/${receiverId}/displayName`).once('value');
+      const receiverName = receiverSnap.val() || 'Someone';
 
       if (after.status === 'accepted') {
         const { title, body } = T.mating_accepted({
-          receiverName: receiver.displayName || 'Someone',
-          receiverPet: receiverPet.name || 'their pet',
-          myPet: myPet.name || 'your pet',
+          receiverName: receiverName || 'Someone',
+          receiverPet: receiverPetName || 'their pet',
+          myPet: senderPetName || 'your pet',
         });
         await notifyUser(senderId, { type: 'mating_accepted', title, body, data: { type: 'mating_accepted', receiverId, click_action: '/profile?tab=messages' } });
       } else {
-        const { title, body } = T.mating_declined({ myPet: myPet.name || 'your pet' });
+        const { title, body } = T.mating_declined({ myPet: senderPetName || 'your pet' });
         await notifyUser(senderId, { type: 'mating_declined', title, body, data: { type: 'mating_declined', receiverId, click_action: '/nearby-mates' } });
       }
     } catch (err) {
