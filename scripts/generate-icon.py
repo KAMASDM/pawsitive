@@ -1,43 +1,35 @@
 #!/usr/bin/env python3
-"""Generate Pawppy app icons at 192x192 and 512x512."""
+"""Generate Pawppy app icons from paw-marker-green.svg."""
 
-from PIL import Image, ImageDraw, ImageFont
 import os
+import io
+import cairosvg
+from PIL import Image, ImageDraw
 
-def draw_paw(draw, cx, cy, size, color):
-    """Draw a realistic paw print (4 toes in arc + large central pad)."""
-    # ── Central metacarpal pad ──────────────────────────────────────────
-    pw = size * 0.48
-    ph = size * 0.40
-    r  = size * 0.14
-    px = cx - pw / 2
-    py = cy + size * 0.06
-    draw.rounded_rectangle([px, py, px + pw, py + ph], radius=r, fill=color)
+SVG_PATH = os.path.join(os.path.dirname(__file__), "..", "public", "paw-marker-green.svg")
+PUBLIC   = os.path.join(os.path.dirname(__file__), "..", "public")
 
-    # ── Toe pads — 4 in a natural arc ───────────────────────────────────
-    # Sizes: inner two slightly bigger, outer two a touch smaller + lower
-    toes = [
-        # (dx from cx, dy from cy, rx, ry)  — ellipses
-        (-size * 0.255, -size * 0.095, size * 0.088, size * 0.075),   # far-left
-        (-size * 0.090, -size * 0.215, size * 0.100, size * 0.085),   # mid-left
-        ( size * 0.090, -size * 0.215, size * 0.100, size * 0.085),   # mid-right
-        ( size * 0.255, -size * 0.095, size * 0.088, size * 0.075),   # far-right
-    ]
-    for dx, dy, rx, ry in toes:
-        tx = cx + dx
-        ty = cy + dy
-        draw.ellipse([tx - rx, ty - ry, tx + rx, ty + ry], fill=color)
+
+def render_svg(size):
+    """Render the SVG at 1024px then resize to target size for quality."""
+    render_size = max(size, 1024)
+    png_data = cairosvg.svg2png(
+        url=SVG_PATH,
+        output_width=render_size,
+        output_height=render_size,
+    )
+    img = Image.open(io.BytesIO(png_data)).convert("RGBA")
+    if render_size != size:
+        img = img.resize((size, size), Image.LANCZOS)
+    return img
 
 
 def gradient_background(size):
-    """Diagonal linear gradient: violet → deep indigo."""
-    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    """Diagonal violet→indigo gradient."""
+    img = Image.new("RGBA", (size, size))
     draw = ImageDraw.Draw(img)
-
-    # #7c3aed (vibrant violet) → #312e81 (deep indigo)
-    c1 = (124, 58, 237)
-    c2 = (49,  46, 129)
-
+    c1 = (124, 58, 237)   # #7c3aed violet
+    c2 = (49,  46, 129)   # #312e81 indigo
     for y in range(size):
         for x in range(size):
             t = (x + y) / (2 * (size - 1))
@@ -49,68 +41,37 @@ def gradient_background(size):
 
 
 def rounded_mask(size, radius_frac=0.22):
-    """iOS-style squircle-ish rounded rectangle mask."""
     mask = Image.new("L", (size, size), 0)
-    draw = ImageDraw.Draw(mask)
-    r = int(size * radius_frac)
-    draw.rounded_rectangle([0, 0, size - 1, size - 1], radius=r, fill=255)
+    ImageDraw.Draw(mask).rounded_rectangle(
+        [0, 0, size - 1, size - 1], radius=int(size * radius_frac), fill=255
+    )
     return mask
 
 
 def generate_icon(size, out_path):
-    img = gradient_background(size)
-    draw = ImageDraw.Draw(img)
+    # 1. Gradient background
+    bg = gradient_background(size)
 
-    # ── Paw print — white, centred slightly above middle ────────────────
-    paw_size = size * 0.54
-    cx = size * 0.50
-    cy = size * 0.42
-    draw_paw(draw, cx, cy, paw_size, (255, 255, 255, 255))
+    # 2. Render SVG — give it 80% of the icon area, centred
+    paw_size = int(size * 0.82)
+    paw = render_svg(paw_size)
 
-    # ── "pawppy" wordmark ────────────────────────────────────────────────
-    font_size = int(size * 0.115)
-    font = None
-    for path in [
-        "/System/Library/Fonts/Supplemental/Futura.ttc",
-        "/System/Library/Fonts/Helvetica.ttc",
-        "/System/Library/Fonts/HelveticaNeue.ttc",
-        "/System/Library/Fonts/SFNSRounded.ttf",
-    ]:
-        if os.path.exists(path):
-            try:
-                font = ImageFont.truetype(path, font_size, index=0)
-                break
-            except Exception:
-                continue
-    if font is None:
-        font = ImageFont.load_default()
+    # 3. Paste paw centred on gradient
+    offset = (size - paw_size) // 2
+    bg.paste(paw, (offset, offset), paw)
 
-    text = "pawppy"
-    bbox = draw.textbbox((0, 0), text, font=font)
-    tw = bbox[2] - bbox[0]
-    tx = (size - tw) / 2 - bbox[0]
-    # Place text below paw + some padding
-    ty = cy + paw_size * 0.30 + size * 0.015
-
-    # Soft drop shadow
-    draw.text((tx + 1, ty + 1), text, font=font, fill=(0, 0, 0, 55))
-    draw.text((tx, ty), text, font=font, fill=(255, 255, 255, 255))
-
-    # ── Apply rounded-corner mask ────────────────────────────────────────
-    img.putalpha(rounded_mask(size, 0.22))
-    img.save(out_path, "PNG", optimize=True)
+    # 4. Rounded corners
+    bg.putalpha(rounded_mask(size))
+    bg.save(out_path, "PNG", optimize=True)
     print(f"  Saved {out_path} ({size}x{size})")
 
 
 if __name__ == "__main__":
-    public = os.path.join(os.path.dirname(__file__), "..", "public")
-    os.makedirs(public, exist_ok=True)
-
-    print("Generating Pawppy app icons...")
-    generate_icon(512, os.path.join(public, "icon-512.png"))
-    generate_icon(192, os.path.join(public, "icon-192.png"))
+    print("Generating Pawppy app icons from paw-marker-green.svg...")
+    generate_icon(512, os.path.join(PUBLIC, "icon-512.png"))
+    generate_icon(192, os.path.join(PUBLIC, "icon-192.png"))
 
     import shutil
-    shutil.copy(os.path.join(public, "icon-192.png"), os.path.join(public, "favicon.png"))
+    shutil.copy(os.path.join(PUBLIC, "icon-192.png"), os.path.join(PUBLIC, "favicon.png"))
     print("  Copied icon-192.png → favicon.png")
     print("Done!")
