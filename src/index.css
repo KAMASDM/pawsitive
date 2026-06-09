@@ -72,11 +72,12 @@ body {
   margin-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* Bottom nav clearance — keeps page content above the fixed nav on mobile.
-   Uses calc so it automatically grows on notched phones (iPhone home indicator = 34px).
-   Reset to 0 at md+ where the bottom nav is hidden. */
+/* Bottom nav clearance — the nav auto-hides on forms/scroll-down so
+   we only need enough space for the resting visible state.
+   Uses calc so it grows correctly on notched phones.
+   Resets to 0 at md+ where the nav is hidden. */
 .main-content {
-  margin-bottom: calc(env(safe-area-inset-bottom, 0px) + 72px);
+  margin-bottom: calc(env(safe-area-inset-bottom, 0px) + 64px);
 }
 @media (min-width: 768px) {
   .main-content { margin-bottom: 0; }
