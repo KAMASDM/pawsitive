@@ -1,23 +1,14 @@
-import { auth } from "../../../firebase";
+import { getFunctions, httpsCallable } from "firebase/functions";
 
-export const callCommerceFunction = async (name, body = {}) => {
-  const user = auth.currentUser;
-  if (!user) throw new Error("Sign in to continue.");
+const fns = getFunctions();
 
-  const token = await user.getIdToken();
-  const response = await fetch(`/.netlify/functions/${name}`, {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
+// Converts "commerce-save-product" → "commerceSaveProduct"
+const toFunctionName = (name) =>
+  name.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
 
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(payload.error || "Commerce request failed.");
-  }
-
-  return payload;
+export const callCommerceFunction = async (name, data = {}) => {
+  const fnName = toFunctionName(name);
+  const callable = httpsCallable(fns, fnName);
+  const result = await callable(data);
+  return result.data;
 };

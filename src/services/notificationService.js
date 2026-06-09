@@ -1,6 +1,7 @@
 import emailjs from '@emailjs/browser';
 import { getDatabase, ref, set, push, get } from 'firebase/database';
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 
 // EmailJS Configuration
 const EMAILJS_SERVICE_ID = 'service_zdt4u0q';
@@ -1082,14 +1083,10 @@ export const requestNotificationPermission = async (userId) => {
 
       console.log('FCM Token saved to database');
 
-      // Subscribe this device to broadcast topics via Netlify function
+      // Subscribe this device to broadcast topics via Firebase callable
       try {
-        const res = await fetch('/.netlify/functions/subscribe-notifications', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token }),
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const subscribeToNotifications = httpsCallable(getFunctions(), 'subscribeToNotifications');
+        await subscribeToNotifications({ token });
         console.log('[FCM] Subscribed to new-challenges + new-quizzes topics');
       } catch (topicErr) {
         // Non-fatal — token is saved, topics subscription failed silently

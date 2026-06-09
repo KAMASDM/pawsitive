@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiDownload, FiX, FiRefreshCw, FiAlertCircle } from 'react-icons/fi';
 import { useRegisterSW } from 'virtual:pwa-register/react';
@@ -6,6 +6,7 @@ import { useRegisterSW } from 'virtual:pwa-register/react';
 const UpdateNotification = () => {
   const [showUpdatePrompt, setShowUpdatePrompt] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const fallbackTimerRef = useRef(null);
 
   const {
     offlineReady: [offlineReady, setOfflineReady],
@@ -13,43 +14,57 @@ const UpdateNotification = () => {
     updateServiceWorker,
   } = useRegisterSW({
     onRegistered(registration) {
-      console.log('SW Registered:', registration);
-      
-      // Check for updates every hour
       if (registration) {
-        setInterval(() => {
-          registration.update();
-        }, 60 * 60 * 1000); // Check every hour
+        // Poll for updates every hour
+        setInterval(() => registration.update(), 60 * 60 * 1000);
       }
     },
     onRegisterError(error) {
-      console.log('SW registration error', error);
+      console.warn('SW registration error', error);
     },
   });
 
   useEffect(() => {
-    if (needRefresh) {
-      setShowUpdatePrompt(true);
-    }
+    if (needRefresh) setShowUpdatePrompt(true);
   }, [needRefresh]);
 
-  const handleUpdate = async () => {
+  // Cleanup fallback timer on unmount
+  useEffect(() => () => { if (fallbackTimerRef.current) clearTimeout(fallbackTimerRef.current); }, []);
+
+  const handleUpdate = () => {
+    if (isUpdating) return;
     setIsUpdating(true);
-    
-    // Show updating state for at least 1 second for better UX
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Update and reload
-    updateServiceWorker(true);
+
+    // Step 1: Listen for controllerchange BEFORE triggering skipWaiting.
+    // This event fires only when the new SW has actually activated and taken
+    // control of the page — guaranteeing that the reload serves the new version.
+    if ('serviceWorker' in navigator) {
+      const onControllerChange = () => {
+        clearTimeout(fallbackTimerRef.current);
+        // Use location.href assignment instead of reload() — more reliable on
+        // mobile PWA standalone mode where reload() can serve stale cache.
+        window.location.href = window.location.href;
+      };
+
+      navigator.serviceWorker.addEventListener('controllerchange', onControllerChange, { once: true });
+
+      // Fallback: if controllerchange hasn't fired within 5 s something went
+      // wrong — force reload anyway so the user isn't stuck on a spinner.
+      fallbackTimerRef.current = setTimeout(() => {
+        navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
+        window.location.href = window.location.href;
+      }, 5000);
+    }
+
+    // Step 2: Send SKIP_WAITING to the waiting SW without reloading.
+    // The controllerchange listener above will trigger the reload once the new
+    // SW has taken over.
+    updateServiceWorker(false);
   };
 
   const handleDismiss = () => {
     setShowUpdatePrompt(false);
     setNeedRefresh(false);
-  };
-
-  const handleOfflineDismiss = () => {
-    setOfflineReady(false);
   };
 
   return (
@@ -69,79 +84,61 @@ const UpdateNotification = () => {
                 <div className="flex items-center gap-3">
                   <motion.div
                     className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center"
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                    animate={isUpdating ? { rotate: 360 } : {}}
+                    transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
                   >
                     <FiRefreshCw className="text-2xl" />
                   </motion.div>
                   <div>
-                    <h3 className="font-bold text-lg">New Version Available! 🎉</h3>
-                    <p className="text-white/90 text-sm">Update now for the latest features</p>
+                    <h3 className="font-bold text-lg">
+                      {isUpdating ? 'Updating Pawppy…' : 'New Version Available! 🎉'}
+                    </h3>
+                    <p className="text-white/80 text-sm">
+                      {isUpdating
+                        ? 'Installing update, please wait…'
+                        : 'A fresh version is ready to install'}
+                    </p>
                   </div>
                 </div>
-                <button
-                  onClick={handleDismiss}
-                  className="p-1 hover:bg-white/20 rounded-lg transition-colors"
-                  aria-label="Dismiss update notification"
-                >
-                  <FiX className="text-xl" />
-                </button>
+                {!isUpdating && (
+                  <button
+                    onClick={handleDismiss}
+                    className="p-1 hover:bg-white/20 rounded-lg transition-colors"
+                    aria-label="Dismiss update notification"
+                  >
+                    <FiX className="text-xl" />
+                  </button>
+                )}
               </div>
 
-              <div className="space-y-3">
-                <div className="bg-white/10 rounded-xl p-3 text-sm">
-                  <ul className="space-y-1">
-                    <li className="flex items-center gap-2">
-                      <span className="text-green-300">✓</span>
-                      <span>Performance improvements</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="text-green-300">✓</span>
-                      <span>Bug fixes and stability</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="text-green-300">✓</span>
-                      <span>New features and enhancements</span>
-                    </li>
-                  </ul>
-                </div>
-
+              {!isUpdating && (
                 <div className="flex gap-3">
                   <button
                     onClick={handleDismiss}
                     className="flex-1 px-4 py-3 bg-white/20 hover:bg-white/30 rounded-xl font-semibold text-sm transition-colors"
-                    disabled={isUpdating}
                   >
                     Later
                   </button>
                   <button
                     onClick={handleUpdate}
                     className="flex-1 px-4 py-3 bg-white text-violet-600 hover:bg-white/90 rounded-xl font-semibold text-sm transition-colors flex items-center justify-center gap-2 shadow-lg"
-                    disabled={isUpdating}
                   >
-                    {isUpdating ? (
-                      <>
-                        <motion.div
-                          animate={{ rotate: 360 }}
-                          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                        >
-                          <FiRefreshCw />
-                        </motion.div>
-                        <span>Updating...</span>
-                      </>
-                    ) : (
-                      <>
-                        <FiDownload />
-                        <span>Update Now</span>
-                      </>
-                    )}
+                    <FiDownload />
+                    Update Now
                   </button>
                 </div>
-              </div>
+              )}
 
-              <p className="text-white/70 text-xs mt-3 text-center">
-                Update takes only a few seconds
-              </p>
+              {isUpdating && (
+                <div className="w-full bg-white/20 rounded-full h-1.5 overflow-hidden">
+                  <motion.div
+                    className="h-full bg-white rounded-full"
+                    initial={{ width: '0%' }}
+                    animate={{ width: '90%' }}
+                    transition={{ duration: 4, ease: 'easeOut' }}
+                  />
+                </div>
+              )}
             </div>
           </motion.div>
         )}
@@ -164,14 +161,14 @@ const UpdateNotification = () => {
                     <FiAlertCircle className="text-2xl" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-bold text-lg mb-1">App Ready for Offline Use! 📱</h3>
+                    <h3 className="font-bold text-lg mb-1">Ready for Offline Use! 📱</h3>
                     <p className="text-white/90 text-sm">
                       Pawppy is now cached and works without internet
                     </p>
                   </div>
                 </div>
                 <button
-                  onClick={handleOfflineDismiss}
+                  onClick={() => setOfflineReady(false)}
                   className="p-1 hover:bg-white/20 rounded-lg transition-colors ml-2"
                   aria-label="Dismiss offline notification"
                 >
