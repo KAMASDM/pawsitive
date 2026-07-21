@@ -9,7 +9,7 @@ export default defineConfig({
     }),
     VitePWA({
       registerType: 'prompt',
-      includeAssets: ['favicon.png', 'robots.txt', 'sitemap.xml'],
+      includeAssets: ['paw-icon.svg', 'favicon-v2.png', 'apple-touch-icon-v2.png', 'paw-icon-v2-192.png', 'paw-icon-v2-512.png', 'paw-icon-maskable-v2-512.png', 'robots.txt', 'sitemap.xml'],
       manifest: {
         name: 'Pawppy App',
         short_name: 'Pawppy',
@@ -22,10 +22,22 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            src: 'favicon.png',
-            sizes: '192x192 256x256 384x384 512x512',
+            src: 'paw-icon-v2-192.png',
+            sizes: '192x192',
             type: 'image/png',
-            purpose: 'any maskable'
+            purpose: 'any'
+          },
+          {
+            src: 'paw-icon-v2-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: 'paw-icon-maskable-v2-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
           }
         ],
         shortcuts: [
@@ -36,7 +48,7 @@ export default defineConfig({
             url: '/resource?category=dog',
             icons: [
               {
-                src: 'favicon.png',
+                src: 'paw-icon-v2-192.png',
                 sizes: '192x192',
                 type: 'image/png'
               }
@@ -49,7 +61,7 @@ export default defineConfig({
             url: '/resource?category=cat',
             icons: [
               {
-                src: 'favicon.png',
+                src: 'paw-icon-v2-192.png',
                 sizes: '192x192',
                 type: 'image/png'
               }
