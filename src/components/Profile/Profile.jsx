@@ -3,9 +3,18 @@ import { motion, AnimatePresence } from "framer-motion";
 import { auth, database } from "../../firebase";
 import { ref, set, get, update, remove } from "firebase/database";
 import { useNavigate, useLocation } from "react-router-dom";
-import { FiMail, FiPhone } from "react-icons/fi";
+import {
+  FiArrowRight,
+  FiEdit3,
+  FiHeart,
+  FiHome,
+  FiMail,
+  FiMapPin,
+  FiPlus,
+  FiUsers,
+} from "react-icons/fi";
 import useResponsive from "../../hooks/useResponsive";
-import { FaPlus, FaPaw, FaHeart, FaCommentDots, FaBalanceScale } from "react-icons/fa";
+import { FaPaw, FaHeart, FaCommentDots, FaBalanceScale } from "react-icons/fa";
 import MultiPetCompare from "../PetProfile/MultiPetCompare";
 import { sendMatingRequestAcceptedNotification } from "../../services/notificationService";
 import { clearUnreadNotifications } from "../../services/badgeService";
@@ -19,7 +28,6 @@ import {
   RequestsSection as RequestsSectionComponent,
   DesktopRequestsSection as DesktopRequestsSectionComponent,
 } from "./components";
-import SkeletonLoader from "../Loaders/SkeletonLoader";
 import ConversationsList from "./components/ConversationsList";
 
 // Memoize components to prevent unnecessary re-renders
@@ -29,267 +37,253 @@ const RequestsSection = memo(RequestsSectionComponent);
 const DesktopRequestsSection = memo(DesktopRequestsSectionComponent);
 const ConversationsListSection = memo(ConversationsList);
 
-// --- Child Components for Mobile/Desktop Views ---
+// --- Responsive Profile Experience ---
 
-// Decorative paw SVG for hero backgrounds
-const PawSVG = ({ size = 24, color = "currentColor", opacity = 1 }) => (
-  <svg width={size} height={size} viewBox="0 0 64 64" fill={color} opacity={opacity}>
-    <ellipse cx="16" cy="14" rx="7" ry="9" />
-    <ellipse cx="32" cy="10" rx="7" ry="9" />
-    <ellipse cx="48" cy="14" rx="7" ry="9" />
-    <ellipse cx="8"  cy="28" rx="6" ry="8" />
-    <path d="M32 56 C14 56 10 38 14 30 C18 22 46 22 50 30 C54 38 50 56 32 56Z" />
-  </svg>
-);
+const ProfileExperience = ({
+  isDesktop,
+  user,
+  pets,
+  matingRequests,
+  activeTab,
+  setActiveTab,
+  tabs,
+  handleAddPet,
+  handleEditPet,
+  handleDeletePet,
+  handleToggleAvailability,
+  handleAcceptRequest,
+  handleDeclineRequest,
+  handleOpenMessageDialog,
+  handleEditProfile,
+  navigate,
+  isLoading,
+}) => {
+  const pendingCount = matingRequests.filter(
+    (request) => request.direction === "incoming" && request.status === "pending"
+  ).length;
+  const publicProfiles = pets.filter((pet) => Boolean(pet.slug)).length;
+  const initials = user.displayName
+    ?.split(" ")
+    .filter(Boolean)
+    .map((word) => word[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase() || "P";
+  const locationLabel = [user.city, user.country].filter(Boolean).join(", ");
+  const activeTabDetails = tabs.find((tab) => tab.id === activeTab) || tabs[0];
 
-const MobileVersion = ({ user, pets, matingRequests, chats, activeTab, setActiveTab, tabs, handleAddPet, handleEditPet, handleDeletePet, handleToggleAvailability, handleAcceptRequest, handleDeclineRequest, handleOpenMessageDialog, handleEditProfile }) => {
-  const pendingCount = matingRequests.filter(r => r.direction === "incoming" && r.status === "pending").length;
+  const quickActions = [
+    {
+      label: "Add a pet",
+      detail: "Create a care profile",
+      icon: FiPlus,
+      onClick: handleAddPet,
+      accent: "bg-violet-600 text-white",
+    },
+    {
+      label: "Find matches",
+      detail: "Discover nearby pets",
+      icon: FiHeart,
+      onClick: () => navigate("/nearby-mates"),
+      accent: "bg-rose-50 text-rose-600",
+    },
+    {
+      label: "Adopt a pet",
+      detail: "Browse pets needing homes",
+      icon: FiHome,
+      onClick: () => navigate("/adopt-pets"),
+      accent: "bg-emerald-50 text-emerald-600",
+    },
+  ];
+
   return (
-    <div className="min-h-screen" style={{ background: "#f4f1fb" }}>
+    <div className="min-h-screen bg-[#f7f5fb] pb-28 lg:pb-14">
+      <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8 lg:py-9">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35 }}
+          className="grid gap-4 lg:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.55fr)] lg:gap-6"
+        >
+          <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#6d5dbf] via-[#51428e] to-[#30264f] p-5 text-white shadow-[0_20px_55px_rgba(64,48,112,0.2)] sm:p-7 lg:min-h-[292px] lg:p-9">
+            <div className="pointer-events-none absolute -right-14 -top-20 h-56 w-56 rounded-full border border-white/10 bg-white/[0.04]" />
+            <div className="pointer-events-none absolute -bottom-28 right-24 h-64 w-64 rounded-full border border-white/10" />
+            <FaPaw className="pointer-events-none absolute right-8 top-16 rotate-12 text-6xl text-white/[0.06] lg:right-14 lg:text-8xl" />
 
-      {/* ── Hero header ── */}
-      <div
-        className="relative overflow-hidden pb-8"
-        style={{ background: "linear-gradient(160deg, #6d5dbf 0%, #4a3d7d 60%, #2e2550 100%)" }}
-      >
-        {/* Scattered paw prints */}
-        {[
-          { top: "6%",  left: "5%",   size: 26, opacity: 0.12, rotate: -15 },
-          { top: "20%", right: "6%",  size: 20, opacity: 0.09, rotate: 20  },
-          { top: "55%", left: "12%",  size: 16, opacity: 0.07, rotate: 40  },
-          { top: "42%", right: "16%", size: 30, opacity: 0.10, rotate: -8  },
-          { top: "72%", left: "42%",  size: 18, opacity: 0.06, rotate: 8   },
-        ].map((p, i) => (
-          <div key={i} className="absolute pointer-events-none" style={{ top: p.top, left: p.left, right: p.right, transform: `rotate(${p.rotate}deg)` }}>
-            <PawSVG size={p.size} color="#fff" opacity={p.opacity} />
-          </div>
-        ))}
-
-        {/* Top nav strip */}
-        <div className="relative z-10 flex items-center justify-between px-5 pt-4 pb-1">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.15)" }}>
-              <PawSVG size={16} color="#fff" opacity={1} />
+            <div className="relative z-10 flex items-start justify-between gap-4">
+              <div>
+                <div className="mb-1 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-violet-200">
+                  <span className="h-1.5 w-1.5 rounded-full bg-violet-300" />
+                  Your Pawppy account
+                </div>
+                <p className="text-sm text-white/60">Everything about you and your pet family, together.</p>
+              </div>
+              <button
+                type="button"
+                onClick={handleEditProfile}
+                className="flex shrink-0 items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs font-bold text-white backdrop-blur transition hover:bg-white/20"
+              >
+                <FiEdit3 size={14} />
+                <span className="hidden sm:inline">Edit account</span>
+                <span className="sm:hidden">Edit</span>
+              </button>
             </div>
-            <span className="font-bold text-white text-base tracking-wide">My Profile</span>
-          </div>
-          <button
-            onClick={handleEditProfile}
-            className="px-3 py-1.5 rounded-full text-xs font-semibold"
-            style={{ background: "rgba(255,255,255,0.18)", color: "#fff" }}
-          >
-            Edit
-          </button>
-        </div>
 
-        {/* Avatar + name */}
-        <div className="relative z-10 flex flex-col items-center px-5 mt-5">
-          <div
-            className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-extrabold text-white mb-3"
-            style={{ background: "rgba(255,255,255,0.2)", boxShadow: "0 0 0 4px rgba(255,255,255,0.15)" }}
-          >
-            {user.displayName?.split(" ").map((w) => w[0]).join("").slice(0, 2) || "?"}
+            <div className="relative z-10 mt-7 flex items-center gap-4 sm:gap-5">
+              <div className="flex h-[74px] w-[74px] shrink-0 items-center justify-center rounded-[24px] border border-white/20 bg-white/15 text-2xl font-black shadow-inner backdrop-blur sm:h-24 sm:w-24 sm:text-3xl">
+                {initials}
+              </div>
+              <div className="min-w-0">
+                <h1 className="truncate text-2xl font-black tracking-tight sm:text-3xl">
+                  {user.displayName || "Pet Parent"}
+                </h1>
+                <div className="mt-2 flex min-w-0 items-center gap-2 text-xs text-white/70 sm:text-sm">
+                  <FiMail className="shrink-0" />
+                  <span className="truncate">{user.email}</span>
+                </div>
+                {locationLabel && (
+                  <div className="mt-1.5 flex items-center gap-2 text-xs text-white/60 sm:text-sm">
+                    <FiMapPin className="shrink-0" />
+                    <span className="truncate">{locationLabel}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="relative z-10 mt-7 grid grid-cols-3 gap-2 sm:max-w-xl sm:gap-3">
+              {[
+                { value: isLoading ? "—" : pets.length, label: pets.length === 1 ? "Pet" : "Pets" },
+                { value: isLoading ? "—" : publicProfiles, label: "Social profiles" },
+                { value: isLoading ? "—" : pendingCount, label: "Pending" },
+              ].map((stat) => (
+                <div key={stat.label} className="rounded-2xl border border-white/10 bg-white/[0.09] px-2 py-3 text-center backdrop-blur-sm sm:px-4">
+                  <p className="text-xl font-black leading-none sm:text-2xl">{stat.value}</p>
+                  <p className="mt-1.5 truncate text-[10px] font-semibold text-white/60 sm:text-xs">{stat.label}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="rounded-[28px] border border-violet-100 bg-white p-4 shadow-[0_14px_40px_rgba(74,61,125,0.08)] sm:p-5">
+            <div className="mb-4 flex items-center justify-between px-1">
+              <div>
+                <h2 className="text-base font-extrabold text-slate-900">Quick actions</h2>
+                <p className="mt-0.5 text-xs text-slate-500">Your most useful next steps</p>
+              </div>
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+                <FaPaw size={16} />
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-2 lg:grid-cols-1 lg:gap-2.5">
+              {quickActions.map(({ label, detail, icon: Icon, onClick, accent }) => (
+                <button
+                  type="button"
+                  key={label}
+                  onClick={onClick}
+                  className="group flex min-w-0 flex-col items-center rounded-2xl border border-slate-100 bg-slate-50/70 p-3 text-center transition hover:border-violet-200 hover:bg-violet-50/60 lg:flex-row lg:p-3.5 lg:text-left"
+                >
+                  <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${accent}`}>
+                    <Icon size={18} />
+                  </span>
+                  <span className="mt-2 min-w-0 lg:ml-3 lg:mt-0 lg:flex-1">
+                    <span className="block truncate text-[11px] font-extrabold text-slate-800 sm:text-xs lg:text-sm">{label}</span>
+                    <span className="mt-0.5 hidden text-xs text-slate-500 lg:block">{detail}</span>
+                  </span>
+                  <FiArrowRight className="hidden text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-violet-500 lg:block" />
+                </button>
+              ))}
+            </div>
+          </section>
+        </motion.div>
+
+        <motion.nav
+          aria-label="Profile sections"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.08, duration: 0.3 }}
+          className="mt-5 grid grid-cols-4 gap-1 rounded-[22px] border border-violet-100 bg-white p-1.5 shadow-[0_8px_28px_rgba(74,61,125,0.07)] sm:gap-2 sm:p-2"
+        >
+          {tabs.map((tab) => (
+            <button
+              type="button"
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              aria-current={activeTab === tab.id ? "page" : undefined}
+              className={`relative flex min-w-0 items-center justify-center gap-2 rounded-2xl px-1.5 py-3 text-[11px] font-bold transition sm:px-4 sm:text-sm ${
+                activeTab === tab.id
+                  ? "bg-[#4e417f] text-white shadow-[0_8px_18px_rgba(78,65,127,0.22)]"
+                  : "text-slate-500 hover:bg-violet-50 hover:text-violet-700"
+              }`}
+            >
+              <span className="text-sm sm:text-base">{tab.icon}</span>
+              <span className="truncate">{tab.shortLabel || tab.label}</span>
+              {tab.badge > 0 && (
+                <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-black text-white sm:static sm:h-5 sm:min-w-5 sm:text-[10px]">
+                  {tab.badge}
+                </span>
+              )}
+            </button>
+          ))}
+        </motion.nav>
+
+        <div className="mb-4 mt-6 flex items-end justify-between gap-4 px-1 sm:mb-5 sm:mt-8">
+          <div>
+            <div className="mb-1 flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.16em] text-violet-500">
+              <FiUsers /> Account workspace
+            </div>
+            <h2 className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl">{activeTabDetails.label}</h2>
+            <p className="mt-1 max-w-2xl text-xs leading-5 text-slate-500 sm:text-sm">{activeTabDetails.description}</p>
           </div>
-          <h1 className="text-[22px] font-extrabold text-white leading-tight text-center">{user.displayName}</h1>
-          <p className="text-sm mt-1 text-center" style={{ color: "rgba(255,255,255,0.65)" }}>{user.email}</p>
-          {(user.city || user.country) && (
-            <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.5)" }}>
-              {[user.city, user.country].filter(Boolean).join(", ")}
-            </p>
+          {activeTab === "pets" && (
+            <button
+              type="button"
+              onClick={handleAddPet}
+              className="hidden shrink-0 items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-violet-700 sm:flex"
+            >
+              <FiPlus /> Add pet
+            </button>
           )}
         </div>
 
-        {/* Stats strip */}
-        <motion.div
+        <motion.main
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
-          className="relative z-10 flex gap-3 px-5 mt-5"
+          transition={{ delay: 0.14, duration: 0.3 }}
         >
-          {[
-            { value: pets.length, label: "My Pets" },
-            { value: pendingCount, label: "Pending" },
-            { value: matingRequests.length, label: "Requests" },
-          ].map((stat, i) => (
-            <div key={i} className="flex-1 rounded-2xl px-3 py-2.5 text-center" style={{ background: "rgba(255,255,255,0.13)" }}>
-              <p className="text-xl font-extrabold text-white leading-none">{stat.value}</p>
-              <p className="text-[10px] mt-0.5 font-medium" style={{ color: "rgba(255,255,255,0.65)" }}>{stat.label}</p>
-            </div>
-          ))}
-        </motion.div>
-
-        {/* Curved bottom */}
-        <div className="absolute bottom-0 left-0 right-0 h-7 bg-[#f4f1fb]" style={{ borderRadius: "40px 40px 0 0" }} />
-      </div>
-
-      {/* ── Body ── */}
-      <div className="px-4 pb-28 space-y-4" style={{ marginTop: -4 }}>
-
-        {/* Add Pet button */}
-        <motion.button
-          onClick={handleAddPet}
-          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-white font-bold text-sm shadow-md"
-          style={{ background: "linear-gradient(135deg, #7c3aed, #4f46e5)" }}
-          whileTap={{ scale: 0.97 }}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <FaPlus size={14} /> Add a New Pet
-        </motion.button>
-
-        {/* Tab Navigation */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-          className="rounded-2xl p-1.5"
-          style={{ background: "#fff", boxShadow: "0 2px 12px rgba(109,93,183,0.08)" }}
-        >
-          <div className="grid grid-cols-4 gap-1">
-            {tabs.map((tab) => (
-              <motion.button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className="relative flex flex-col items-center py-2.5 rounded-xl transition-colors"
-                style={
-                  activeTab === tab.id
-                    ? { background: "linear-gradient(135deg, #7c3aed, #4f46e5)", color: "#fff" }
-                    : { color: "#64748b" }
-                }
-                whileTap={{ scale: 0.95 }}
-              >
-                {tab.badge > 0 && (
-                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
-                    <span className="text-[10px] text-white font-bold">{tab.badge}</span>
+          {isLoading ? (
+            <div className={`grid gap-3 ${isDesktop ? "md:grid-cols-2 xl:grid-cols-3" : "grid-cols-1"}`} aria-label="Loading pet information">
+              {[0, 1, 2].map((item) => (
+                <div key={item} className={`animate-pulse rounded-[22px] border border-violet-100 bg-white p-3 ${!isDesktop && item > 0 ? "hidden" : ""}`}>
+                  <div className="flex gap-3">
+                    <div className="h-[92px] w-[92px] shrink-0 rounded-[18px] bg-violet-100" />
+                    <div className="flex-1 py-1">
+                      <div className="h-4 w-2/3 rounded bg-slate-100" />
+                      <div className="mt-2 h-3 w-1/2 rounded bg-slate-100" />
+                      <div className="mt-3 h-6 w-24 rounded-full bg-violet-50" />
+                      <div className="mt-2 h-7 rounded-lg bg-slate-100" />
+                    </div>
                   </div>
-                )}
-                <span className="text-base mb-0.5">{tab.icon}</span>
-                <span className="text-[10px] font-semibold">{tab.label}</span>
-                {tab.count > 0 && !tab.badge && (
-                  <span className="text-[9px] opacity-60">{tab.count}</span>
-                )}
-              </motion.button>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Tab Content */}
-        <AnimatePresence mode="wait">
-          {activeTab === "pets" && (<PetsSection key="pets" pets={pets} onAddPet={handleAddPet} onEditPet={handleEditPet} onDeletePet={handleDeletePet} onToggleAvailability={handleToggleAvailability} />)}
-          {activeTab === "requests" && (<RequestsSection key="requests" requests={matingRequests} onAccept={handleAcceptRequest} onDecline={handleDeclineRequest} />)}
-          {activeTab === "messages" && <ConversationsListSection key="messages" onOpenConversation={handleOpenMessageDialog} />}
-          {activeTab === "compare" && <MultiPetCompare key="compare" pets={pets} />}
-        </AnimatePresence>
+                  <div className="mt-3 h-8 rounded-xl bg-slate-100" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <AnimatePresence mode="wait">
+              {activeTab === "pets" && (isDesktop
+                ? <DesktopPetsSection key="pets" pets={pets} onAddPet={handleAddPet} onEditPet={handleEditPet} onDeletePet={handleDeletePet} onToggleAvailability={handleToggleAvailability} />
+                : <PetsSection key="pets" pets={pets} onAddPet={handleAddPet} onEditPet={handleEditPet} onDeletePet={handleDeletePet} onToggleAvailability={handleToggleAvailability} />)}
+              {activeTab === "requests" && (isDesktop
+                ? <DesktopRequestsSection key="requests" requests={matingRequests} onAccept={handleAcceptRequest} onDecline={handleDeclineRequest} />
+                : <RequestsSection key="requests" requests={matingRequests} onAccept={handleAcceptRequest} onDecline={handleDeclineRequest} />)}
+              {activeTab === "messages" && <ConversationsListSection key="messages" onOpenConversation={handleOpenMessageDialog} />}
+              {activeTab === "compare" && <MultiPetCompare key="compare" pets={pets} />}
+            </AnimatePresence>
+          )}
+        </motion.main>
       </div>
     </div>
   );
 };
-
-const DesktopVersion = ({ user, pets, matingRequests, activeTab, setActiveTab, tabs, handleAddPet, handleEditPet, handleDeletePet, handleToggleAvailability, handleAcceptRequest, handleDeclineRequest, handleOpenMessageDialog, handleEditProfile, navigate }) => (
-  <div className="min-h-screen bg-gradient-to-br from-slate-50 to-violet-50 p-8">
-    <div className="max-w-7xl mx-auto">
-      {/* Header */}
-      <motion.div className="bg-white rounded-3xl p-8 shadow-lg border border-violet-100 mb-8" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-violet-400 to-indigo-500 text-white flex items-center justify-center text-2xl font-bold mr-6">
-              {user.displayName?.split(" ").map((word) => word[0]).join("").slice(0, 2)}
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-slate-800 mb-2">{user.displayName}</h1>
-              <div className="flex items-center text-gray-600 mb-1"><FiMail className="w-4 h-4 mr-2" /><span>{user.email}</span></div>
-              {user.phoneNumber && (<div className="flex items-center text-gray-600 mb-1"><FiPhone className="w-4 h-4 mr-2" /><span>{user.phoneNumber}</span></div>)}
-              {(user.city || user.country) && (
-                <div className="flex items-center text-gray-600">
-                  <span>{[user.city, user.country].filter(Boolean).join(', ')}</span>
-                </div>
-              )}
-            </div>
-          </div>
-          {/* Desktop Stats & Edit Button */}
-          <div className="flex gap-8 items-center">
-            <div className="flex gap-8">
-              <div className="text-center"><div className="text-2xl font-bold text-slate-800">{pets.length}</div><div className="text-sm text-gray-600">Pets</div></div>
-              <div className="text-center"><div className="text-2xl font-bold text-slate-800">{matingRequests.length}</div><div className="text-sm text-gray-600">Requests</div></div>
-            </div>
-            <button
-              onClick={handleEditProfile}
-              className="px-4 py-2 text-sm font-medium text-violet-600 hover:bg-violet-50 border border-violet-200 rounded-lg transition-colors"
-            >
-              Edit Profile
-            </button>
-          </div>
-        </div>
-      </motion.div>
-      <motion.div className="mb-8" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }}>
-        <div className="bg-white rounded-2xl p-3 shadow-md border border-violet-100">
-          <div className="flex justify-between items-center flex-wrap gap-4">
-            {/* Tabs on the left */}
-            <div className="flex flex-wrap gap-2">
-              {tabs.map((tab) => (
-                <motion.button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`relative flex items-center px-6 py-3 rounded-xl transition-all duration-300 ${activeTab === tab.id
-                    ? "bg-gradient-to-r from-violet-400 to-indigo-400 text-white shadow-md"
-                    : "text-gray-600 hover:bg-violet-50"
-                    }`}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  {tab.badge > 0 && (
-                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
-                      <span className="text-xs text-white font-bold">{tab.badge}</span>
-                    </div>
-                  )}
-                  <span className="text-xl mr-3">{tab.icon}</span>
-                  <span className="font-medium">{tab.label}</span>
-                  {tab.count > 0 && !tab.badge && (
-                    <span className="ml-2 bg-white bg-opacity-20 rounded-full px-2 py-1 text-xs">
-                      {tab.count}
-                    </span>
-                  )}
-                </motion.button>
-              ))}
-            </div>
-
-            {/* Action buttons on the right - UPDATED DESIGN */}
-            <div className="flex gap-4">
-              <motion.button
-                onClick={() => navigate("/nearby-mates")}
-                className="flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-violet-400 to-indigo-400 text-white font-semibold shadow-md transition-all duration-300 hover:shadow-lg hover:brightness-110"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <FaHeart />
-                Find Mates
-              </motion.button>
-
-              <motion.button
-                onClick={() => navigate("/adopt-pets")}
-                className="flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-teal-400 to-cyan-500 text-white font-semibold shadow-md transition-all duration-300 hover:shadow-lg hover:brightness-110"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <FaPaw />
-                Adopt Pet
-              </motion.button>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.4 }}>
-        <AnimatePresence mode="wait">
-          {activeTab === "pets" && (<DesktopPetsSection key="pets" pets={pets} onAddPet={handleAddPet} onEditPet={handleEditPet} onDeletePet={handleDeletePet} onToggleAvailability={handleToggleAvailability} />)}
-          {activeTab === "requests" && (<DesktopRequestsSection key="requests" requests={matingRequests} onAccept={handleAcceptRequest} onDecline={handleDeclineRequest} />)}
-          {activeTab === "messages" && (<ConversationsListSection key="messages" onOpenConversation={handleOpenMessageDialog} />)}
-          {activeTab === "compare" && <MultiPetCompare key="compare" pets={pets} />}
-        </AnimatePresence>
-      </motion.div>
-    </div>
-  </div>
-);
 
 
 // --- Main Profile Component ---
@@ -694,23 +688,61 @@ const Profile = () => {
 
   // --- Tab Configuration ---
   const tabs = useMemo(() => [
-    { id: "pets", label: "Pets", icon: <FaPaw />, count: pets.length },
-    { id: "requests", label: "Requests", icon: <FaHeart />, count: matingRequests.length, badge: pendingRequestsCount },
-    { id: "messages", label: "Messages", icon: <FaCommentDots /> },
-    { id: "compare", label: "Compare", icon: <FaBalanceScale />, count: pets.length >= 2 ? pets.length : 0 },
+    {
+      id: "pets",
+      label: "My pets",
+      shortLabel: "Pets",
+      description: "Manage care details, visibility, and each pet's shareable social profile.",
+      icon: <FaPaw />,
+      count: pets.length,
+    },
+    {
+      id: "requests",
+      label: "Pet requests",
+      shortLabel: "Requests",
+      description: "Review incoming and outgoing connections involving your pets.",
+      icon: <FaHeart />,
+      count: matingRequests.length,
+      badge: pendingRequestsCount,
+    },
+    {
+      id: "messages",
+      label: "Messages",
+      shortLabel: "Inbox",
+      description: "Continue conversations with other pet parents in one place.",
+      icon: <FaCommentDots />,
+    },
+    {
+      id: "compare",
+      label: "Compare pets",
+      shortLabel: "Compare",
+      description: "See care and profile information across pets in your family.",
+      icon: <FaBalanceScale />,
+      count: pets.length >= 2 ? pets.length : 0,
+    },
   ], [pets.length, matingRequests.length, pendingRequestsCount]);
-
-  if (isLoading) {
-    return <SkeletonLoader type="profile" />;
-  }
 
   return (
     <>
-      {isDesktop ? (
-        <DesktopVersion user={userData} pets={pets} navigate={navigate} matingRequests={matingRequests} activeTab={activeTab} setActiveTab={setActiveTab} tabs={tabs} handleAddPet={handleAddPet} handleEditPet={handleEditPet} handleDeletePet={handleDeletePet} handleToggleAvailability={handleToggleAvailability} handleAcceptRequest={handleAcceptRequest} handleDeclineRequest={handleDeclineRequest} handleOpenMessageDialog={handleOpenMessageDialog} handleEditProfile={handleEditProfile} />
-      ) : (
-        <MobileVersion user={userData} pets={pets} matingRequests={matingRequests} activeTab={activeTab} setActiveTab={setActiveTab} tabs={tabs} handleAddPet={handleAddPet} handleEditPet={handleEditPet} handleDeletePet={handleDeletePet} handleToggleAvailability={handleToggleAvailability} handleAcceptRequest={handleAcceptRequest} handleDeclineRequest={handleDeclineRequest} handleOpenMessageDialog={handleOpenMessageDialog} handleEditProfile={handleEditProfile} />
-      )}
+      <ProfileExperience
+        isDesktop={isDesktop}
+        user={userData}
+        pets={pets}
+        navigate={navigate}
+        matingRequests={matingRequests}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        tabs={tabs}
+        handleAddPet={handleAddPet}
+        handleEditPet={handleEditPet}
+        handleDeletePet={handleDeletePet}
+        handleToggleAvailability={handleToggleAvailability}
+        handleAcceptRequest={handleAcceptRequest}
+        handleDeclineRequest={handleDeclineRequest}
+        handleOpenMessageDialog={handleOpenMessageDialog}
+        handleEditProfile={handleEditProfile}
+        isLoading={isLoading}
+      />
 
       {openPetDialog && (<PetDialog open={openPetDialog} onClose={() => setOpenPetDialog(false)} pet={currentPet} setPet={setCurrentPet} onSave={handleSavePet} isEditMode={isEditMode} tabValue={tabValue} onTabChange={(e, val) => setTabValue(val)} onAddVaccination={handleAddVaccination} onEditVaccination={handleEditVaccination} onDeleteVaccination={handleDeleteVaccination} isMobile={!isDesktop} />)}
       {openVaccinationDialog && (<VaccinationDialog open={openVaccinationDialog} onClose={() => setOpenVaccinationDialog(false)} vaccination={currentVaccination} setVaccination={setCurrentVaccination} onSave={handleSaveVaccination} isEditMode={vaccinationEditIndex >= 0} isMobile={!isDesktop} petType={currentPet?.type} petDateOfBirth={currentPet?.dateOfBirth} vaccinationEditIndex={vaccinationEditIndex} loading={isSavingVaccination} />)}

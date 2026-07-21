@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { auth, database } from "../../firebase";
 import { ref, get, set, update, onValue, off } from "firebase/database";
@@ -614,6 +614,7 @@ const HealthCenter = ({ open, pet, onClose, onAdd, onEdit, onEditMedical }) => {
 
 export default function PetDashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { petId } = useParams();
   const { isDesktop } = useResponsive();
   const user = auth.currentUser;
@@ -661,6 +662,15 @@ export default function PetDashboard() {
   useEffect(() => {
     if (petId) localStorage.setItem("pawppy_last_pet_id", petId);
   }, [petId]);
+
+  // Profile pet cards can open this dashboard directly into the same Health
+  // Center used here. Consume the navigation state once so refreshes and
+  // later renders do not reopen the modal unexpectedly.
+  useEffect(() => {
+    if (!pet || !location.state?.openHealthCenter) return;
+    setOpenHealthCenter(true);
+    navigate(location.pathname, { replace: true, state: {} });
+  }, [pet, location.pathname, location.state?.openHealthCenter, navigate]);
 
   // Load pet data
   useEffect(() => {

@@ -48,7 +48,7 @@ const RequestsSection = ({ requests, onAccept, onDecline }) => {
             {requests.map((request, index) => (
               <motion.div
                 key={request.id}
-                className="bg-white rounded-2xl p-4 shadow-md border border-violet-100"
+                className="rounded-[22px] border border-violet-100 bg-white p-4 shadow-[0_10px_30px_rgba(74,61,125,0.07)]"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
@@ -56,9 +56,9 @@ const RequestsSection = ({ requests, onAccept, onDecline }) => {
                 <div className="flex items-start justify-between">
                   <div className="flex items-center flex-1">
                     <div className="w-12 h-12 rounded-full bg-violet-100 overflow-hidden mr-3">
-                      {request.direction === "incoming" ? (
-                        request.senderPetImage
-                      ) : request.receiverPetImage ? (
+                      {(request.direction === "incoming"
+                        ? request.senderPetImage
+                        : request.receiverPetImage) ? (
                         <img
                           src={
                             request.direction === "incoming"

@@ -15,7 +15,8 @@ import PawLoader from "./components/Loaders/PawLoader";
 
 // Lazy-loaded route chunks — only downloaded when the route is visited
 const Home              = lazy(() => import("./components/Home/Home"));
-const Profile           = lazy(() => import("./components/Profile/Profile"));
+const loadProfile       = () => import("./components/Profile/Profile");
+const Profile           = lazy(loadProfile);
 const NearbyMates       = lazy(() => import("./components/NearbyMates/NearbyMates"));
 const AdoptPet          = lazy(() => import("./components/AdoptPet/AdoptPet"));
 const PetDetail         = lazy(() => import("./components/NearbyMates/PetDetail"));
@@ -115,6 +116,18 @@ function App() {
     }
 
     return () => unsubscribeAuth();
+  }, []);
+
+  useEffect(() => {
+    // Profile is a primary bottom-navigation destination. Warm its route chunk
+    // after the first paint so the first tap does not wait for a network fetch.
+    const preload = () => { loadProfile().catch(() => {}); };
+    if ("requestIdleCallback" in window) {
+      const idleId = window.requestIdleCallback(preload, { timeout: 2500 });
+      return () => window.cancelIdleCallback?.(idleId);
+    }
+    const timerId = window.setTimeout(preload, 800);
+    return () => window.clearTimeout(timerId);
   }, []);
 
   return (
