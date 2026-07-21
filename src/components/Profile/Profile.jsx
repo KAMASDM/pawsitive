@@ -71,7 +71,7 @@ const MobileVersion = ({ user, pets, matingRequests, chats, activeTab, setActive
             <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.15)" }}>
               <PawSVG size={16} color="#fff" opacity={1} />
             </div>
-            <span className="font-bold text-white text-base tracking-wide">My Account</span>
+            <span className="font-bold text-white text-base tracking-wide">My Profile</span>
           </div>
           <button
             onClick={handleEditProfile}
@@ -126,7 +126,7 @@ const MobileVersion = ({ user, pets, matingRequests, chats, activeTab, setActive
       <div className="px-4 pb-28 space-y-4" style={{ marginTop: -4 }}>
 
         {/* Add Pet button */}
-        {activeTab === "pets" && <motion.button
+        <motion.button
           onClick={handleAddPet}
           className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-white font-bold text-sm shadow-md"
           style={{ background: "linear-gradient(135deg, #7c3aed, #4f46e5)" }}
@@ -136,7 +136,7 @@ const MobileVersion = ({ user, pets, matingRequests, chats, activeTab, setActive
           transition={{ delay: 0.1 }}
         >
           <FaPlus size={14} /> Add a New Pet
-        </motion.button>}
+        </motion.button>
 
         {/* Tab Navigation */}
         <motion.div
@@ -173,11 +173,6 @@ const MobileVersion = ({ user, pets, matingRequests, chats, activeTab, setActive
             ))}
           </div>
         </motion.div>
-
-        <div className="rounded-2xl border border-violet-100 bg-white/75 px-4 py-3">
-          <p className="text-xs font-extrabold text-[#30274e]">{tabs.find((tab) => tab.id === activeTab)?.label}</p>
-          <p className="mt-1 text-[11px] leading-4 text-slate-500">{tabs.find((tab) => tab.id === activeTab)?.description}</p>
-        </div>
 
         {/* Tab Content */}
         <AnimatePresence mode="wait">
@@ -222,7 +217,7 @@ const DesktopVersion = ({ user, pets, matingRequests, activeTab, setActiveTab, t
               onClick={handleEditProfile}
               className="px-4 py-2 text-sm font-medium text-violet-600 hover:bg-violet-50 border border-violet-200 rounded-lg transition-colors"
             >
-              Edit Account
+              Edit Profile
             </button>
           </div>
         </div>
@@ -284,10 +279,6 @@ const DesktopVersion = ({ user, pets, matingRequests, activeTab, setActiveTab, t
           </div>
         </div>
       </motion.div>
-      <div className="-mt-5 mb-8 rounded-2xl border border-violet-100 bg-white/75 px-5 py-4">
-        <p className="text-sm font-extrabold text-[#30274e]">{tabs.find((tab) => tab.id === activeTab)?.label}</p>
-        <p className="mt-1 text-xs text-slate-500">{tabs.find((tab) => tab.id === activeTab)?.description}</p>
-      </div>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.4 }}>
         <AnimatePresence mode="wait">
           {activeTab === "pets" && (<DesktopPetsSection key="pets" pets={pets} onAddPet={handleAddPet} onEditPet={handleEditPet} onDeletePet={handleDeletePet} onToggleAvailability={handleToggleAvailability} />)}
@@ -703,10 +694,10 @@ const Profile = () => {
 
   // --- Tab Configuration ---
   const tabs = useMemo(() => [
-    { id: "pets", label: "My Pets", description: "Manage private care details and open each pet's shareable social profile.", icon: <FaPaw />, count: pets.length },
-    { id: "requests", label: "Pet Requests", description: "Review incoming and outgoing connection requests involving your pets.", icon: <FaHeart />, count: matingRequests.length, badge: pendingRequestsCount },
-    { id: "messages", label: "Inbox", description: "Continue adoption and community conversations with other pet parents.", icon: <FaCommentDots /> },
-    { id: "compare", label: "Compare Pets", description: "Compare age and care information across pets in your family.", icon: <FaBalanceScale />, count: pets.length >= 2 ? pets.length : 0 },
+    { id: "pets", label: "Pets", icon: <FaPaw />, count: pets.length },
+    { id: "requests", label: "Requests", icon: <FaHeart />, count: matingRequests.length, badge: pendingRequestsCount },
+    { id: "messages", label: "Messages", icon: <FaCommentDots /> },
+    { id: "compare", label: "Compare", icon: <FaBalanceScale />, count: pets.length >= 2 ? pets.length : 0 },
   ], [pets.length, matingRequests.length, pendingRequestsCount]);
 
   if (isLoading) {

@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { signOut } from "firebase/auth";
 import { auth, database } from "../../firebase";
 import { ref, get } from "firebase/database";
-import { FaPlus } from "react-icons/fa";
+import { FaPlus, FaPaw } from "react-icons/fa";
+import useResponsive from "../../hooks/useResponsive";
+import Home from "../Home/Home";
 import {
   FiArrowRight,
+  FiUser,
+  FiLogOut,
   FiPlus,
   FiMapPin,
   FiSearch,
@@ -13,9 +18,8 @@ import {
   FiHeart,
   FiChevronRight,
   FiAlertTriangle,
+  FiHome,
   FiAward,
-  FiExternalLink,
-  FiShare2,
 } from "react-icons/fi";
 import { MdPets } from "react-icons/md";
 import { usePetOperations } from "../../hooks/usePetOperations";
@@ -222,12 +226,18 @@ const FeatureCard = ({ feat, navigate, index }) => {
 
 // ---- Main Component (wrapper) ----
 export default function PetSelector() {
+  const { isDesktop } = useResponsive();
+  const [searchParams] = useSearchParams();
+  const isPicker = searchParams.get("picker") === "true";
+  if (isDesktop && !isPicker) return <Home />;
   return <PetSelectorMobile />;
 }
 
 // ---- Mobile Component ----
 function PetSelectorMobile() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isPicker = searchParams.get("picker") === "true";
   const user = auth.currentUser;
   const [pets, setPets] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -245,17 +255,39 @@ function PetSelectorMobile() {
   useEffect(() => {
     if (!user) return;
 
+    // Fast path: if we already know the last pet id, navigate immediately
+    // without waiting for Firebase. PetDashboard will load its own data.
+    if (!isPicker) {
+      const lastId = localStorage.getItem("pawppy_last_pet_id");
+      if (lastId) {
+        navigate(`/my-pets/${lastId}`, { replace: true });
+        return;
+      }
+    }
+
     get(ref(database, `userPets/${user.uid}`))
       .then((snap) => {
         if (snap.exists()) {
           const data = snap.val();
           const list = Object.keys(data).map((id) => ({ id, ...data[id] }));
           setPets(list);
+          // If no last-visited id was stored, redirect to the first pet
+          if (!isPicker && list.length > 0) {
+            navigate(`/my-pets/${list[0].id}`, { replace: true });
+          }
         }
       })
       .catch((err) => console.error(err))
       .finally(() => setIsLoading(false));
-  }, [user]);
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Redirect once pets load (only needed when picker=true was set then cleared)
+  useEffect(() => {
+    if (isLoading || isPicker || pets.length === 0) return;
+    const lastId = localStorage.getItem("pawppy_last_pet_id");
+    const target = pets.find((p) => p.id === lastId) || pets[0];
+    navigate(`/my-pets/${target.id}`, { replace: true });
+  }, [pets, isLoading, isPicker, navigate]);
 
   useEffect(() => {
     if (!user) {
@@ -282,26 +314,8 @@ function PetSelectorMobile() {
     }).finally(() => setIsDiscoveryLoading(false));
   }, [user]);
 
+  const handleLogout = async () => { await signOut(auth); navigate("/"); };
   const hasPets = !isLoading && pets.length > 0;
-  const lastPetId = localStorage.getItem("pawppy_last_pet_id");
-  const profilePet = pets.find((pet) => pet.id === lastPetId) || pets[0];
-  const hasShareableProfile = Boolean(profilePet?.slug && !profilePet?.privacy?.isPrivate);
-  const sharePetProfile = async () => {
-    if (!hasShareableProfile) {
-      if (profilePet) navigate(`/my-pets/${profilePet.id}`);
-      return;
-    }
-    const url = `${window.location.origin}/pet/${profilePet.slug}`;
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: `${profilePet.name} on Pawppy`, text: `Meet ${profilePet.name}!`, url });
-      } else {
-        await navigator.clipboard.writeText(url);
-      }
-    } catch (error) {
-      if (error?.name !== "AbortError") console.error("Unable to share pet profile:", error);
-    }
-  };
   const openHealthRecordSetup = () => {
     const targetPet = pets.find((pet) => (pet.vaccinations || []).length === 0) || pets[0];
     if (targetPet) {
@@ -311,6 +325,19 @@ function PetSelectorMobile() {
     }
     petOps.handleAddPet();
   };
+
+  // While loading and not in picker mode, show nothing — the redirect will fire
+  // almost immediately and we don't want to flash the full selector screen.
+  if (isLoading && !isPicker) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "#f4f1fb" }}>
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-12 h-12 rounded-full border-4 border-violet-200 border-t-violet-500 animate-spin" />
+          <span className="text-sm text-violet-400 font-medium">Loading your pets…</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen" style={{ background: "#f4f1fb" }}>
@@ -333,8 +360,28 @@ function PetSelectorMobile() {
           </div>
         ))}
 
+        {/* Top navigation strip */}
+        <div className="relative z-10 flex items-center justify-between px-5 pt-4 pb-1">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.15)" }}>
+              <PawPrint size={16} color="#fff" opacity={1} />
+            </div>
+            <span className="font-bold text-white text-base tracking-wide">Pawppy</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            {hasPets && (
+              <button onClick={petOps.handleAddPet} className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold" style={{ background: "rgba(255,255,255,0.18)", color: "#fff" }}>
+                <FiPlus size={13} /> Add Pet
+              </button>
+            )}
+            <button onClick={() => navigate("/profile")} className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.15)" }}>
+              <FiUser size={15} color="#fff" />
+            </button>
+          </div>
+        </div>
+
         {/* Greeting */}
-        <div className="relative z-10 mx-auto max-w-6xl px-5 pt-8 sm:px-6 lg:px-8">
+        <div className="relative z-10 px-5 mt-5">
           <p className="text-sm font-medium" style={{ color: "rgba(255,255,255,0.7)" }}>{greeting},</p>
           <h1 className="text-[26px] font-extrabold text-white leading-tight mt-0.5">{firstName} 👋</h1>
           <p className="text-sm mt-1.5" style={{ color: "rgba(255,255,255,0.65)" }}>
@@ -350,7 +397,7 @@ function PetSelectorMobile() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="relative z-10 mx-auto flex max-w-6xl gap-3 px-5 mt-5 sm:px-6 lg:px-8"
+            className="relative z-10 flex gap-3 px-5 mt-5"
           >
             {[
               { value: pets.length, label: "My Pets" },
@@ -370,7 +417,7 @@ function PetSelectorMobile() {
       </div>
 
       {/* ── Scrollable body ── */}
-      <div className="mx-auto max-w-6xl px-4 pb-28 space-y-7 sm:px-6 lg:px-8 md:pb-12" style={{ marginTop: -4 }}>
+      <div className="px-4 pb-28 space-y-7" style={{ marginTop: -4 }}>
 
         {/* Loading skeleton */}
         {isLoading && (
@@ -415,42 +462,12 @@ function PetSelectorMobile() {
                 <FiPlus size={12} /> Add
               </button>
             </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3">
               <AnimatePresence>
                 {pets.map((pet, i) => (
                   <PetCard key={pet.id} pet={pet} index={i} onClick={() => navigate(`/my-pets/${pet.id}`)} />
                 ))}
               </AnimatePresence>
-            </div>
-          </section>
-        )}
-
-        {profilePet && (
-          <section className="relative overflow-hidden rounded-[26px] bg-[#30274e] p-5 text-white shadow-[0_16px_45px_rgba(45,35,76,0.16)] sm:flex sm:items-center sm:justify-between sm:p-6">
-            <PawPrint size={120} color="#fff" opacity={0.045} className="absolute -bottom-8 -right-5 rotate-[-15deg]" />
-            <div className="relative flex items-center gap-4">
-              <div className="h-14 w-14 flex-none overflow-hidden rounded-2xl bg-violet-200/20">
-                {profilePet.image ? (
-                  <img src={profilePet.image} alt={profilePet.name} className="h-full w-full object-cover" />
-                ) : (
-                  <span className="grid h-full w-full place-items-center text-2xl">{getPetEmoji(profilePet.type)}</span>
-                )}
-              </div>
-              <div>
-                <p className="text-[9px] font-black uppercase tracking-[0.18em] text-violet-200">Shareable pet profile</p>
-                <h2 className="mt-1 text-base font-black">{hasShareableProfile ? `${profilePet.name} has a public Pawppy page` : `Set up ${profilePet.name}'s social profile`}</h2>
-                <p className="mt-1 max-w-lg text-xs leading-5 text-violet-100/65">Add posts and events, then share one link with friends, family or your pet community.</p>
-              </div>
-            </div>
-            <div className="relative mt-4 flex gap-2 sm:ml-5 sm:mt-0">
-              {hasShareableProfile && (
-                <button onClick={() => navigate(`/pet/${profilePet.slug}`)} className="flex flex-1 items-center justify-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2.5 text-xs font-bold transition hover:bg-white/15 sm:flex-none">
-                  <FiExternalLink /> View profile
-                </button>
-              )}
-              <button onClick={sharePetProfile} className="flex flex-1 items-center justify-center gap-2 rounded-full bg-white px-4 py-2.5 text-xs font-black text-[#3b305f] shadow-lg sm:flex-none">
-                <FiShare2 /> {hasShareableProfile ? "Share link" : "Set up profile"}
-              </button>
             </div>
           </section>
         )}
@@ -522,7 +539,7 @@ function PetSelectorMobile() {
             <PawPrint size={16} color="#7c3aed" opacity={0.6} />
             <h2 className="font-extrabold text-slate-800 text-base">Explore</h2>
           </div>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3">
             {FEATURES.map((feat, i) => (
               <FeatureCard key={feat.id} feat={feat} navigate={navigate} index={i} />
             ))}

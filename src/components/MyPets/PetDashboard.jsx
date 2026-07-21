@@ -176,31 +176,28 @@ const HealthWidget = ({ pet, onAdd, onEdit, onDelete, onViewAll }) => {
 
   return (
     <div className={`rounded-2xl border overflow-hidden ${statusBg[worstStatus]}`}>
-      <div className="w-full flex items-center gap-2 px-4 py-3.5">
-        <button
-          type="button"
-          onClick={() => setExpanded((v) => !v)}
-          aria-expanded={expanded}
-          className="min-w-0 flex flex-1 items-center gap-3 text-left"
-        >
-          <FaSyringe className={`flex-shrink-0 ${statusColor[worstStatus]}`} size={14} />
-          <span className={`min-w-0 text-sm font-semibold flex-1 ${statusColor[worstStatus]}`}>
-            {statusLabel[worstStatus]}
-          </span>
+      <button
+        onClick={() => setExpanded((v) => !v)}
+        className="w-full flex items-center gap-3 px-4 py-3.5 text-left"
+      >
+        <FaSyringe className={`flex-shrink-0 ${statusColor[worstStatus]}`} size={14} />
+        <span className={`text-sm font-semibold flex-1 ${statusColor[worstStatus]}`}>
+          {statusLabel[worstStatus]}
+        </span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={(e) => { e.stopPropagation(); onAdd(); }}
+            className="text-xs font-semibold text-violet-600 hover:text-violet-800 bg-white/70 px-2 py-0.5 rounded-full"
+          >
+            + Add
+          </button>
           {expanded ? (
-            <FiChevronUp size={14} className="flex-shrink-0 text-gray-400" />
+            <FiChevronUp size={14} className="text-gray-400" />
           ) : (
-            <FiChevronDown size={14} className="flex-shrink-0 text-gray-400" />
+            <FiChevronDown size={14} className="text-gray-400" />
           )}
-        </button>
-        <button
-          type="button"
-          onClick={onAdd}
-          className="flex-shrink-0 text-xs font-semibold text-violet-600 hover:text-violet-800 bg-white/70 px-2 py-0.5 rounded-full"
-        >
-          + Add
-        </button>
-      </div>
+        </div>
+      </button>
 
       <AnimatePresence>
         {expanded && (
@@ -591,38 +588,6 @@ export default function PetDashboard() {
     { Icon: FiHeart, label: "Find mate", detail: "Browse nearby matches", onClick: navToMates },
     { Icon: FaQrcode, label: "Show QR", detail: "Share this pet profile", onClick: () => setShowQR(true) },
   ];
-  const featureGroups = [
-    {
-      title: "Care & records",
-      detail: "Keep everyday care in one place",
-      items: [
-        { emoji: "🏥", label: "Health", detail: "Vaccines and records", onClick: () => scrollToSection(healthRef) },
-        { emoji: "📚", label: "Find care", detail: "Vets and services nearby", onClick: navToResources },
-        { emoji: "💉", label: "Add vaccine", detail: "Update health history", onClick: petOps.handleAddVaccination },
-        { emoji: "📅", label: "Add event", detail: "Memory or appointment", onClick: openEventComposer },
-      ],
-    },
-    {
-      title: "Social profile",
-      detail: "Build their page and connect",
-      items: [
-        { emoji: "✍️", label: "Add post", detail: "Share a pet moment", onClick: openPostComposer },
-        { emoji: "🔗", label: "Pet profile", detail: pet?.slug ? "View public page" : "Finish profile setup", onClick: pet?.slug ? () => navigate(`/pet/${pet.slug}`) : () => openEditPet(pet, "basic") },
-        { emoji: "💕", label: "Meet pets", detail: "Find nearby matches", onClick: navToMates },
-        { emoji: "💬", label: "Messages", detail: "Open conversations", onClick: navToMessages },
-      ],
-    },
-    {
-      title: "Safety & community",
-      detail: "Help when it matters most",
-      items: [
-        { emoji: "🚨", label: "Lost & found", detail: "Report or search", onClick: navToReportLost },
-        { emoji: "🏠", label: "Adoption", detail: "Browse or rehome", onClick: navToAdopt },
-        { emoji: "📍", label: "Tag a place", detail: "Share pet-friendly spots", onClick: navToPlaces },
-        { emoji: "❤️", label: "Requests", detail: pendingCount ? `${pendingCount} need attention` : "No pending requests", onClick: () => scrollToSection(requestsRef), badge: pendingCount },
-      ],
-    },
-  ];
 
   if (isLoading) {
     return (
@@ -774,28 +739,38 @@ export default function PetDashboard() {
         <div className="mt-6 h-8 bg-slate-50" style={{ borderRadius: "60% 60% 0 0 / 100% 100% 0 0" }} />
       </div>
 
-      {/* Capabilities grouped by the user's intent; handlers and routes stay unchanged. */}
-      <div className="px-4 mt-3 space-y-4">
-        {featureGroups.map((group) => (
-          <section key={group.title} className="rounded-2xl border border-violet-100 bg-white p-4 shadow-sm">
-            <div className="mb-3">
-              <h2 className="text-sm font-extrabold text-slate-800">{group.title}</h2>
-              <p className="mt-0.5 text-[11px] text-gray-400">{group.detail}</p>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {group.items.map(({ emoji, label, detail, onClick, badge }) => (
-                <button key={label} onClick={onClick} className="group relative flex items-center gap-3 rounded-xl bg-violet-50/60 p-3 text-left transition active:scale-[0.98]">
-                  <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-white text-xl shadow-sm">{emoji}</span>
-                  <span className="min-w-0">
-                    <strong className="block truncate text-xs font-extrabold text-slate-700">{label}</strong>
-                    <span className="mt-0.5 block truncate text-[9px] text-gray-400">{detail}</span>
-                  </span>
-                  {badge > 0 && <span className="absolute right-2 top-2 min-w-[17px] rounded-full bg-rose-500 px-1 text-center text-[9px] font-bold text-white">{badge}</span>}
-                </button>
-              ))}
-            </div>
-          </section>
-        ))}
+      {/* Feature Actions Grid — 4-across with colourful gradients */}
+      <div className="px-4 mt-2">
+        <div className="grid grid-cols-4 gap-3">
+          {[
+            { emoji: "💕", label: "Find Mates",   onClick: navToMates                                           },
+            { emoji: "🚨", label: "Lost & Found", onClick: navToReportLost                                      },
+            { emoji: "🏠", label: "Adoption",     onClick: navToAdopt                                           },
+            { emoji: "📚", label: "Resources",    onClick: navToResources                                       },
+            { emoji: "📍", label: "Tag Place",    onClick: navToPlaces                                          },
+            { emoji: "💬", label: "Messages",     onClick: navToMessages,  badge: 0                             },
+            { emoji: "🏥", label: "Health",       onClick: () => scrollToSection(healthRef)                     },
+            { emoji: "❤️", label: "Requests",     onClick: () => scrollToSection(requestsRef), badge: pendingCount },
+          ].map(({ emoji, label, onClick, badge }) => (
+            <button
+              key={label}
+              onClick={onClick}
+              className="flex flex-col items-center gap-1.5 group"
+            >
+              <div className="relative w-full aspect-square max-w-[56px] mx-auto rounded-2xl bg-violet-50 border border-violet-100 flex items-center justify-center shadow-sm group-active:scale-95 transition-transform">
+                <span className="text-2xl leading-none">{emoji}</span>
+                {badge > 0 && (
+                  <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 rounded-full flex items-center justify-center px-1">
+                    <span className="text-[9px] text-white font-bold">{badge}</span>
+                  </div>
+                )}
+              </div>
+              <span className="text-[10px] font-semibold text-gray-500 text-center leading-tight">
+                {label}
+              </span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Feed Section: Posts + Events */}
@@ -984,24 +959,41 @@ export default function PetDashboard() {
             )}
           </div>
 
-          {/* Intent-based feature navigation */}
-          <div className="space-y-3">
-            {featureGroups.map((group) => (
-              <section key={group.title} className="overflow-hidden rounded-2xl border border-violet-100 bg-white shadow-sm">
-                <div className="border-b border-violet-50 px-4 py-3">
-                  <p className="text-[11px] font-bold uppercase tracking-widest text-violet-500">{group.title}</p>
+          {/* Feature nav */}
+          <div className="bg-white rounded-2xl border border-violet-100 shadow-sm overflow-hidden">
+            <div className="px-4 py-3 border-b border-violet-50">
+              <p className="text-[11px] font-bold text-violet-400 uppercase tracking-widest">Quick Actions</p>
+            </div>
+            <div className="p-2 space-y-0.5">
+              {[
+                { emoji: "💕", label: "Find Mates",   onClick: navToMates                                      },
+                { emoji: "🚨", label: "Report Lost",  onClick: navToReportLost                                 },
+                { emoji: "🏠", label: "Adopt a Pet",  onClick: navToAdopt                                      },
+                { emoji: "📚", label: "Resources",    onClick: navToResources                                  },
+                { emoji: "📍", label: "Tag a Place",  onClick: navToPlaces                                     },
+                { emoji: "💬", label: "Messages",     onClick: navToMessages                                   },
+                { emoji: "🏥", label: "Health Log",   onClick: () => openEditPet(pet, "vaccinations")          },
+              ].map(({ emoji, label, onClick }) => (
+                <button
+                  key={label}
+                  onClick={onClick}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-violet-50 hover:text-violet-700 transition-colors text-left group"
+                >
+                  <div className="w-8 h-8 rounded-xl bg-violet-50 border border-violet-100 flex items-center justify-center flex-shrink-0 group-hover:bg-violet-100 group-hover:scale-105 transition-all">
+                    <span className="text-base leading-none">{emoji}</span>
+                  </div>
+                  <span className="flex-1">{label}</span>
+                  <FiChevronRight size={13} className="text-gray-300 group-hover:text-violet-400 transition-colors" />
+                </button>
+              ))}
+              {/* Provision slot for future features */}
+              <div className="mt-2 px-3 py-2.5 rounded-xl border border-dashed border-violet-100 flex items-center gap-3 text-gray-300">
+                <div className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center flex-shrink-0">
+                  <span className="text-base leading-none">✨</span>
                 </div>
-                <div className="p-2">
-                  {group.items.map(({ emoji, label, onClick, badge }) => (
-                    <button key={label} onClick={onClick} className="group flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-xs font-semibold text-gray-600 transition-colors hover:bg-violet-50 hover:text-violet-700">
-                      <span className="grid h-7 w-7 flex-none place-items-center rounded-lg bg-violet-50">{emoji}</span>
-                      <span className="flex-1">{label}</span>
-                      {badge > 0 ? <span className="rounded-full bg-rose-500 px-1.5 text-[9px] text-white">{badge}</span> : <FiChevronRight size={12} className="text-gray-300" />}
-                    </button>
-                  ))}
-                </div>
-              </section>
-            ))}
+                <span className="text-xs font-medium">More coming soon</span>
+              </div>
+            </div>
           </div>
         </aside>
 

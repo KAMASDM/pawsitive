@@ -16,7 +16,6 @@ import { FaHotel, FaCut, FaHeart } from "react-icons/fa";
 import ResourceCard from "./ResourceCard/ResourceCard";
 import SkeletonResourceCard from "./SkeletonResourceCard";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ExperienceEmptyState, ExperienceHero, ResultsHeading } from "../Experience/ExperiencePage";
 
 // --- CACHE UTILITIES ---
 const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
@@ -120,12 +119,12 @@ const categoryKeywords = {
 const ResourcesPage = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const { category, subCategory, searchTerm: initialSearchTerm } = location.state || {};
+    const { category, subCategory } = location.state || {};
 
     // State management
     const [activeMainCategory, setActiveMainCategory] = useState(category || "all");
     const [activeSubCategory, setActiveSubCategory] = useState(subCategory || "Health & Wellness");
-    const [searchTerm, setSearchTerm] = useState(initialSearchTerm || "");
+    const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [resources, setResources] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -142,13 +141,6 @@ const ResourcesPage = () => {
     });
 
     const isInitialMount = useRef(true);
-
-    useEffect(() => {
-        const nextState = location.state || {};
-        if (nextState.category) setActiveMainCategory(nextState.category);
-        if (nextState.subCategory) setActiveSubCategory(nextState.subCategory);
-        if (typeof nextState.searchTerm === "string") setSearchTerm(nextState.searchTerm);
-    }, [location.key, location.state]);
 
     // --- HOOKS & LOGIC (No changes in this section) ---
     useEffect(() => {
@@ -344,6 +336,7 @@ const ResourcesPage = () => {
     useEffect(() => { setCurrentPage(1); }, [searchTerm, sortBy, activeSubCategory]);
     
     const currentCategory = mainCategories.find(cat => cat.id === activeMainCategory);
+    const headerBackground = currentCategory?.background;
     const categoryColor = currentCategory?.color || "from-violet-400 to-indigo-500";
     const Pagination = () => (<div className="flex flex-col sm:flex-row items-center justify-between gap-4 w-full"><div className="flex items-center gap-2"><span className="text-sm text-gray-600">Items per page:</span><select value={resourcesPerPage} onChange={(e) => { setResourcesPerPage(Number(e.target.value)); setCurrentPage(1); }} className="bg-violet-50 border border-violet-200 text-violet-700 text-sm rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-violet-400"><option value="6">6</option><option value="10">10</option><option value="15">15</option><option value="20">20</option></select></div><div className="flex items-center gap-2"><button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} className={`p-2 rounded-lg ${currentPage === 1 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-violet-100 text-violet-700 hover:bg-violet-200'}`}><FaChevronLeft /></button>{Array.from({ length: Math.min(5, totalPages) }, (_, i) => { let pageNum; if (totalPages <= 5) { pageNum = i + 1; } else if (currentPage <= 3) { pageNum = i + 1; } else if (currentPage >= totalPages - 2) { pageNum = totalPages - 4 + i; } else { pageNum = currentPage - 2 + i; } return (<button key={pageNum} onClick={() => setCurrentPage(pageNum)} className={`w-10 h-10 rounded-lg flex items-center justify-center ${currentPage === pageNum ? `bg-gradient-to-r ${categoryColor} text-white shadow-md` : 'bg-violet-100 text-violet-700 hover:bg-violet-200'}`}>{pageNum}</button>); })}<button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages || totalPages === 0} className={`p-2 rounded-lg ${(currentPage === totalPages || totalPages === 0) ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-violet-100 text-violet-700 hover:bg-violet-200'}`}><FaChevronRight /></button></div></div>);
 
@@ -360,33 +353,34 @@ const ResourcesPage = () => {
     }
 
     return (
-        <div className="min-h-screen bg-[#f7f5fb] pb-28 md:pb-12">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-violet-50 py-8 px-4 sm:px-6 lg:px-8">
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <motion.div className="absolute top-10 right-10 w-20 h-20 bg-violet-200 rounded-full opacity-20" animate={{ scale: [1, 1.2, 1], rotate: [0, 180, 360] }} transition={{ duration: 20, repeat: Infinity, ease: "linear" }} />
                 <motion.div className="absolute bottom-20 left-5 w-16 h-16 bg-indigo-200 rounded-full opacity-25" animate={{ y: [0, -20, 0], x: [0, 10, 0] }} transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }} />
             </div>
 
-            <ExperienceHero
-                eyebrow="Care near you"
-                title="Find trusted pet care"
-                description="Search veterinarians, emergency hospitals, groomers, boarding and pet stores within 10 km of your location."
-                onBack={() => navigate('/discover')}
-            >
-                <div className="relative max-w-3xl">
-                    <input type="text" placeholder="Search by place, service or area" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full rounded-2xl border border-white/10 bg-white/10 py-3.5 pl-12 pr-4 text-sm text-white placeholder-violet-100/55 outline-none backdrop-blur-xl focus:bg-white/15 focus:ring-2 focus:ring-white/25" />
-                    <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-violet-100" />
-                </div>
-                <div className="mt-4 flex flex-wrap gap-2">
-                    {mainCategories.map(cat => (<button key={cat.id} onClick={() => setActiveMainCategory(cat.id)} className={`flex items-center gap-1 rounded-full px-4 py-2 text-xs font-bold transition ${activeMainCategory === cat.id ? 'bg-white text-[#30274e] shadow-lg' : 'border border-white/10 bg-white/10 text-violet-100 hover:bg-white/15'}`}>{cat.icon} {cat.name === 'All' ? 'All pets' : `${cat.name} care`}</button>))}
-                </div>
-            </ExperienceHero>
-
-            <div className="max-w-7xl mx-auto relative z-10 px-4 py-6 sm:px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto relative z-10">
+                {/* Header */}
+                <motion.div className="mb-4 rounded-3xl overflow-hidden relative py-4 shadow-xl" style={{ backgroundImage: `url(${headerBackground})`, backgroundSize: 'cover', backgroundPosition: 'center' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                    <div className="absolute inset-0 bg-gradient-to-br from-black/60 to-black/40"></div>
+                    <div className="relative z-10 p-4 sm:p-6 flex flex-col justify-center gap-4 sm:gap-7">
+                        <motion.div className="relative w-full order-1 sm:order-2" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0, transition: { delay: 0.3 } }}>
+                            <input type="text" placeholder={`Search ${activeMainCategory} resources...`} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-12 pr-4 py-3 rounded-2xl border border-white/30 bg-white/20 backdrop-blur-md text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/50 focus:bg-white/30 shadow-lg" />
+                            <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white/70" />
+                        </motion.div>
+                        <div className="flex flex-col lg:flex-row w-full justify-between items-center gap-4 order-2 sm:order-1">
+                            <motion.h1 className="text-3xl md:text-4xl font-bold text-white capitalize text-center lg:text-left hidden sm:block" initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.5 }}>{activeMainCategory} Resources</motion.h1>
+                            <motion.div className="flex flex-wrap gap-2 justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { delay: 0.2 } }}>
+                                {mainCategories.map(cat => (<button key={cat.id} onClick={() => setActiveMainCategory(cat.id)} className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-2 ${activeMainCategory === cat.id ? 'bg-white text-slate-800 shadow-lg transform scale-105' : 'bg-white/20 text-white hover:bg-white/30 shadow-md border border-white/30'}`}>{cat.icon} {cat.name}</button>))}
+                            </motion.div>
+                        </div>
+                    </div>
+                </motion.div>
 
                 {/* Quick Filters */}
                 <motion.div className="mb-4 p-4 bg-white/80 backdrop-blur-md rounded-2xl shadow-lg border border-violet-100" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0, transition: { delay: 0.35 } }}>
                     <div className="flex flex-wrap gap-2 items-center">
-                        <span className="text-sm font-semibold text-violet-700 mr-2">Refine results</span>
+                        <span className="text-sm font-semibold text-violet-700 mr-2">Quick Filters:</span>
                         <button onClick={() => setQuickFilters(prev => ({ ...prev, openNow: !prev.openNow }))} className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-2 ${quickFilters.openNow ? 'bg-gradient-to-r from-violet-500 to-indigo-500 text-white shadow-lg transform scale-105' : 'bg-violet-50 text-violet-700 hover:bg-violet-100 border border-violet-200'}`}>
                             🟢 Open Now
                         </button>
@@ -402,7 +396,7 @@ const ResourcesPage = () => {
                             </button>
                         )}
                         <span className="ml-auto text-sm text-violet-600 font-medium">
-                            {processedResources.length} {processedResources.length === 1 ? 'place' : 'places'}
+                            {processedResources.length} {processedResources.length === 1 ? 'result' : 'results'}
                         </span>
                     </div>
                 </motion.div>
@@ -413,8 +407,8 @@ const ResourcesPage = () => {
                     <div className="hidden md:block">
                         <div className="flex flex-row items-center justify-between mb-4 ">
                             <h2 className="text-sm font-semibold text-violet-700 uppercase tracking-wider">Categories</h2>
-                            <p className="text-center text-sm text-violet-600 hidden sm:block">
-                                Showing care within 10 km
+                            <p className="text-center text-sm text-violet-600  hidden sm:block ">
+                                The Resources are Located Within a 10KM Radius from your current Location.
                             </p>
 
                             <div className="flex items-center gap-4">
@@ -472,18 +466,10 @@ const ResourcesPage = () => {
 
                 {/* NEW: Radius Message Moved Here */}
                 <p className="text-center text-sm text-violet-600 mb-4 block md:hidden">
-                    Showing care within 10 km of your location
+                    The Resources are Located Within a 10KM Radius from your current Location.
                 </p>
 
                 {/* Content Area */}
-                {!loading && !error && (
-                    <ResultsHeading
-                        eyebrow="Nearby care"
-                        title={searchTerm ? `Results for “${searchTerm}”` : (activeSubCategory === 'all' ? 'All services' : activeSubCategory)}
-                        count={processedResources.length}
-                        detail={`Sorted by ${sortBy === 'default' ? 'best match' : sortBy}`}
-                    />
-                )}
                 {loading && (
                     <motion.div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                         {[...Array(6)].map((_, index) => (
@@ -540,15 +526,12 @@ const ResourcesPage = () => {
                                 )}
                             </>
                         ) : (
-                            <ExperienceEmptyState
-                                icon="🔎"
-                                title="No care matches found"
-                                description="Try a broader service category, increase the result range by clearing filters, or search for a different place or service."
-                                primaryLabel="Clear filters"
-                                onPrimary={() => { setSearchTerm(""); setActiveSubCategory("all"); setSortBy("default"); setQuickFilters({ openNow: false, highRated: false, nearby: false }); }}
-                                secondaryLabel="Back to Discover"
-                                onSecondary={() => navigate('/discover')}
-                            />
+                            <motion.div className="bg-white/90 p-8 text-center shadow-lg rounded-2xl" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                                <div className="text-6xl mb-4">🔍</div>
+                                <h3 className="text-xl font-bold text-gray-800 mb-2">No resources found</h3>
+                                <p className="text-gray-600 mb-6">Try adjusting your filters or search term.</p>
+                                <button onClick={() => { setSearchTerm(""); setActiveSubCategory("all"); setSortBy("default"); }} className={`bg-gradient-to-r ${categoryColor} hover:opacity-90 text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all`}>Reset Filters</button>
+                            </motion.div>
                         )}
                     </>
                 )}

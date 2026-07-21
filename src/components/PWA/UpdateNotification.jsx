@@ -43,7 +43,7 @@ const UpdateNotification = () => {
         clearTimeout(fallbackTimerRef.current);
         // Use location.href assignment instead of reload() — more reliable on
         // mobile PWA standalone mode where reload() can serve stale cache.
-        window.location.reload();
+        window.location.href = window.location.href;
       };
 
       navigator.serviceWorker.addEventListener('controllerchange', onControllerChange, { once: true });
@@ -52,7 +52,7 @@ const UpdateNotification = () => {
       // wrong — force reload anyway so the user isn't stuck on a spinner.
       fallbackTimerRef.current = setTimeout(() => {
         navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
-        window.location.reload();
+        window.location.href = window.location.href;
       }, 5000);
     }
 

@@ -4,9 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { collection, getDocs, orderBy, query } from "firebase/firestore";
 import { db, auth } from "../../firebase";
 import { useQuizStats } from "../quiz/hooks/useQuizStats";
-import { FiAward, FiZap, FiCalendar } from "react-icons/fi";
+import { FiArrowLeft, FiAward, FiZap, FiTrendingUp, FiCalendar } from "react-icons/fi";
 import { HiOutlineLightBulb } from "react-icons/hi";
-import { ExperienceEmptyState, ExperienceHero, ResultsHeading } from "../../components/Experience/ExperiencePage";
 
 // ── Star rating helper ──────────────────────────────────────────────────────
 function stars(score, total) {
@@ -88,19 +87,17 @@ export default function ActivityPage() {
     : allItems.filter((i) => i.type === "quiz");
 
   return (
-    <div className="min-h-screen bg-[#f7f5fb] pb-28 md:pb-12">
-      <ExperienceHero
-        eyebrow="Play & learn"
-        title="Your Pawppy activity"
-        description="See the challenges you joined, quizzes you completed, XP you earned and the streak you are building."
-        onBack={() => navigate('/discover')}
-        actions={<><button onClick={() => navigate('/challenge')} className="flex flex-1 items-center justify-center rounded-full bg-white px-4 py-2.5 text-xs font-black text-[#3b305f] sm:flex-none">Join challenge</button><button onClick={() => navigate('/quiz')} className="flex flex-1 items-center justify-center rounded-full border border-white/15 bg-white/10 px-4 py-2.5 text-xs font-black text-white sm:flex-none">Take quiz</button></>}
-      />
-
-      <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-50 pb-24">
+      {/* Header */}
+      <div className="sticky top-0 z-30 bg-white border-b border-violet-100 h-14 flex items-center px-4 gap-3">
+        <button onClick={() => navigate(-1)} className="text-gray-500 hover:text-violet-600">
+          <FiArrowLeft size={20} />
+        </button>
+        <span className="flex-1 font-bold text-slate-800 text-base">My Activity</span>
+      </div>
 
       {/* Stats bar */}
-      <div className="bg-white rounded-2xl shadow-sm border border-violet-50 overflow-hidden">
+      <div className="bg-white mx-4 mt-4 rounded-2xl shadow-sm border border-violet-50 overflow-hidden">
         <div className="flex divide-x divide-gray-100">
           <StatTile icon="🏆" value={challengeHistory.length} label="Challenges" color="text-violet-500" />
           <StatTile icon="🧠" value={quizHistory.length} label="Quizzes" color="text-indigo-500" />
@@ -110,7 +107,7 @@ export default function ActivityPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 mt-5">
+      <div className="flex gap-2 px-4 mt-4">
         {TABS.map((t) => (
           <button key={t} onClick={() => setTab(t)}
             className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors ${
@@ -124,22 +121,27 @@ export default function ActivityPage() {
       </div>
 
       {/* Timeline */}
-      <div className="mt-5 flex flex-col gap-3">
-        {!loading && displayed.length > 0 && <ResultsHeading title={tab === 'All' ? 'Recent activity' : tab} count={displayed.length} detail="Newest activity appears first" />}
+      <div className="px-4 mt-4 flex flex-col gap-3">
         {loading ? (
           Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="h-20 rounded-2xl bg-gray-100 animate-pulse" />
           ))
         ) : displayed.length === 0 ? (
-          <ExperienceEmptyState
-            icon="🏆"
-            title={tab === 'All' ? 'Your activity starts here' : `No ${tab.toLowerCase()} yet`}
-            description="Join the weekly photo challenge or complete the pet quiz. Your entries, scores and rewards will appear here."
-            primaryLabel="Join challenge"
-            onPrimary={() => navigate('/challenge')}
-            secondaryLabel="Take quiz"
-            onSecondary={() => navigate('/quiz')}
-          />
+          <div className="flex flex-col items-center justify-center py-20 text-center gap-3">
+            <span className="text-5xl">🐾</span>
+            <p className="text-slate-700 font-bold text-base">Nothing here yet</p>
+            <p className="text-gray-500 text-sm">Join a challenge or take a quiz to see your activity!</p>
+            <div className="flex gap-3 mt-2">
+              <button onClick={() => navigate("/challenge")}
+                className="text-sm font-semibold text-violet-600 bg-violet-50 px-4 py-2 rounded-full">
+                🏆 Challenge
+              </button>
+              <button onClick={() => navigate("/quiz")}
+                className="text-sm font-semibold text-indigo-600 bg-indigo-50 px-4 py-2 rounded-full">
+                💡 Quiz
+              </button>
+            </div>
+          </div>
         ) : (
           <AnimatePresence>
             {displayed.map((item, idx) => (
@@ -150,7 +152,6 @@ export default function ActivityPage() {
           </AnimatePresence>
         )}
       </div>
-      </main>
     </div>
   );
 }

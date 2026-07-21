@@ -33,6 +33,7 @@ const required = [
   'VITE_FIREBASE_STORAGE_BUCKET',
   'VITE_FIREBASE_MESSAGING_SENDER_ID',
   'VITE_FIREBASE_APP_ID',
+  'VITE_FIREBASE_DATABASE_URL',
 ];
 
 const missing = required.filter((k) => !process.env[k]);
@@ -51,11 +52,14 @@ const storageBucket   = process.env.VITE_FIREBASE_STORAGE_BUCKET   || '';
 const senderId        = process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '';
 const appId           = process.env.VITE_FIREBASE_APP_ID           || '';
 const measurementId   = process.env.VITE_FIREBASE_MEASUREMENT_ID   || '';
+const databaseURL     = process.env.VITE_FIREBASE_DATABASE_URL     || '';
+
 const content = `// AUTO-GENERATED — do not edit by hand.
 // Regenerated at build time by scripts/generate-firebase-sw.js
 
 importScripts('https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.13.2/firebase-messaging-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.13.2/firebase-database-compat.js');
 
 const BASE_URL = 'https://pawppy.in';
 
@@ -66,45 +70,47 @@ firebase.initializeApp({
   storageBucket: "${storageBucket}",
   messagingSenderId: "${senderId}",
   appId: "${appId}",
-  measurementId: "${measurementId}"
+  measurementId: "${measurementId}",
+  databaseURL: "${databaseURL}"
 });
 
 const messaging = firebase.messaging();
+const database = firebase.database();
 
-async function updateBadge(count) {
-  if (!navigator.setAppBadge) return;
-
-  const numericCount = Number(count);
+async function updateBadge(userId) {
+  if (!userId) return 0;
   try {
-    if (Number.isFinite(numericCount) && numericCount <= 0) {
-      await navigator.clearAppBadge();
-    } else if (Number.isFinite(numericCount)) {
-      await navigator.setAppBadge(numericCount);
-    } else {
-      // The worker has no Firebase Auth session, so it must not read the user's
-      // private RTDB counter. A flag badge still indicates a new notification.
-      await navigator.setAppBadge();
+    const snapshot = await database.ref(\`users/\${userId}/unreadNotifications\`).once('value');
+    const count = snapshot.val() || 0;
+    if (navigator.setAppBadge) {
+      if (count > 0) {
+        await navigator.setAppBadge(count);
+      } else {
+        await navigator.clearAppBadge();
+      }
     }
+    return count;
   } catch (error) {
     console.error('Error updating badge:', error);
+    return 0;
   }
 }
 
 messaging.onBackgroundMessage(async (payload) => {
-  const rawBadgeCount = payload.data?.badgeCount ?? payload.data?.unreadCount;
-  const parsedBadgeCount = Number(rawBadgeCount);
-  const hasBadgeCount = Number.isFinite(parsedBadgeCount) && parsedBadgeCount >= 0;
-  await updateBadge(hasBadgeCount ? parsedBadgeCount : undefined);
-
+  const userId = payload.data?.receiverId;
+  let badgeCount = 0;
+  if (userId) {
+    badgeCount = await updateBadge(userId);
+  }
   const notificationTitle = payload.notification?.title || 'Pawppy';
   let notificationBody = payload.notification?.body || 'You have a new notification';
-  if (hasBadgeCount && parsedBadgeCount > 0) {
-    notificationBody += \` (\${parsedBadgeCount} unread)\`;
+  if (badgeCount > 0) {
+    notificationBody += \` (\${badgeCount} unread)\`;
   }
   const notificationOptions = {
     body: notificationBody,
-    icon: BASE_URL + '/favicon-v2.png',
-    badge: BASE_URL + '/favicon-v2.png',
+    icon: BASE_URL + '/favicon.png',
+    badge: BASE_URL + '/favicon.png',
     data: payload.data || {},
     actions: [{ action: 'open', title: 'Open Pawppy' }],
     tag: payload.data?.notificationId || payload.data?.type || 'default',
@@ -147,9 +153,7 @@ self.addEventListener('notificationclick', (event) => {
 
 self.addEventListener('message', async (event) => {
   if (event.data && event.data.type === 'UPDATE_BADGE') {
-    await updateBadge(event.data.count);
-  } else if (event.data && event.data.type === 'CLEAR_BADGE') {
-    await updateBadge(0);
+    await updateBadge(event.data.userId);
   }
 });
 `;

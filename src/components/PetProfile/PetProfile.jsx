@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FiShare2, FiLock, FiCalendar, FiArrowLeft, FiEdit, FiInfo, FiPlus, FiGlobe } from 'react-icons/fi';
+import { FiShare2, FiLock, FiCalendar, FiArrowLeft, FiEdit, FiInfo, FiPlus } from 'react-icons/fi';
 import { FaBirthdayCake, FaPaw } from 'react-icons/fa';
 import { ref, get, onValue, off } from 'firebase/database';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -335,7 +335,7 @@ const PetProfile = () => {
                   className="flex items-center px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
                 >
                   <FiInfo className="w-4 h-4 mr-1" />
-                  <span className="hidden md:inline">Care details</span>
+                  <span className="hidden md:inline">Pet Details</span>
                 </button>
                 <button
                   onClick={() => {
@@ -345,7 +345,7 @@ const PetProfile = () => {
                   className="flex items-center px-3 py-2 text-sm bg-violet-50 text-violet-600 rounded-lg hover:bg-violet-100 transition-colors"
                 >
                   <FiPlus className="w-4 h-4 mr-1" />
-                  <span className="hidden md:inline">New post</span>
+                  <span className="hidden md:inline">Add Post</span>
                 </button>
                 <button
                   onClick={() => {
@@ -355,14 +355,14 @@ const PetProfile = () => {
                   className="flex items-center px-3 py-2 text-sm bg-violet-50 text-violet-600 rounded-lg hover:bg-violet-100 transition-colors"
                 >
                   <FiCalendar className="w-4 h-4 mr-1" />
-                  <span className="hidden md:inline">Add event</span>
+                  <span className="hidden md:inline">Add Event</span>
                 </button>
                 <button
                   onClick={() => setShowShareModal(true)}
                   className="flex items-center px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
                 >
                   <FiShare2 className="w-4 h-4 mr-1" />
-                  <span className="hidden md:inline">Share page</span>
+                  <span className="hidden md:inline">Share</span>
                 </button>
               </div>
             )}
@@ -374,7 +374,7 @@ const PetProfile = () => {
                 className="flex items-center px-3 py-2 text-sm bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors"
               >
                 <FiShare2 className="w-4 h-4 mr-1" />
-                <span className="hidden md:inline">Share pet profile</span>
+                <span className="hidden md:inline">Share</span>
               </button>
             )}
           </div>
@@ -383,22 +383,6 @@ const PetProfile = () => {
 
       {/* Desktop Layout */}
       <div className="hidden lg:block max-w-7xl mx-auto px-4 py-8">
-        <div className="mb-6 flex items-center justify-between rounded-2xl border border-violet-100 bg-white/80 px-5 py-4 shadow-sm">
-          <div className="flex items-center gap-3">
-            <span className={`grid h-10 w-10 place-items-center rounded-xl ${pet?.privacy?.isPrivate ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'}`}>
-              {pet?.privacy?.isPrivate ? <FiLock /> : <FiGlobe />}
-            </span>
-            <div>
-              <p className="text-sm font-extrabold text-[#30274e]">{pet?.privacy?.isPrivate ? 'Private pet profile' : 'Shareable pet profile'}</p>
-              <p className="mt-0.5 text-xs text-slate-500">{pet?.privacy?.isPrivate ? 'Only you can view this page until you change its privacy setting.' : `Anyone with ${pet?.name}'s Pawppy link can view public posts and events.`}</p>
-            </div>
-          </div>
-          {pet?.privacy?.isPrivate ? (
-            <button onClick={() => navigate('/profile', { state: { editPetId: pet?.id, openEditDialog: true } })} className="flex items-center gap-2 rounded-full bg-[#4a3d7d] px-4 py-2.5 text-xs font-black text-white"><FiEdit /> Privacy settings</button>
-          ) : (
-            <button onClick={() => setShowShareModal(true)} className="flex items-center gap-2 rounded-full bg-[#4a3d7d] px-4 py-2.5 text-xs font-black text-white"><FiShare2 /> Share page</button>
-          )}
-        </div>
         <div className="grid grid-cols-12 gap-6">
           {/* Left Sidebar - Pet Info */}
           <div className="col-span-3">
@@ -482,7 +466,7 @@ const PetProfile = () => {
                       </div>
                       <div>
                         <p className="font-medium text-gray-900">{owner.name}</p>
-                        <p className="text-xs text-gray-600">Pet parent on Pawppy</p>
+                        <p className="text-xs text-gray-600">{owner.email}</p>
                       </div>
                     </div>
                   </div>
@@ -505,14 +489,14 @@ const PetProfile = () => {
                         className="w-full px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors flex items-center justify-center"
                       >
                         <FiEdit className="w-4 h-4 mr-2" />
-                        Manage pet
+                        Edit Profile
                       </button>
                       <button
                         onClick={() => setShowShareModal(true)}
                         className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center"
                       >
                         <FiShare2 className="w-4 h-4 mr-2" />
-                        Share pet profile
+                        Share Profile
                       </button>
                     </>
                   ) : (
@@ -521,7 +505,7 @@ const PetProfile = () => {
                       className="w-full px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors flex items-center justify-center"
                     >
                       <FiShare2 className="w-4 h-4 mr-2" />
-                      Share pet profile
+                      Share Profile
                     </button>
                   )}
                 </div>

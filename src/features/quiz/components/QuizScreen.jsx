@@ -2,11 +2,17 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  httpsCallable,
-} from "firebase/functions";
-import { auth, functions } from "../../../firebase";
+  doc,
+  setDoc,
+  writeBatch,
+  serverTimestamp,
+  increment,
+  getDoc,
+} from "firebase/firestore";
+import { db, auth } from "../../../firebase";
 import { useCurrentQuiz } from "../hooks/useCurrentQuiz";
-import { quizStars, STAR_LABELS } from "../../../utils/xpSystem";
+import { quizXP, quizStars, STAR_LABELS } from "../../../utils/xpSystem";
+import { getWeekId } from "../../../utils/getWeekId";
 import QuizQuestion from "./QuizQuestion";
 import QuizTimer from "./QuizTimer";
 import { FiArrowRight } from "react-icons/fi";
@@ -25,12 +31,8 @@ export default function QuizScreen() {
   const [timeLeft, setTimeLeft] = useState(SECONDS_PER_QUESTION);
   const [answered, setAnswered] = useState(null); // current Q answered index
   const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState("");
-  const [submitVersion, setSubmitVersion] = useState(0);
   const startTimeRef = useRef(null);
-  const finalTimeRef = useRef(null);
   const timerRef = useRef(null);
-  const completionSavedRef = useRef(false);
 
   const questions = quiz?.questions ?? [];
   const total = questions.length;
@@ -48,9 +50,6 @@ export default function QuizScreen() {
       setAnswered(null);
       setTimeLeft(SECONDS_PER_QUESTION);
     } else {
-      finalTimeRef.current = startTimeRef.current
-        ? Math.round((Date.now() - startTimeRef.current) / 1000)
-        : 0;
       setScreen("finished");
     }
   }, [currentQ, total]);
@@ -79,17 +78,53 @@ export default function QuizScreen() {
   };
 
   const score = answers.filter((a, i) => a === questions[i]?.correct).length;
-  const timeTaken = finalTimeRef.current ?? (startTimeRef.current ? Math.round((Date.now() - startTimeRef.current) / 1000) : 0);
+  const timeTaken = startTimeRef.current ? Math.round((Date.now() - startTimeRef.current) / 1000) : 0;
 
   // Save results to Firestore once we reach "finished"
   useEffect(() => {
-    if (screen !== "finished" || !user || !quiz || completionSavedRef.current) return;
-    completionSavedRef.current = true;
+    if (screen !== "finished" || !user || !quiz) return;
     setSaving(true);
-    setSaveError("");
+    const xpEarned = quizXP(score);
+    const weekId = getWeekId();
     const saveData = async () => {
-      // Pet display metadata is cosmetic. Score, XP, streaks and leaderboard
-      // placement are calculated and committed atomically by Cloud Functions.
+      const batch = writeBatch(db);
+
+      // Save history for this week
+      batch.set(doc(db, "users", user.uid, "quizHistory", weekId), {
+        score,
+        timeTaken,
+        answers,
+        completedAt: serverTimestamp(),
+        xpEarned,
+        quizId: quiz.id,
+        quizTitle: quiz.title,
+      });
+
+      // Update streak + stats
+      const statsRef = doc(db, "users", user.uid, "quizStats", "stats");
+      const statsSnap = await getDoc(statsRef);
+      const current = statsSnap.data() ?? {};
+      const lastWeek = current.lastCompletedWeek;
+      let newStreak = 1;
+      if (lastWeek) {
+        // Check if lastWeek is exactly the previous week
+        const [ly, lw] = lastWeek.split("-W").map(Number);
+        const [cy, cw] = weekId.split("-W").map(Number);
+        const expectedPrev = cw === 1 ? `${cy - 1}-W52` : `${cy}-W${String(cw - 1).padStart(2, "0")}`;
+        if (lastWeek === expectedPrev) {
+          newStreak = (current.currentStreak ?? 0) + 1;
+        }
+      }
+
+      batch.set(statsRef, {
+        currentStreak: newStreak,
+        longestStreak: Math.max(newStreak, current.longestStreak ?? 0),
+        totalXP: increment(xpEarned),
+        totalQuizzes: increment(1),
+        lastCompletedWeek: weekId,
+      }, { merge: true });
+
+      // Write to leaderboard sub-collection
       let petName = user.displayName || "Pawppy User";
       let petPhotoUrl = user.photoURL || "";
       try {
@@ -103,36 +138,26 @@ export default function QuizScreen() {
         }
       } catch { /* non-fatal */ }
 
-      const submitQuiz = httpsCallable(functions, "submitWeeklyQuiz");
-      const result = await submitQuiz({
-        quizId: quiz.id,
-        answers,
-        timeTaken,
+      batch.set(doc(db, "weeklyQuiz", quiz.id, "leaderboard", user.uid), {
+        displayName: user.displayName || "Pawppy User",
         petName,
         petPhotoUrl,
+        score,
+        timeTaken,
+        xpEarned,
+        completedAt: serverTimestamp(),
       });
-      return result.data;
+
+      await batch.commit();
     };
 
-    saveData()
-      .then((saved) => {
-        navigate("/quiz/results", {
-          state: {
-            score: saved.score,
-            total,
-            timeTaken: saved.timeTaken,
-            quizId: quiz.id,
-            quizTitle: quiz.title,
-            answers,
-          },
-        });
-      })
-      .catch((error) => {
-        console.error("Unable to save quiz result:", error);
-        setSaveError("Your answers are safe on this screen, but the result could not be saved. Check your connection and retry.");
-        setSaving(false);
+    saveData().finally(() => {
+      setSaving(false);
+      navigate("/quiz/results", {
+        state: { score, total, timeTaken, quizId: quiz.id, quizTitle: quiz.title, answers },
       });
-  }, [screen, user, quiz, answers, timeTaken, total, navigate, submitVersion]);
+    });
+  }, [screen]);
 
   // ---- SCREENS ----
 
@@ -273,33 +298,7 @@ export default function QuizScreen() {
 
   // FINISHED — navigate in effect, not during render
   if (screen === "finished") {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 px-6 text-center">
-        <div className="max-w-sm">
-          {saving ? (
-            <>
-              <div className="w-10 h-10 mx-auto rounded-full border-4 border-indigo-200 border-t-indigo-500 animate-spin" />
-              <p className="mt-4 text-sm font-semibold text-slate-700">Saving your result…</p>
-            </>
-          ) : (
-            <>
-              <span className="text-4xl">⚠️</span>
-              <p className="mt-3 text-sm text-slate-600">{saveError}</p>
-              <button
-                type="button"
-                onClick={() => {
-                  completionSavedRef.current = false;
-                  setSubmitVersion((version) => version + 1);
-                }}
-                className="mt-5 rounded-full bg-indigo-600 px-6 py-3 text-sm font-bold text-white"
-              >
-                Retry saving
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-    );
+    return null; // useEffect above will navigate
   }
 
   return null;

@@ -36,19 +36,14 @@
     "build": "vite build && npm run generate-sitemap",
     "generate-sitemap": "node generate-sitemap.js",
     "preview": "vite preview",
-    "lint": "eslint .",
-    "test": "vitest run --exclude tests/rules/**",
-    "test:watch": "vitest",
-    "test:rules": "npx --yes firebase-tools@15.24.0 emulators:exec --project pawppy-rules-test --only database,firestore,storage \"vitest run tests/rules\"",
-    "verify": "npm run lint && npm run test && npm run build",
-    "deploy:hosting": "npx --yes firebase-tools@15.24.0 deploy --only hosting",
-    "deploy:functions": "npx --yes firebase-tools@15.24.0 deploy --only functions",
-    "deploy:firestore-rules": "npx --yes firebase-tools@15.24.0 deploy --only firestore:rules",
-    "deploy:rtdb-storage-rules": "npx --yes firebase-tools@15.24.0 deploy --only database,storage",
-    "deploy:rules": "npx --yes firebase-tools@15.24.0 deploy --only database,firestore:rules,storage",
-    "deploy:firebase": "npx --yes firebase-tools@15.24.0 deploy",
-    "test-email-function": "node netlify/functions/test-daily-reminders.js",
-    "deploy": "netlify deploy --prod"
+    "deploy": "netlify deploy --prod",
+    "test-email-function": "node netlify/functions/test-daily-reminders.js"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
   },
   "browserslist": {
     "production": [
@@ -63,25 +58,17 @@
     ]
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.5",
-    "@firebase/rules-unit-testing": "^5.0.1",
     "@vitejs/plugin-react": "^5.1.1",
     "autoprefixer": "^10.4.20",
-    "eslint": "^9.39.5",
-    "eslint-plugin-react-hooks": "^5.2.0",
-    "globals": "^16.5.0",
-    "jsdom": "^26.1.0",
     "postcss": "^8.4.49",
     "sitemap": "^8.0.0",
     "tailwindcss": "^3.4.14",
     "vite": "^7.2.2",
-    "vite-plugin-pwa": "^1.2.0",
-    "vitest": "^3.2.7"
+    "vite-plugin-pwa": "^1.2.0"
   },
   "overrides": {
     "serialize-javascript": "^7.0.3",
     "@rollup/plugin-terser": "^1.0.0",
-    "http-proxy-agent": "^7.0.2",
-    "esbuild": "^0.28.1"
+    "http-proxy-agent": "^7.0.2"
   }
 }

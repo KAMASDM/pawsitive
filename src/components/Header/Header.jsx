@@ -374,7 +374,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { auth, database } from "../../firebase";
-import PawMark from "../Brand/PawMark";
+import logo from "../../images/logo.png";
 import BottomNavigation from "./BottomNavigation";
 import { get, onValue, ref, update } from "firebase/database";
 import {
@@ -389,8 +389,6 @@ import {
   FiArrowRight,
   FiInbox,
   FiShoppingBag,
-  FiCompass,
-  FiActivity,
 } from "react-icons/fi";
 import { BsGrid } from "react-icons/bs";
 import { triggerSearch } from "../Search/GlobalSearch";
@@ -528,7 +526,7 @@ const Header = () => {
   const [totalUnreadCount, setTotalUnreadCount] = useState(0);
 
   // Check if we're on the pet-first landing pages
-  const isHomePage = location.pathname === "/my-pets" || location.pathname.startsWith("/my-pets/") || location.pathname === "/discover" || location.pathname === "/";
+  const isHomePage = location.pathname === "/my-pets" || location.pathname.startsWith("/my-pets/") || location.pathname === "/";
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -705,12 +703,10 @@ const Header = () => {
       <header className={`sticky top-0 z-[100] transition-all duration-300 ${getHeaderClasses()}`}>
         <div className="container mx-auto px-4 py-3">
           <div className="flex justify-between items-center">
-            <Link to="/my-pets" className="flex items-center hover:opacity-90 transition-opacity" aria-label="Pawppy home">
-              <span className="mr-2 grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-[#8f7bd1] to-[#4a3d7d] text-white shadow-[0_8px_22px_rgba(76,59,126,0.2)]">
-                <PawMark size={22} />
-              </span>
+            <Link to="/my-pets" className="flex items-center hover:opacity-90 transition-opacity">
+              <img src={logo} alt="Pawppy" className="h-10 mr-3" />
               <span className={`text-2xl font-bold hidden sm:inline transition-all duration-300 ${getLogoTextClasses()}`}>
-                pawppy
+                Pawppy
               </span>
             </Link>
 
@@ -720,19 +716,7 @@ const Header = () => {
                 to="/my-pets"
                 className={getNavLinkClasses(location.pathname === "/my-pets" || location.pathname.startsWith("/my-pets/"))}
               >
-                <FiHome className="mr-1" /> Home
-              </NavLink>
-              <NavLink
-                to="/discover"
-                className={getNavLinkClasses(location.pathname === "/discover")}
-              >
-                <FiCompass className="mr-1" /> Discover
-              </NavLink>
-              <NavLink
-                to="/resource"
-                className={getNavLinkClasses(location.pathname === "/resource")}
-              >
-                <BsGrid className="mr-1" /> Care
+                <FiHome className="mr-1" /> My Pets
               </NavLink>
               <NavLink
                 to="/shop"
@@ -741,10 +725,22 @@ const Header = () => {
                 <FiShoppingBag className="mr-1" /> Shop
               </NavLink>
               <NavLink
+                to="/resource"
+                className={getNavLinkClasses(location.pathname === "/resource")}
+              >
+                <BsGrid className="mr-1" /> Resources
+              </NavLink>
+              <NavLink
                 to="/profile"
                 className={getNavLinkClasses(location.pathname === "/profile")}
               >
-                <FiUser className="mr-1" /> Account
+                <FiUser className="mr-1" /> Profile
+              </NavLink>
+              <NavLink
+                to="/faq"
+                className={getNavLinkClasses(location.pathname === "/faq")}
+              >
+                <FiHelpCircle className="mr-1" /> FAQ
               </NavLink>
 
               <button
@@ -839,21 +835,7 @@ const Header = () => {
                 onClick={() => setIsMenuOpen(false)}
                 className={getMobileNavLinkClasses(location.pathname === "/my-pets" || location.pathname.startsWith("/my-pets/"))}
               >
-                <FiHome className="mr-2" /> Home
-              </MobileNavLink>
-              <MobileNavLink
-                to="/discover"
-                onClick={() => setIsMenuOpen(false)}
-                className={getMobileNavLinkClasses(location.pathname === "/discover")}
-              >
-                <FiCompass className="mr-2" /> Discover
-              </MobileNavLink>
-              <MobileNavLink
-                to="/my-pets?picker=true"
-                onClick={() => setIsMenuOpen(false)}
-                className={getMobileNavLinkClasses(false)}
-              >
-                <BsGrid className="mr-2" /> My Pets
+                <FiHome className="mr-2" /> My Pets
               </MobileNavLink>
               <MobileNavLink
                 to="/shop"
@@ -867,21 +849,14 @@ const Header = () => {
                 onClick={() => setIsMenuOpen(false)}
                 className={getMobileNavLinkClasses(location.pathname === "/resource")}
               >
-                <BsGrid className="mr-2" /> Care & Services
-              </MobileNavLink>
-              <MobileNavLink
-                to="/activity"
-                onClick={() => setIsMenuOpen(false)}
-                className={getMobileNavLinkClasses(location.pathname === "/activity")}
-              >
-                <FiActivity className="mr-2" /> My Activity
+                <BsGrid className="mr-2" /> Resources
               </MobileNavLink>
               <MobileNavLink
                 to="/profile"
                 onClick={() => setIsMenuOpen(false)}
                 className={getMobileNavLinkClasses(location.pathname === "/profile")}
               >
-                <FiUser className="mr-2" /> Account & Messages
+                <FiUser className="mr-2" /> Profile
               </MobileNavLink>
               <MobileNavLink
                 to="/faq"

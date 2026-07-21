@@ -37,15 +37,15 @@ service cloud.firestore {
     }
     match /users/{userId}/quizHistory/{weekId} {
       allow read: if isOwner(userId);
-      allow write: if false; // submitWeeklyQuiz callable only
+      allow write: if isOwner(userId);
     }
     match /users/{userId}/quizStats/{doc} {
       allow read: if isOwner(userId);
-      allow write: if false; // submitWeeklyQuiz callable only
+      allow write: if isOwner(userId);
     }
     match /users/{userId}/challengeHistory/{challengeId} {
       allow read: if isOwner(userId);
-      allow write: if false; // submitChallengeEntry callable only
+      allow write: if isOwner(userId);
     }
     match /users/{userId}/addresses/{addressId} {
       allow read, write: if isOwner(userId);
@@ -122,7 +122,7 @@ service cloud.firestore {
     }
     match /weeklyQuiz/{quizId}/leaderboard/{uid} {
       allow read: if true;
-      allow write: if false; // submitWeeklyQuiz callable only
+      allow write: if isOwner(uid);
     }
 
     // -----------------------------------------------------------------------
@@ -143,20 +143,17 @@ service cloud.firestore {
     }
     match /challenges/{challengeId}/entries/{entryId} {
       allow read: if true;
-      allow create: if false; // submitChallengeEntry callable only
-      // Vote counts are incremented transactionally by onChallengeVoteCreated.
-      allow update: if false;
+      // Authenticated user can create their own entry
+      allow create: if isAuthed() && request.resource.data.uid == request.auth.uid;
+      // Any authenticated user can increment voteCount (voting)
+      allow update: if isAuthed()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['voteCount']);
       allow delete: if false;
     }
     match /challenges/{challengeId}/votes/{uid} {
       allow read: if true;
-      // A user can cast exactly one vote for another user's existing entry.
-      allow create: if isOwner(uid)
-        && request.resource.data.keys().hasOnly(['entryId', 'votedAt', 'counterManagedBy'])
-        && request.resource.data.entryId is string
-        && request.resource.data.counterManagedBy == 'server'
-        && exists(/databases/$(database)/documents/challenges/$(challengeId)/entries/$(request.resource.data.entryId))
-        && get(/databases/$(database)/documents/challenges/$(challengeId)/entries/$(request.resource.data.entryId)).data.uid != uid;
+      // A user can cast exactly one vote (their own doc)
+      allow create: if isOwner(uid);
       allow update, delete: if false;
     }
 

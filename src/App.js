@@ -14,8 +14,8 @@ import GlobalSearch from "./components/Search/GlobalSearch";
 import PawLoader from "./components/Loaders/PawLoader";
 
 // Lazy-loaded route chunks — only downloaded when the route is visited
+const Home              = lazy(() => import("./components/Home/Home"));
 const Profile           = lazy(() => import("./components/Profile/Profile"));
-const DiscoverHub       = lazy(() => import("./components/Discover/DiscoverHub"));
 const NearbyMates       = lazy(() => import("./components/NearbyMates/NearbyMates"));
 const AdoptPet          = lazy(() => import("./components/AdoptPet/AdoptPet"));
 const PetDetail         = lazy(() => import("./components/NearbyMates/PetDetail"));
@@ -164,15 +164,6 @@ function App() {
 
             {/* Legacy redirect so old bookmarks/links still work */}
             <Route path="/dashboard" element={<Navigate to="/my-pets" replace />} />
-
-            <Route
-              path="/discover"
-              element={
-                <PR>
-                  <DiscoverHub />
-                </PR>
-              }
-            />
 
             <Route
               path="/faq"

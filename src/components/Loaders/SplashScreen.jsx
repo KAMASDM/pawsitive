@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import PawMark from "../Brand/PawMark";
+import logo from "../../images/logo.png";
 
 const SplashScreen = () => {
   return (
@@ -51,26 +51,30 @@ const SplashScreen = () => {
         }}
         className="relative flex flex-col items-center"
       >
-        {/* The same paw mark used throughout the application. */}
+        {/* Logo — object-contain so the full circle + text inside is visible */}
         <div
           style={{
             width: 136,
             height: 136,
             borderRadius: "50%",
-            background: "linear-gradient(145deg, rgba(255,255,255,0.22), rgba(255,255,255,0.08))",
+            background: "#fff",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             boxShadow:
               "0 0 0 6px rgba(255,255,255,0.18), 0 20px 56px rgba(0,0,0,0.32)",
-            border: "1px solid rgba(255,255,255,0.3)",
-            backdropFilter: "blur(10px)",
+            overflow: "hidden",
           }}
         >
-          <PawMark
-            size={94}
-            color="#ffffff"
-            style={{ filter: "drop-shadow(0 10px 14px rgba(34,25,72,0.3))" }}
+          <img
+            src={logo}
+            alt="Pawppy"
+            style={{
+              width: "88%",
+              height: "88%",
+              objectFit: "contain",
+              display: "block",
+            }}
           />
         </div>
 
