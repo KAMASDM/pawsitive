@@ -54,7 +54,8 @@ export function usePetOperations(pets, setPets) {
     setCurrentPet({ ...pet });
     setIsEditMode(true);
     setOpenPetDialog(true);
-    if (section === "vaccinations") setTabValue(2);
+    if (section === "medical") setTabValue(1);
+    else if (section === "vaccinations") setTabValue(2);
     else setTabValue(0);
   }, []);
 
@@ -146,6 +147,12 @@ export function usePetOperations(pets, setPets) {
 
   // ---- Vaccination handlers ----
 
+  const prepareVaccinationForPet = useCallback((pet) => {
+    if (!pet) return;
+    setCurrentPet({ ...pet });
+    setIsEditMode(true);
+  }, []);
+
   const handleAddVaccination = useCallback(() => {
     setCurrentVaccination({ name: "", date: null, nextDue: null, notes: "" });
     setVaccinationEditIndex(-1);
@@ -215,6 +222,7 @@ export function usePetOperations(pets, setPets) {
     currentVaccination,
     setCurrentVaccination,
     vaccinationEditIndex,
+    prepareVaccinationForPet,
     handleAddPet,
     handleEditPet,
     handleSavePet,

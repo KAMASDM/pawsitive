@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { auth, database } from "../../firebase";
@@ -176,28 +177,31 @@ const HealthWidget = ({ pet, onAdd, onEdit, onDelete, onViewAll }) => {
 
   return (
     <div className={`rounded-2xl border overflow-hidden ${statusBg[worstStatus]}`}>
-      <button
-        onClick={() => setExpanded((v) => !v)}
-        className="w-full flex items-center gap-3 px-4 py-3.5 text-left"
-      >
-        <FaSyringe className={`flex-shrink-0 ${statusColor[worstStatus]}`} size={14} />
-        <span className={`text-sm font-semibold flex-1 ${statusColor[worstStatus]}`}>
-          {statusLabel[worstStatus]}
-        </span>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={(e) => { e.stopPropagation(); onAdd(); }}
-            className="text-xs font-semibold text-violet-600 hover:text-violet-800 bg-white/70 px-2 py-0.5 rounded-full"
-          >
-            + Add
-          </button>
+      <div className="w-full flex items-center gap-2 px-4 py-3.5">
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          aria-expanded={expanded}
+          className="min-w-0 flex flex-1 items-center gap-3 text-left"
+        >
+          <FaSyringe className={`flex-shrink-0 ${statusColor[worstStatus]}`} size={14} />
+          <span className={`min-w-0 text-sm font-semibold flex-1 ${statusColor[worstStatus]}`}>
+            {statusLabel[worstStatus]}
+          </span>
           {expanded ? (
-            <FiChevronUp size={14} className="text-gray-400" />
+            <FiChevronUp size={14} className="flex-shrink-0 text-gray-400" />
           ) : (
-            <FiChevronDown size={14} className="text-gray-400" />
+            <FiChevronDown size={14} className="flex-shrink-0 text-gray-400" />
           )}
-        </div>
-      </button>
+        </button>
+        <button
+          type="button"
+          onClick={onAdd}
+          className="flex-shrink-0 text-xs font-semibold text-violet-600 hover:text-violet-800 bg-white/70 px-2 py-0.5 rounded-full"
+        >
+          + Add
+        </button>
+      </div>
 
       <AnimatePresence>
         {expanded && (
@@ -369,6 +373,243 @@ const ActionSheet = ({ open, onClose, actions }) => {
   );
 };
 
+const JOURNEY_TONES = {
+  care: {
+    shell: "border-emerald-100 bg-gradient-to-br from-white to-emerald-50/60",
+    eyebrow: "text-emerald-600",
+    icon: "bg-emerald-100 text-emerald-700",
+    item: "border-emerald-100 hover:border-emerald-200 hover:bg-emerald-50/70",
+  },
+  social: {
+    shell: "border-violet-100 bg-gradient-to-br from-white to-violet-50/70",
+    eyebrow: "text-violet-600",
+    icon: "bg-violet-100 text-violet-700",
+    item: "border-violet-100 hover:border-violet-200 hover:bg-violet-50/70",
+  },
+  safety: {
+    shell: "border-amber-100 bg-gradient-to-br from-white to-amber-50/60",
+    eyebrow: "text-amber-600",
+    icon: "bg-amber-100 text-amber-700",
+    item: "border-amber-100 hover:border-amber-200 hover:bg-amber-50/70",
+  },
+};
+
+const JourneySection = ({ journey, compact = false }) => {
+  const tone = JOURNEY_TONES[journey.tone];
+  return (
+    <section className={`rounded-[24px] border p-4 shadow-[0_10px_30px_rgba(76,61,125,0.05)] ${tone.shell}`}>
+      <div className="flex items-start gap-3 mb-3.5">
+        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 ${tone.icon}`}>
+          <span className="text-xl leading-none" aria-hidden="true">{journey.emoji}</span>
+        </div>
+        <div className="min-w-0">
+          <p className={`text-[10px] font-extrabold uppercase tracking-[0.16em] ${tone.eyebrow}`}>{journey.eyebrow}</p>
+          <h2 className="text-base font-extrabold text-slate-800 leading-tight mt-0.5">{journey.title}</h2>
+          <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">{journey.detail}</p>
+        </div>
+      </div>
+      <div className={compact ? "grid grid-cols-1 gap-2" : "grid grid-cols-2 gap-2"}>
+        {journey.items.map((item) => (
+          <button
+            type="button"
+            key={item.label}
+            onClick={item.onClick}
+            className={`relative min-w-0 rounded-2xl border bg-white/80 p-3 text-left transition-all active:scale-[0.98] ${tone.item}`}
+          >
+            {item.badge > 0 && (
+              <span className="absolute right-2.5 top-2.5 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-[9px] font-bold text-white flex items-center justify-center">
+                {item.badge}
+              </span>
+            )}
+            <span className="text-xl leading-none" aria-hidden="true">{item.emoji}</span>
+            <span className="block text-xs font-bold text-slate-700 mt-2 pr-4">{item.label}</span>
+            <span className="block text-[10px] text-slate-400 mt-0.5 leading-snug">{item.detail}</span>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+};
+
+const HealthCenter = ({ open, pet, onClose, onAdd, onEdit, onEditMedical }) => {
+  useEffect(() => {
+    if (!open) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open, onClose]);
+
+  if (typeof document === "undefined") return null;
+
+  const vaccinations = pet?.vaccinations || [];
+  const statuses = vaccinations.map((vaccination) => getVaccinationStatus(vaccination.nextDue));
+  const attentionCount = statuses.filter((status) => status === "overdue" || status === "due-soon").length;
+  const conditions = Array.isArray(pet?.medical?.conditions) ? pet.medical.conditions : [];
+  const allergies = Array.isArray(pet?.medical?.allergies) ? pet.medical.allergies : [];
+  const savedMedications = pet?.medications ?? pet?.medical?.medications;
+  const medications = Array.isArray(savedMedications)
+    ? savedMedications
+    : savedMedications
+      ? [savedMedications]
+      : [];
+
+  return createPortal(
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          className="fixed inset-0 z-[230] flex items-end md:items-center justify-center bg-slate-950/55 md:p-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+        >
+          <motion.section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="health-center-title"
+            initial={{ y: 60, opacity: 0, scale: 0.98 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: 60, opacity: 0, scale: 0.98 }}
+            transition={{ type: "spring", stiffness: 360, damping: 34 }}
+            className="w-full md:max-w-3xl max-h-[92dvh] overflow-hidden rounded-t-[30px] md:rounded-[30px] bg-[#f8f7fc] shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="relative overflow-hidden bg-gradient-to-br from-[#6857b7] via-[#51418d] to-[#312650] px-5 py-5 text-white md:px-7">
+              <div className="absolute -right-6 -top-8 opacity-10"><PawPrint size={130} opacity={1} /></div>
+              <div className="relative flex items-start gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center flex-shrink-0">
+                  <FaSyringe size={19} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-violet-200">Health center</p>
+                  <h2 id="health-center-title" className="text-xl font-extrabold mt-1">{pet?.name}'s care record</h2>
+                  <p className="text-xs text-violet-200 mt-1">See what is recorded, what needs attention, and add updates.</p>
+                </div>
+                <button type="button" onClick={onClose} className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center" aria-label="Close health center">
+                  <FiX size={17} />
+                </button>
+              </div>
+            </header>
+
+            <div className="max-h-[calc(92dvh-116px)] overflow-y-auto px-4 py-5 md:px-7 md:py-6">
+              <div className="grid grid-cols-3 gap-2.5">
+                {[
+                  { value: vaccinations.length, label: "Vaccinations", color: "text-violet-700 bg-violet-100" },
+                  { value: attentionCount, label: "Need attention", color: attentionCount ? "text-amber-700 bg-amber-100" : "text-emerald-700 bg-emerald-100" },
+                  { value: conditions.length + allergies.length + medications.length, label: "Health notes", color: "text-sky-700 bg-sky-100" },
+                ].map((summary) => (
+                  <div key={summary.label} className="rounded-2xl border border-white bg-white p-3 text-center shadow-sm">
+                    <span className={`inline-flex min-w-8 h-8 px-2 rounded-xl items-center justify-center text-sm font-extrabold ${summary.color}`}>{summary.value}</span>
+                    <p className="text-[10px] font-semibold text-slate-500 mt-2 leading-tight">{summary.label}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex items-center justify-between mt-6 mb-3">
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-800">Vaccination records</h3>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Complete history for {pet?.name}</p>
+                </div>
+                <button type="button" onClick={onAdd} className="flex items-center gap-1.5 rounded-full bg-violet-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-violet-700">
+                  <FaPlus size={10} /> Add new
+                </button>
+              </div>
+
+              {vaccinations.length > 0 ? (
+                <div className="space-y-2.5">
+                  {vaccinations.map((vaccination, index) => {
+                    const status = getVaccinationStatus(vaccination.nextDue);
+                    const statusText = status === "up-to-date" ? "Up to date" : status === "due-soon" ? "Due soon" : status === "overdue" ? "Overdue" : "No due date";
+                    return (
+                      <article key={vaccination.id || `${vaccination.name}-${index}`} className="rounded-2xl border border-violet-100 bg-white p-4 shadow-sm">
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 rounded-2xl bg-violet-100 text-violet-700 flex items-center justify-center flex-shrink-0"><FaSyringe size={14} /></div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-start gap-2">
+                              <div className="min-w-0 flex-1">
+                                <h4 className="text-sm font-extrabold text-slate-800 truncate">{vaccination.name || "Vaccination"}</h4>
+                                <p className="text-[11px] text-slate-400 mt-0.5">Given {formatDate(vaccination.date)}</p>
+                              </div>
+                              <span className={`text-[9px] font-extrabold rounded-full border px-2 py-1 ${VAC_COLORS[status]}`}>{statusText}</span>
+                            </div>
+                            <div className="flex items-end justify-between gap-3 mt-3 pt-3 border-t border-slate-100">
+                              <div>
+                                <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Next due</p>
+                                <p className="text-xs font-semibold text-slate-600 mt-0.5">{formatDate(vaccination.nextDue)}</p>
+                              </div>
+                              <button type="button" onClick={() => onEdit(vaccination, index)} className="flex items-center gap-1.5 rounded-xl bg-violet-50 px-3 py-2 text-xs font-bold text-violet-700 hover:bg-violet-100">
+                                <FiEdit2 size={12} /> Edit
+                              </button>
+                            </div>
+                            {vaccination.notes && <p className="text-[11px] text-slate-500 mt-3 rounded-xl bg-slate-50 px-3 py-2">{vaccination.notes}</p>}
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="rounded-3xl border border-dashed border-violet-200 bg-white px-6 py-8 text-center">
+                  <div className="mx-auto w-14 h-14 rounded-2xl bg-violet-100 text-violet-600 flex items-center justify-center"><FaSyringe size={20} /></div>
+                  <h4 className="text-sm font-extrabold text-slate-800 mt-4">No vaccination records yet</h4>
+                  <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">Add the first record to start a clear health history and keep upcoming dates visible.</p>
+                  <button type="button" onClick={onAdd} className="mt-4 rounded-full bg-violet-600 px-5 py-2.5 text-xs font-bold text-white">Add first vaccination</button>
+                </div>
+              )}
+
+              <div className="mt-6">
+                <h3 className="text-base font-extrabold text-slate-800">Other health records</h3>
+                <p className="text-[11px] text-slate-400 mt-0.5">Medical details already saved on {pet?.name}'s profile</p>
+                <div className="grid gap-2.5 mt-3 md:grid-cols-3">
+                  {[
+                    { label: "Conditions", emoji: "🩺", values: conditions },
+                    { label: "Allergies", emoji: "🌿", values: allergies },
+                    { label: "Medications", emoji: "💊", values: medications },
+                  ].map((record) => (
+                    <div key={record.label} className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span aria-hidden="true">{record.emoji}</span>
+                          <p className="text-xs font-extrabold text-slate-700">{record.label}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={onEditMedical}
+                          className="rounded-lg bg-slate-100 px-2.5 py-1.5 text-[10px] font-bold text-slate-600 hover:bg-violet-100 hover:text-violet-700"
+                        >
+                          {record.values.length > 0 ? "Edit" : "Add"}
+                        </button>
+                      </div>
+                      {record.values.length > 0 ? (
+                        <div className="flex flex-wrap gap-1.5 mt-3">
+                          {record.values.map((value, index) => {
+                            const label = typeof value === "string" ? value : value?.name || value?.label || "Recorded";
+                            return <span key={`${label}-${index}`} className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-600">{label}</span>;
+                          })}
+                        </div>
+                      ) : (
+                        <p className="text-[11px] text-slate-400 mt-3">None recorded</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </motion.section>
+        </motion.div>
+      )}
+    </AnimatePresence>,
+    document.body
+  );
+};
+
 // ---- Main Component ----
 
 export default function PetDashboard() {
@@ -385,6 +626,9 @@ export default function PetDashboard() {
   const [showQR, setShowQR] = useState(false);
   const [openMessageDialog, setOpenMessageDialog] = useState(false);
   const [openActions, setOpenActions] = useState(false);
+  const [openHealthCenter, setOpenHealthCenter] = useState(false);
+  const [returnToHealthCenter, setReturnToHealthCenter] = useState(false);
+  const [returnFromMedicalEditor, setReturnFromMedicalEditor] = useState(false);
   const [postComposerSignal, setPostComposerSignal] = useState(0);
   const [eventComposerSignal, setEventComposerSignal] = useState(0);
   const healthRef = useRef(null);
@@ -411,6 +655,7 @@ export default function PetDashboard() {
     (p, section) => { petOps.handleEditPet(p || pet, section); },
     [pet, petOps]
   );
+  const closeHealthCenter = useCallback(() => setOpenHealthCenter(false), []);
 
   // Save last viewed pet id for auto-redirect
   useEffect(() => {
@@ -580,14 +825,38 @@ export default function PetDashboard() {
     scrollToSection(feedRef);
     setEventComposerSignal((value) => value + 1);
   };
+  const openVaccinationForm = (vaccination, index) => {
+    petOps.prepareVaccinationForPet(pet);
+    setOpenHealthCenter(false);
+    setReturnToHealthCenter(true);
+    if (vaccination) petOps.handleEditVaccination(vaccination, index);
+    else petOps.handleAddVaccination();
+  };
+  const openMedicalEditor = () => {
+    setOpenHealthCenter(false);
+    setReturnFromMedicalEditor(true);
+    openEditPet(pet, "medical");
+  };
   const petActions = [
     { Icon: FiMessageSquare, label: "Add post", detail: "Share a pet moment", onClick: openPostComposer },
     { Icon: FiActivity, label: "Add event", detail: "Log a memory or appointment", onClick: openEventComposer },
-    { Icon: FaSyringe, label: "Add vaccine", detail: "Update health records", onClick: petOps.handleAddVaccination },
+    { Icon: FaSyringe, label: "Add vaccine", detail: "Update health records", onClick: () => openVaccinationForm() },
     { Icon: FiAlertCircle, label: "Report lost", detail: "Start a lost pet report", onClick: navToReportLost },
     { Icon: FiHeart, label: "Find mate", detail: "Browse nearby matches", onClick: navToMates },
     { Icon: FaQrcode, label: "Show QR", detail: "Share this pet profile", onClick: () => setShowQR(true) },
   ];
+
+  useEffect(() => {
+    if (!returnToHealthCenter || petOps.openVaccinationDialog) return;
+    setOpenHealthCenter(true);
+    setReturnToHealthCenter(false);
+  }, [petOps.openVaccinationDialog, returnToHealthCenter]);
+
+  useEffect(() => {
+    if (!returnFromMedicalEditor || petOps.openPetDialog) return;
+    setOpenHealthCenter(true);
+    setReturnFromMedicalEditor(false);
+  }, [petOps.openPetDialog, returnFromMedicalEditor]);
 
   if (isLoading) {
     return (
@@ -607,6 +876,53 @@ export default function PetDashboard() {
   const InfoChip = ({ label }) => (
     <span className="text-xs bg-white/20 text-white rounded-full px-3 py-0.5 backdrop-blur-sm">{label}</span>
   );
+
+  const journeys = [
+    {
+      tone: "care",
+      emoji: "✦",
+      eyebrow: "Everyday care",
+      title: `Care for ${pet.name}`,
+      detail: "Health records, useful services, and the moments you need to remember.",
+      items: [
+        { emoji: "🏥", label: "Health record", detail: "Vaccines and care history", onClick: () => setOpenHealthCenter(true) },
+        { emoji: "📚", label: "Find care", detail: "Vets, groomers and services", onClick: navToResources },
+        { emoji: "💉", label: "Add vaccine", detail: "Keep reminders accurate", onClick: () => openVaccinationForm() },
+        { emoji: "📅", label: "Add event", detail: "Memory or appointment", onClick: openEventComposer },
+      ],
+    },
+    {
+      tone: "social",
+      emoji: "🐾",
+      eyebrow: "Their digital life",
+      title: "Social profile",
+      detail: "Build a page people can discover, enjoy, and share beyond Pawppy.",
+      items: [
+        { emoji: "✍️", label: "Add post", detail: "Share a pet moment", onClick: openPostComposer },
+        {
+          emoji: "🔗",
+          label: pet.slug ? "View profile" : "Create profile link",
+          detail: pet.slug ? "Open their public page" : "Finish profile setup",
+          onClick: pet.slug ? () => navigate(`/pet/${pet.slug}`) : () => openEditPet(pet, "basic"),
+        },
+        { emoji: "💕", label: "Meet pets", detail: "Find nearby matches", onClick: navToMates },
+        { emoji: "💬", label: "Messages", detail: "Open conversations", onClick: navToMessages },
+      ],
+    },
+    {
+      tone: "safety",
+      emoji: "⌁",
+      eyebrow: "Help when it matters",
+      title: "Safety & community",
+      detail: "Protection, trusted places, and community support in one calm space.",
+      items: [
+        { emoji: "🚨", label: "Lost & found", detail: "Report or search quickly", onClick: navToReportLost },
+        { emoji: "🏠", label: "Adoption", detail: "Browse or rehome", onClick: navToAdopt },
+        { emoji: "📍", label: "Tag a place", detail: "Share pet-friendly spots", onClick: navToPlaces },
+        { emoji: "❤️", label: "Requests", detail: pendingCount ? `${pendingCount} need attention` : "No pending requests", onClick: () => scrollToSection(requestsRef), badge: pendingCount },
+      ],
+    },
+  ];
 
   // ---- MOBILE LAYOUT ----
   const mobileLayout = (
@@ -739,38 +1055,24 @@ export default function PetDashboard() {
         <div className="mt-6 h-8 bg-slate-50" style={{ borderRadius: "60% 60% 0 0 / 100% 100% 0 0" }} />
       </div>
 
-      {/* Feature Actions Grid — 4-across with colourful gradients */}
-      <div className="px-4 mt-2">
-        <div className="grid grid-cols-4 gap-3">
-          {[
-            { emoji: "💕", label: "Find Mates",   onClick: navToMates                                           },
-            { emoji: "🚨", label: "Lost & Found", onClick: navToReportLost                                      },
-            { emoji: "🏠", label: "Adoption",     onClick: navToAdopt                                           },
-            { emoji: "📚", label: "Resources",    onClick: navToResources                                       },
-            { emoji: "📍", label: "Tag Place",    onClick: navToPlaces                                          },
-            { emoji: "💬", label: "Messages",     onClick: navToMessages,  badge: 0                             },
-            { emoji: "🏥", label: "Health",       onClick: () => scrollToSection(healthRef)                     },
-            { emoji: "❤️", label: "Requests",     onClick: () => scrollToSection(requestsRef), badge: pendingCount },
-          ].map(({ emoji, label, onClick, badge }) => (
-            <button
-              key={label}
-              onClick={onClick}
-              className="flex flex-col items-center gap-1.5 group"
-            >
-              <div className="relative w-full aspect-square max-w-[56px] mx-auto rounded-2xl bg-violet-50 border border-violet-100 flex items-center justify-center shadow-sm group-active:scale-95 transition-transform">
-                <span className="text-2xl leading-none">{emoji}</span>
-                {badge > 0 && (
-                  <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 rounded-full flex items-center justify-center px-1">
-                    <span className="text-[9px] text-white font-bold">{badge}</span>
-                  </div>
-                )}
-              </div>
-              <span className="text-[10px] font-semibold text-gray-500 text-center leading-tight">
-                {label}
-              </span>
-            </button>
-          ))}
+      {/* Existing capabilities, organised around the user's intent. */}
+      <div className="px-4 mt-3 space-y-4">
+        <div className="flex items-end justify-between px-1">
+          <div>
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-violet-500">Your pet's world</p>
+            <h2 className="text-lg font-extrabold text-slate-800 mt-0.5">Everything starts here</h2>
+          </div>
+          <button
+            type="button"
+            onClick={() => setOpenActions(true)}
+            className="text-xs font-bold text-violet-600 bg-violet-100 px-3 py-1.5 rounded-full"
+          >
+            Quick add
+          </button>
         </div>
+        {journeys.map((journey) => (
+          <JourneySection key={journey.tone} journey={journey} />
+        ))}
       </div>
 
       {/* Feed Section: Posts + Events */}
@@ -792,7 +1094,7 @@ export default function PetDashboard() {
         posts={posts}
         events={events}
         requests={matingRequests}
-        onHealth={() => scrollToSection(healthRef)}
+        onHealth={() => setOpenHealthCenter(true)}
         onRequests={() => scrollToSection(requestsRef)}
         onFeed={() => scrollToSection(feedRef)}
       />
@@ -804,14 +1106,14 @@ export default function PetDashboard() {
         {(pet.vaccinations?.length ?? 0) > 0 ? (
           <HealthWidget
             pet={pet}
-            onAdd={petOps.handleAddVaccination}
-            onEdit={petOps.handleEditVaccination}
+            onAdd={() => openVaccinationForm()}
+            onEdit={openVaccinationForm}
             onDelete={petOps.handleDeleteVaccination}
-            onViewAll={() => openEditPet(pet, "vaccinations")}
+            onViewAll={() => setOpenHealthCenter(true)}
           />
         ) : (
           <button
-            onClick={petOps.handleAddVaccination}
+            onClick={() => setOpenHealthCenter(true)}
             className="w-full rounded-2xl border border-dashed border-violet-200 bg-white px-4 py-4 text-left active:scale-[0.99] transition-all"
           >
             <p className="text-sm font-bold text-slate-800">Start {pet.name}'s health record</p>
@@ -927,14 +1229,14 @@ export default function PetDashboard() {
             {(pet.vaccinations?.length ?? 0) > 0 ? (
             <HealthWidget
               pet={pet}
-              onAdd={petOps.handleAddVaccination}
-              onEdit={petOps.handleEditVaccination}
+              onAdd={() => openVaccinationForm()}
+              onEdit={openVaccinationForm}
               onDelete={petOps.handleDeleteVaccination}
-              onViewAll={() => openEditPet(pet, "vaccinations")}
+              onViewAll={() => setOpenHealthCenter(true)}
             />
             ) : (
               <button
-                onClick={petOps.handleAddVaccination}
+                onClick={() => setOpenHealthCenter(true)}
                 className="w-full rounded-2xl border border-dashed border-violet-200 bg-white px-4 py-4 text-left hover:bg-violet-50 transition-colors"
               >
                 <p className="text-sm font-bold text-slate-800">Start health record</p>
@@ -959,46 +1261,57 @@ export default function PetDashboard() {
             )}
           </div>
 
-          {/* Feature nav */}
-          <div className="bg-white rounded-2xl border border-violet-100 shadow-sm overflow-hidden">
-            <div className="px-4 py-3 border-b border-violet-50">
-              <p className="text-[11px] font-bold text-violet-400 uppercase tracking-widest">Quick Actions</p>
-            </div>
-            <div className="p-2 space-y-0.5">
-              {[
-                { emoji: "💕", label: "Find Mates",   onClick: navToMates                                      },
-                { emoji: "🚨", label: "Report Lost",  onClick: navToReportLost                                 },
-                { emoji: "🏠", label: "Adopt a Pet",  onClick: navToAdopt                                      },
-                { emoji: "📚", label: "Resources",    onClick: navToResources                                  },
-                { emoji: "📍", label: "Tag a Place",  onClick: navToPlaces                                     },
-                { emoji: "💬", label: "Messages",     onClick: navToMessages                                   },
-                { emoji: "🏥", label: "Health Log",   onClick: () => openEditPet(pet, "vaccinations")          },
-              ].map(({ emoji, label, onClick }) => (
-                <button
-                  key={label}
-                  onClick={onClick}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-violet-50 hover:text-violet-700 transition-colors text-left group"
-                >
-                  <div className="w-8 h-8 rounded-xl bg-violet-50 border border-violet-100 flex items-center justify-center flex-shrink-0 group-hover:bg-violet-100 group-hover:scale-105 transition-all">
-                    <span className="text-base leading-none">{emoji}</span>
-                  </div>
-                  <span className="flex-1">{label}</span>
-                  <FiChevronRight size={13} className="text-gray-300 group-hover:text-violet-400 transition-colors" />
-                </button>
-              ))}
-              {/* Provision slot for future features */}
-              <div className="mt-2 px-3 py-2.5 rounded-xl border border-dashed border-violet-100 flex items-center gap-3 text-gray-300">
-                <div className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center flex-shrink-0">
-                  <span className="text-base leading-none">✨</span>
-                </div>
-                <span className="text-xs font-medium">More coming soon</span>
-              </div>
+          {/* Make the shareable profile legible as a product, not a hidden utility. */}
+          <div className="rounded-2xl border border-violet-100 bg-gradient-to-br from-white to-violet-50 p-4 shadow-sm">
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-violet-500">Public profile</p>
+            <p className="text-sm font-extrabold text-slate-800 mt-1">
+              {pet.slug ? `${pet.name} has a page to share` : `Create ${pet.name}'s shareable page`}
+            </p>
+            <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+              Posts, milestones and pet details come together in one beautiful link.
+            </p>
+            <div className="grid grid-cols-2 gap-2 mt-3">
+              <button
+                type="button"
+                onClick={pet.slug ? () => navigate(`/pet/${pet.slug}`) : () => openEditPet(pet, "basic")}
+                className="rounded-xl bg-violet-600 px-3 py-2 text-xs font-bold text-white"
+              >
+                {pet.slug ? "View page" : "Set up"}
+              </button>
+              <button
+                type="button"
+                onClick={pet.slug ? shareProfile : () => openEditPet(pet, "basic")}
+                className="rounded-xl border border-violet-200 bg-white px-3 py-2 text-xs font-bold text-violet-700"
+              >
+                {pet.slug ? "Share link" : "Learn more"}
+              </button>
             </div>
           </div>
         </aside>
 
         {/* Main feed column */}
         <main className="flex-1 min-w-0">
+          <div className="mb-7">
+            <div className="flex items-end justify-between mb-4">
+              <div>
+                <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-violet-500">Your pet's world</p>
+                <h1 className="text-2xl font-extrabold text-slate-800 mt-1">Everything starts with {pet.name}</h1>
+                <p className="text-sm text-slate-400 mt-1">Care, connection and safety—organised around what you want to do.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOpenActions(true)}
+                className="flex-shrink-0 rounded-full bg-violet-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-violet-700"
+              >
+                + Quick add
+              </button>
+            </div>
+            <div className="grid grid-cols-3 gap-4 items-start">
+              {journeys.map((journey) => (
+                <JourneySection key={journey.tone} journey={journey} compact />
+              ))}
+            </div>
+          </div>
           <div ref={feedRef} className="scroll-mt-24">
             <PetPostsFeed
               embedded
@@ -1017,7 +1330,7 @@ export default function PetDashboard() {
               posts={posts}
               events={events}
               requests={matingRequests}
-              onHealth={() => scrollToSection(healthRef)}
+              onHealth={() => setOpenHealthCenter(true)}
               onRequests={() => scrollToSection(requestsRef)}
               onFeed={() => scrollToSection(feedRef)}
             />
@@ -1044,6 +1357,15 @@ export default function PetDashboard() {
         open={openActions}
         onClose={() => setOpenActions(false)}
         actions={petActions}
+      />
+
+      <HealthCenter
+        open={openHealthCenter}
+        pet={pet}
+        onClose={closeHealthCenter}
+        onAdd={() => openVaccinationForm()}
+        onEdit={openVaccinationForm}
+        onEditMedical={openMedicalEditor}
       />
 
       {/* QR modal */}
@@ -1075,7 +1397,7 @@ export default function PetDashboard() {
           setVaccination={petOps.setCurrentVaccination}
           onSave={petOps.handleSaveVaccination}
           isEditMode={petOps.vaccinationEditIndex >= 0}
-          petType={petOps.currentPet?.type}
+          petType={petOps.currentPet?.type?.toLowerCase()}
           petDateOfBirth={petOps.currentPet?.dateOfBirth}
           loading={petOps.isSavingVaccination}
         />

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FiX,
@@ -67,6 +68,13 @@ const VaccinationDialog = ({
       setVaccineDropdownOpen(false);
     }
   }, [open, currentVaccination, petType]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = previousOverflow; };
+  }, [open]);
 
   const getVaccinationList = () => {
     if (petType === "dog") return DOG_VACCINATIONS;
@@ -200,10 +208,12 @@ const VaccinationDialog = ({
     await onSave();
   };
 
-  return (
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-30 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[260] overflow-y-auto bg-black bg-opacity-40 flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -486,7 +496,8 @@ const VaccinationDialog = ({
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };
 
