@@ -1,70 +1,65 @@
-# Getting Started with Create React App
+# Pawppy
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Pawppy is a React 18 progressive web application for pet profiles, health
+records, social features, lost-and-found reports, local pet resources, weekly
+challenges and quizzes, notifications, and multi-vendor commerce.
 
-## Available Scripts
+## Runtime architecture
 
-In the project directory, you can run:
+- Vite builds the React application into `build/`.
+- Firebase Authentication manages Google and email/password sign-in.
+- Firebase Realtime Database stores the established pet, profile, messaging,
+  place, notification, and lost-and-found domains.
+- Cloud Firestore stores commerce, quiz, challenge, cart, order, coupon, and
+  review data.
+- Firebase Storage stores uploaded media.
+- Firebase Functions owns trusted commerce mutations, scheduled reminders,
+  push notifications, voting counters, quiz scoring, and role provisioning.
+- Firebase Hosting is the canonical deployment target. `netlify.toml` is a
+  frontend-only fallback and does not host backend functions.
 
-### `npm start`
+## Local development
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Use Node 22, matching the Firebase Functions runtime.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+```bash
+npm ci
+npm run dev
+```
 
-### `npm test`
+Copy `.env.example` to `.env` and provide the Firebase, Google Maps, EmailJS,
+and FCM browser configuration values. Do not put server credentials or private
+keys in any `VITE_` variable because Vite exposes those values to browsers.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Verification
 
-### `npm run build`
+```bash
+npm run lint
+npm run test
+npm run test:rules
+npm run build
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+`npm run test:rules` starts isolated Firestore, Realtime Database, and Storage
+emulators. It never connects to production data.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## Deployment
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Do not deploy the security hardening changes out of order. Follow
+[`DEPLOYMENT_RUNBOOK.md`](./DEPLOYMENT_RUNBOOK.md).
 
-### `npm run eject`
+```bash
+npm run deploy:functions
+npm run deploy:hosting
+npm run deploy:rules
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+The combined `npm run deploy` command should only be used after the staged
+release has completed successfully in production.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Further documentation
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- `COMPLETE_SITE_DOCUMENTATION.md`: established feature reference
+- `COMPONENT_MAP.md`: UI and data-flow map
+- `SECURITY_MIGRATION.md`: remaining compatibility migrations
+- `DEPLOYMENT_RUNBOOK.md`: safe production rollout and rollback

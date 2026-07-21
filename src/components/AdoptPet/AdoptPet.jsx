@@ -3,7 +3,6 @@ import { ref, get, set, query, orderByChild, equalTo } from "firebase/database";
 import { database, auth } from "../../firebase";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
-  FiArrowLeft,
   FiHeart,
   FiInfo,
   FiMapPin,
@@ -16,6 +15,7 @@ import {
 } from "react-icons/fi";
 import MessageDialogForAdoption from "./MessageDialogForAdoption";
 import SkeletonLoader from "../Loaders/SkeletonLoader";
+import { ExperienceEmptyState, ExperienceHero, ResultsHeading } from "../Experience/ExperiencePage";
 
 // PetDetailPopup component remains the same
 const PetDetailPopup = ({ pet, onClose, onMessageOwner }) => {
@@ -454,26 +454,18 @@ const AdoptPet = () => {
   }
 
   return (
-    <div className="min-h-screen bg-lavender-50 relative">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center">
-            <button
-              onClick={() => navigate(-1)}
-              className="p-2 rounded-full hover:bg-lavender-100 text-lavender-700"
-            >
-              <FiArrowLeft className="w-5 h-5" />
-            </button>
-            <h1 className="text-2xl md:text-3xl font-bold text-lavender-800 ml-4 flex items-center">
-              <FiHeart className="text-pink-500 mr-2" />
-              Adopt a Pet
-            </h1>
-          </div>
-        </div>
-        {/*  */}
+    <div className="min-h-screen bg-[#f7f5fb] pb-28 md:pb-12">
+      <ExperienceHero
+        eyebrow="Adoption"
+        title="Meet pets looking for a home"
+        description="Browse nearby pets whose families have chosen to make them available for adoption, then start a private conversation with the owner."
+        onBack={() => navigate('/discover')}
+        actions={<button onClick={() => selectedUserPetData ? navigate(`/my-pets/${selectedUserPetData.id}`) : navigate('/my-pets')} className="flex flex-1 items-center justify-center rounded-full bg-white px-4 py-2.5 text-xs font-black text-[#3b305f] sm:flex-none">Rehome a pet</button>}
+      />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
         {/* Accordion Filters Section */}
-        <div className="bg-gradient-to-r from-lavender-50 to-lavender-50 rounded-xl shadow-md p-4 md:p-6 mb-8 border border-lavender-100">
+        <div className="rounded-[24px] border border-white bg-white/85 p-4 shadow-[0_10px_35px_rgba(66,50,108,0.07)] md:p-6 mb-8">
           {/* Accordion Header for Mobile */}
           <button
             onClick={() => setIsFiltersOpen(!isFiltersOpen)}
@@ -490,7 +482,7 @@ const AdoptPet = () => {
 
           {/* Filters Header for Desktop */}
           <h2 className="text-xl font-bold text-lavender-900 mb-4 hidden md:block">
-            Find Your Perfect Pet
+            Find the right companion
           </h2>
 
           {/* Collapsible Content */}
@@ -589,6 +581,8 @@ const AdoptPet = () => {
             </div>
           </div>
         ) : filteredPets.length > 0 ? (
+          <>
+          <ResultsHeading title="Pets available for adoption" count={filteredPets.length} detail={`Showing pets within ${maxDistance} km`} />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredPets.map((pet) => (
               <div
@@ -665,53 +659,20 @@ const AdoptPet = () => {
                 </div>
               </div>
             ))}
-          </div>
+          </div></>
         ) : (
-          <div className="bg-gray-50 rounded-xl p-8 flex flex-col items-center">
-            <div className="w-16 h-16 bg-pink-200 rounded-full flex items-center justify-center mb-4">
-              <FiHeart className="text-pink-500 text-2xl" />
-            </div>
-            <h3 className="text-xl font-bold text-gray-800 mb-2">
-              {availablePets.length === 0 ? "No Pets Available for Adoption" : "No Pets Found"}
-            </h3>
-            <p className="text-gray-600 text-center mb-6 max-w-md">
-              {availablePets.length === 0 ? (
-                <>
-                  There are no pets available for adoption in your area at the moment.
-                  <br /><br />
-                  <strong>Have a pet to rehome?</strong>
-                  <br />
-                  Go to your Profile → Edit your pet → Enable "Available for Adoption" toggle
-                </>
-              ) : (
-                "No pets match your current filters. Try adjusting your search criteria."
-              )}
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3">
-              {availablePets.length === 0 ? (
-                <button
-                  onClick={() => navigate('/profile')}
-                  className="flex items-center px-6 py-3 bg-lavender-600 text-white rounded-lg hover:bg-lavender-700 transition-colors"
-                >
-                  Go to Profile
-                </button>
-              ) : (
-                <button
-                  onClick={() => {
-                    setSelectedType("all");
-                    setSelectedGender("all");
-                    setSelectedBreed("all");
-                    setMaxDistance(25);
-                    setTabValue(0);
-                    setIsFiltersOpen(true);
-                  }}
-                  className="flex items-center px-6 py-3 bg-lavender-600 text-white rounded-lg hover:bg-lavender-700 transition-colors"
-                >
-                  Reset Filters
-                </button>
-              )}
-            </div>
-          </div>
+          <ExperienceEmptyState
+            icon="🏠"
+            title={availablePets.length === 0 ? "No pets are available nearby yet" : "No pets match these filters"}
+            description={availablePets.length === 0 ? "Availability is controlled by each pet's owner. Check again later, or open your own pet dashboard if you need to responsibly rehome a pet." : "Try another type or breed, or widen the distance to see more pets."}
+            primaryLabel={availablePets.length === 0 ? "Open my pet" : "Clear filters"}
+            onPrimary={() => {
+              if (availablePets.length === 0) navigate(selectedUserPetData ? `/my-pets/${selectedUserPetData.id}` : '/my-pets');
+              else { setSelectedType('all'); setSelectedGender('all'); setSelectedBreed('all'); setMaxDistance(50); setTabValue(0); setIsFiltersOpen(true); }
+            }}
+            secondaryLabel="Back to Discover"
+            onSecondary={() => navigate('/discover')}
+          />
         )}
 
         <MessageDialogForAdoption

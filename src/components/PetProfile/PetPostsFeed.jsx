@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { FiArrowLeft, FiShare2, FiPlus } from 'react-icons/fi';
+import { FiArrowLeft, FiShare2, FiPlus, FiLock } from 'react-icons/fi';
 import { FaBirthdayCake, FaPaw } from 'react-icons/fa';
 import PostCard from './PostCard';
 import CreatePostModal from './CreatePostModal';
@@ -80,11 +80,13 @@ const PetPostsFeed = ({
                 <FiArrowLeft size={14} /> Back
               </button>
               <button
-                onClick={onShare}
+                onClick={() => pet?.privacy?.isPrivate && isOwner
+                  ? navigate('/profile', { state: { editPetId: pet?.id, openEditDialog: true } })
+                  : onShare?.()}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
                 style={{ background: "rgba(255,255,255,0.15)", color: "#fff" }}
               >
-                <FiShare2 size={14} /> Share
+                {pet?.privacy?.isPrivate && isOwner ? <><FiLock size={14} /> Privacy</> : <><FiShare2 size={14} /> Share</>}
               </button>
             </div>
 
@@ -111,6 +113,9 @@ const PetPostsFeed = ({
               <p className="text-sm mt-0.5 capitalize text-center" style={{ color: "rgba(255,255,255,0.7)" }}>
                 {[pet?.breed, pet?.type].filter(Boolean).join(" · ")}
               </p>
+              <div className="mt-2 flex items-center gap-1.5 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-violet-100">
+                {pet?.privacy?.isPrivate ? 'Private pet profile' : 'Pawppy pet profile'}
+              </div>
               {birthday?.isToday && (
                 <div className="mt-2 px-3 py-1 rounded-full text-xs font-bold" style={{ background: "rgba(236,72,153,0.3)", color: "#fce7f3" }}>
                   🎂 Birthday Today!
@@ -244,13 +249,14 @@ const PetPostsFeed = ({
             {posts.length === 0 ? (
               <div className="bg-white rounded-xl shadow-sm text-center py-12">
                 <FaPaw className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500">No posts yet</p>
+                <p className="font-bold text-slate-700">{isOwner ? `Start ${pet?.name}'s story` : `${pet?.name} has no posts yet`}</p>
+                <p className="mx-auto mt-1 max-w-xs text-xs leading-5 text-gray-400">{isOwner ? 'Share a photo or update so visitors can get to know your pet.' : 'Check back later for photos and updates from their pet parent.'}</p>
                 {isOwner && (
                   <button
                     onClick={() => setShowCreatePost(true)}
                     className="mt-4 px-6 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors"
                   >
-                    Create First Post
+                    Create first post
                   </button>
                 )}
               </div>
@@ -366,13 +372,14 @@ const PetPostsFeed = ({
           {posts.length === 0 ? (
             <div className="bg-white rounded-xl shadow-sm text-center py-12">
               <FaPaw className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500">No posts yet</p>
+              <p className="font-bold text-slate-700">{isOwner ? `Start ${pet?.name}'s story` : `${pet?.name} has no posts yet`}</p>
+              <p className="mx-auto mt-1 max-w-xs text-xs leading-5 text-gray-400">{isOwner ? 'Share a photo or update so visitors can get to know your pet.' : 'Check back later for photos and updates from their pet parent.'}</p>
               {isOwner && (
                 <button
                   onClick={() => setShowCreatePost(true)}
                   className="mt-4 px-6 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors"
                 >
-                  Create First Post
+                  Create first post
                 </button>
               )}
             </div>

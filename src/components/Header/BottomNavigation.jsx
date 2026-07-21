@@ -1,27 +1,22 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiAward, FiShoppingBag, FiUser } from "react-icons/fi";
+import { FiActivity, FiCompass, FiHome, FiUser } from "react-icons/fi";
 import { FaPaw } from "react-icons/fa";
-import { HiOutlineLightBulb } from "react-icons/hi";
 
 const MENUS = [
-  { id: "challenge", label: "Challenges", Icon: FiAward,            path: "/challenge"              },
-  { id: "shop",      label: "Shop",       Icon: FiShoppingBag,      path: "/shop"                   },
-  { id: "home",      label: "Home",       Icon: FaPaw,              path: "/my-pets?picker=true", featured: true },
-  { id: "quiz",      label: "Quiz",       Icon: HiOutlineLightBulb, path: "/quiz"                   },
-  { id: "profile",   label: "Profile",    Icon: FiUser,             path: "/profile"                },
+  { id: "home",      label: "Home",       Icon: FiHome,     path: "/my-pets" },
+  { id: "discover",  label: "Discover",   Icon: FiCompass,  path: "/discover" },
+  { id: "pet",       label: "My pet",     Icon: FaPaw,      path: "/my-pets?picker=true", featured: true },
+  { id: "activity",  label: "Activity",   Icon: FiActivity, path: "/activity" },
+  { id: "profile",   label: "Account",    Icon: FiUser,     path: "/profile" },
 ];
 
 const matchId = (pathname) => {
-  if (pathname.startsWith("/challenge"))   return "challenge";
-  if (
-    pathname.startsWith("/shop") || pathname.startsWith("/store") ||
-    pathname.startsWith("/products") || pathname.startsWith("/cart") ||
-    pathname.startsWith("/checkout") || pathname.startsWith("/orders")
-  ) return "shop";
-  if (pathname === "/my-pets" || pathname.startsWith("/my-pets/")) return "home";
-  if (pathname.startsWith("/quiz"))        return "quiz";
+  if (pathname === "/my-pets")            return "home";
+  if (pathname.startsWith("/my-pets/"))    return "pet";
+  if (pathname === "/discover")           return "discover";
+  if (pathname === "/activity" || pathname.startsWith("/challenge") || pathname.startsWith("/quiz")) return "activity";
   if (pathname === "/profile")             return "profile";
   return null;
 };
@@ -32,6 +27,10 @@ const FORM_TAGS = new Set(["INPUT", "TEXTAREA", "SELECT"]);
 const BottomNavigation = () => {
   const location  = useLocation();
   const activeId  = matchId(location.pathname);
+  const lastPetId = window.localStorage.getItem("pawppy_last_pet_id");
+  const menus = MENUS.map((menu) => menu.id === "pet"
+    ? { ...menu, path: lastPetId ? `/my-pets/${lastPetId}` : menu.path }
+    : menu);
   const [visible, setVisible] = useState(true);
   const lastY     = useRef(0);
   const formFocus = useRef(false);
@@ -113,7 +112,7 @@ const BottomNavigation = () => {
               <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-violet-300/50 to-transparent" />
 
               <ul className="grid grid-cols-5 items-center px-1 py-1">
-                {MENUS.map((menu) => (
+                {menus.map((menu) => (
                   <NavItem
                     key={menu.id}
                     menu={menu}

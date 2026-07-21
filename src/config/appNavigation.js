@@ -1,0 +1,147 @@
+export const APP_DESTINATIONS = [
+  {
+    id: "home",
+    label: "Home",
+    detail: "Your pets, care and what needs attention",
+    path: "/my-pets",
+    group: "Pawppy",
+    keywords: "home today overview family",
+  },
+  {
+    id: "my-pets",
+    label: "My pets",
+    detail: "Switch pets or add a new pet",
+    path: "/my-pets?picker=true",
+    group: "My pets",
+    keywords: "pet dashboard switch add manage health profile",
+  },
+  {
+    id: "discover",
+    label: "Discover",
+    detail: "Find pets, care, places and community features",
+    path: "/discover",
+    group: "Discover",
+    keywords: "explore find search community services",
+  },
+  {
+    id: "resources",
+    label: "Pet care near me",
+    detail: "Search vets, hospitals, groomers, boarding and stores",
+    path: "/resource",
+    group: "Care",
+    keywords: "resource vet veterinarian emergency hospital clinic groomer grooming boarding daycare walker sitter pet store supplies care near me",
+  },
+  {
+    id: "nearby-pets",
+    label: "Meet nearby pets",
+    detail: "Discover other pets and connect with their parents",
+    path: "/nearby-mates",
+    group: "Community",
+    keywords: "pets nearby search social mates mating friends connect other pets",
+  },
+  {
+    id: "adoption",
+    label: "Adoption",
+    detail: "Meet pets looking for a loving home",
+    path: "/adopt-pets",
+    group: "Community",
+    keywords: "adopt adoption rehome rescue shelter",
+  },
+  {
+    id: "lost-found",
+    label: "Lost & found",
+    detail: "Report a pet or help reunite a family",
+    path: "/lost-and-found",
+    group: "Safety",
+    keywords: "lost found missing report reunite emergency",
+  },
+  {
+    id: "places",
+    label: "Pet-friendly places",
+    detail: "Tag and explore places with the community",
+    path: "/place-tagging",
+    group: "Discover",
+    keywords: "place map tag pet friendly location park cafe",
+  },
+  {
+    id: "challenge",
+    label: "Weekly challenge",
+    detail: "Share a pet photo, vote and climb the leaderboard",
+    path: "/challenge",
+    group: "Play & learn",
+    keywords: "challenge photo contest vote leaderboard xp",
+  },
+  {
+    id: "quiz",
+    label: "Weekly pet quiz",
+    detail: "Learn, earn XP and compare scores",
+    path: "/quiz",
+    group: "Play & learn",
+    keywords: "quiz trivia learn questions leaderboard xp",
+  },
+  {
+    id: "activity",
+    label: "My activity",
+    detail: "Review challenge and quiz history",
+    path: "/activity",
+    group: "Play & learn",
+    keywords: "activity history achievements challenge quiz xp",
+  },
+  {
+    id: "shop",
+    label: "Pawppy Market",
+    detail: "Browse food, toys and care essentials",
+    path: "/shop",
+    group: "Shop",
+    keywords: "shop market products food toys treats care supplies",
+  },
+  {
+    id: "orders",
+    label: "My orders",
+    detail: "Track and review marketplace purchases",
+    path: "/orders",
+    group: "Shop",
+    keywords: "orders purchases track delivery marketplace",
+  },
+  {
+    id: "account",
+    label: "Account & messages",
+    detail: "Manage your account, requests and conversations",
+    path: "/profile",
+    group: "Account",
+    keywords: "account human user settings messages requests compare pets",
+  },
+  {
+    id: "notifications",
+    label: "Notifications",
+    detail: "Review reminders, messages and alerts",
+    path: "/notifications",
+    group: "Account",
+    keywords: "notifications reminders alerts inbox messages",
+  },
+  {
+    id: "help",
+    label: "Help & FAQ",
+    detail: "Learn how Pawppy features work",
+    path: "/faq",
+    group: "Account",
+    keywords: "help faq support how to questions",
+  },
+  {
+    id: "seller",
+    label: "Seller Studio",
+    detail: "Apply or manage your Pawppy store",
+    path: "/shop/seller",
+    group: "Shop",
+    keywords: "seller vendor business store products ecommerce",
+  },
+];
+
+export const matchesDestination = (item, query) => {
+  const normalized = query.trim().toLowerCase();
+  if (!normalized) return true;
+  return `${item.label} ${item.detail} ${item.group} ${item.keywords}`
+    .toLowerCase()
+    .includes(normalized);
+};
+

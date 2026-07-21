@@ -9,23 +9,35 @@ export default defineConfig({
     }),
     VitePWA({
       registerType: 'prompt',
-      includeAssets: ['favicon.png', 'robots.txt', 'sitemap.xml'],
+      includeAssets: ['paw-icon-v2-192.png', 'paw-icon-v2-512.png', 'paw-icon-maskable-v2-512.png', 'apple-touch-icon-v2.png', 'favicon-v2.png', 'robots.txt', 'sitemap.xml'],
       manifest: {
         name: 'Pawppy App',
         short_name: 'Pawppy',
         description: 'Pawppy is a web app that provides pet resources',
-        theme_color: '#7c3aed',
-        background_color: '#ffffff',
+        theme_color: '#6b5aad',
+        background_color: '#4a3d7d',
         display: 'standalone',
         orientation: 'portrait',
         scope: '/',
         start_url: '/',
         icons: [
           {
-            src: 'favicon.png',
-            sizes: '192x192 256x256 384x384 512x512',
+            src: 'paw-icon-v2-192.png',
+            sizes: '192x192',
             type: 'image/png',
-            purpose: 'any maskable'
+            purpose: 'any'
+          },
+          {
+            src: 'paw-icon-v2-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: 'paw-icon-maskable-v2-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
           }
         ],
         shortcuts: [
@@ -36,7 +48,7 @@ export default defineConfig({
             url: '/resource?category=dog',
             icons: [
               {
-                src: 'favicon.png',
+                src: 'paw-icon-v2-192.png',
                 sizes: '192x192',
                 type: 'image/png'
               }
@@ -49,7 +61,7 @@ export default defineConfig({
             url: '/resource?category=cat',
             icons: [
               {
-                src: 'favicon.png',
+                src: 'paw-icon-v2-192.png',
                 sizes: '192x192',
                 type: 'image/png'
               }
@@ -109,7 +121,7 @@ export default defineConfig({
         ]
       },
       devOptions: {
-        enabled: true
+        enabled: process.env.PWA_DEV === 'true'
       }
     })
   ],
@@ -131,7 +143,20 @@ export default defineConfig({
   },
   build: {
     outDir: 'build',
-    sourcemap: true
+    sourcemap: process.env.SOURCE_MAPS === 'true',
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return undefined;
+          if (id.includes('/firebase/') || id.includes('/@firebase/')) return 'firebase-vendor';
+          if (id.includes('/react/') || id.includes('/react-dom/') || id.includes('/react-router')) return 'react-vendor';
+          if (id.includes('/framer-motion/')) return 'motion-vendor';
+          if (id.includes('/react-icons/') || id.includes('/lucide-react/')) return 'icons-vendor';
+          if (id.includes('/emoji-picker-react/') || id.includes('/html2canvas/')) return 'media-vendor';
+          return undefined;
+        }
+      }
+    }
   },
   resolve: {
     alias: {

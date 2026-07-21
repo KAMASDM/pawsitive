@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ref, onValue, get } from "firebase/database";
 import { database, auth } from "../../../firebase";
@@ -12,6 +13,7 @@ import { FaPaw } from "react-icons/fa";
 import ConversationsListShimmer from "../../../UI/ConversationsListShimmer";
 
 const ConversationsList = ({ onOpenConversation }) => {
+  const navigate = useNavigate();
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState("all");
@@ -234,13 +236,15 @@ const ConversationsList = ({ onOpenConversation }) => {
           When you start messaging with pet owners, your conversations will
           appear here.
         </p>
-        <div className="mt-4 p-4 bg-blue-50 rounded-lg text-left text-sm">
-          <p className="font-semibold text-blue-900 mb-2">💡 How to start a conversation:</p>
-          <ul className="text-blue-700 space-y-1">
-            <li>• Send a mating request from Nearby Mates</li>
-            <li>• Request to adopt a pet</li>
-            <li>• Wait for someone to message you</li>
-          </ul>
+        <div className="mt-4 grid w-full max-w-md gap-2 sm:grid-cols-2">
+          <button onClick={() => navigate('/nearby-mates')} className="rounded-xl bg-violet-50 px-4 py-3 text-left text-xs font-bold text-violet-700">
+            Meet other pets
+            <span className="mt-1 block font-normal text-violet-500">Discover profiles and send a request</span>
+          </button>
+          <button onClick={() => navigate('/adopt-pets')} className="rounded-xl bg-teal-50 px-4 py-3 text-left text-xs font-bold text-teal-700">
+            Browse adoption
+            <span className="mt-1 block font-normal text-teal-600">Message a pet parent privately</span>
+          </button>
         </div>
       </div>
     );

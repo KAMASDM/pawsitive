@@ -3,21 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   collection,
-  doc,
   getDocs,
-  increment,
   limit,
   query,
-  serverTimestamp,
-  setDoc,
-  updateDoc,
   where,
 } from "firebase/firestore";
+import { httpsCallable } from "firebase/functions";
 import imageCompression from "browser-image-compression";
-import { db, auth } from "../../../firebase";
+import { db, auth, functions } from "../../../firebase";
 import { useCurrentChallenge } from "../hooks/useCurrentChallenge";
 import { FiCamera, FiX, FiArrowLeft, FiUpload } from "react-icons/fi";
-import { XP } from "../../../utils/xpSystem";
 
 const MAX_CAPTION = 150;
 
@@ -103,44 +98,18 @@ export default function ChallengeSubmitScreen() {
         petName = first[1].name || "";
       }
 
-      const entryRef = doc(collection(db, "challenges", challenge.id, "entries"));
-      await setDoc(entryRef, {
-        id: entryRef.id,
-        uid: user.uid,
+      const submitEntry = httpsCallable(functions, "submitChallengeEntry");
+      await submitEntry({
+        challengeId: challenge.id,
         petId,
         petName,
-        ownerDisplayName: user.displayName || "Pawppy User",
         petPhotoUrl: photoUrl,
         caption: caption.trim(),
-        voteCount: 0,
-        timestamp: serverTimestamp(),
       });
 
       // Entry saved — show success immediately
       setAlreadyEntered(true);
       setDone(true);
-
-      // Best-effort: update challenge entry count
-      updateDoc(doc(db, "challenges", challenge.id), {
-        entryCount: increment(1),
-      }).catch(() => {});
-
-      // Best-effort: award XP to user
-      updateDoc(doc(db, "users", user.uid, "quizStats", "stats"), {
-        totalXP: increment(XP.CHALLENGE_SUBMITTED),
-      }).catch(() => {});
-
-      // Best-effort: write user's challenge history record for ActivityPage
-      setDoc(doc(db, "users", user.uid, "challengeHistory", challenge.id), {
-        challengeId: challenge.id,
-        theme: challenge.theme,
-        prompt: challenge.prompt,
-        petPhotoUrl: photoUrl,
-        petName,
-        entryId: entryRef.id,
-        joinedAt: new Date().toISOString(),
-        voteCount: 0,
-      }).catch(() => {});
     } catch (err) {
       console.error(err);
       setError("Upload failed. Please try again.");

@@ -2,8 +2,7 @@ import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   doc,
-  writeBatch,
-  increment,
+  setDoc,
   serverTimestamp,
 } from "firebase/firestore";
 import { db, auth } from "../../../firebase";
@@ -35,17 +34,13 @@ export default function VoteButton({ challengeId, entry, votedEntryId, onShareCl
     setOptimisticVoted(true);
 
     try {
-      const batch = writeBatch(db);
-      // Record vote
-      batch.set(doc(db, "challenges", challengeId, "votes", user.uid), {
+      // The backend atomically validates the vote and increments the entry.
+      // Keeping the vote document keyed by uid preserves the one-vote contract.
+      await setDoc(doc(db, "challenges", challengeId, "votes", user.uid), {
         entryId: entry.id,
         votedAt: serverTimestamp(),
+        counterManagedBy: "server",
       });
-      // Increment voteCount on entry
-      batch.update(doc(db, "challenges", challengeId, "entries", entry.id), {
-        voteCount: increment(1),
-      });
-      await batch.commit();
     } catch (err) {
       console.error("Vote failed:", err);
       // Roll back

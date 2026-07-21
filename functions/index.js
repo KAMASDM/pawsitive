@@ -630,6 +630,134 @@ exports.notifyNewChallenge = functions.firestore
     }
   });
 
+// Creates one entry per user and awards entry XP in the same trusted
+// transaction. This replaces the former best-effort client-side counter and XP
+// writes, which could fail silently or be manipulated.
+exports.submitChallengeEntry = functions.runWith({ memory: '512MB', timeoutSeconds: 60 }).https.onCall(async (data, context) => {
+  assertAuthed(context);
+  const challengeId = String(data?.challengeId || '');
+  const petPhotoUrl = String(data?.petPhotoUrl || '');
+  const caption = String(data?.caption || '').trim().slice(0, 150);
+  const petId = String(data?.petId || '').slice(0, 128);
+  const petName = String(data?.petName || '').slice(0, 80);
+  if (!challengeId || !petPhotoUrl.startsWith('data:image/')) {
+    throw new functions.https.HttpsError('invalid-argument', 'Challenge and pet photo are required.');
+  }
+  if (petPhotoUrl.length > 600000) {
+    throw new functions.https.HttpsError('invalid-argument', 'The compressed pet photo is too large.');
+  }
+
+  const db = getFirestore();
+  const uid = context.auth.uid;
+  const challengeRef = db.doc(`challenges/${challengeId}`);
+  const entryRef = challengeRef.collection('entries').doc(uid);
+  const historyRef = db.doc(`users/${uid}/challengeHistory/${challengeId}`);
+  const statsRef = db.doc(`users/${uid}/quizStats/stats`);
+
+  // Covers entries created by legacy clients, which used random document ids.
+  const legacyEntry = await challengeRef.collection('entries').where('uid', '==', uid).limit(1).get();
+  if (!legacyEntry.empty) {
+    throw new functions.https.HttpsError('already-exists', 'You already entered this challenge.');
+  }
+
+  await db.runTransaction(async (tx) => {
+    const [challengeSnap, entrySnap] = await Promise.all([
+      tx.get(challengeRef),
+      tx.get(entryRef),
+    ]);
+    if (!challengeSnap.exists) throw new functions.https.HttpsError('not-found', 'Challenge not found.');
+    if (entrySnap.exists) throw new functions.https.HttpsError('already-exists', 'You already entered this challenge.');
+
+    const challenge = challengeSnap.data();
+    const nowMs = Date.now();
+    const startsAt = challenge.startTime?.toMillis?.() || 0;
+    const endsAt = challenge.endTime?.toMillis?.() || Number.MAX_SAFE_INTEGER;
+    if (nowMs < startsAt || nowMs > endsAt || challenge.isActive === false) {
+      throw new functions.https.HttpsError('failed-precondition', 'This challenge is not accepting entries.');
+    }
+
+    const timestamp = admin.firestore.Timestamp.now();
+    tx.create(entryRef, {
+      id: entryRef.id,
+      uid,
+      userId: uid,
+      petId,
+      petName,
+      ownerDisplayName: context.auth.token.name || context.auth.token.email?.split('@')[0] || 'Pawppy User',
+      petPhotoUrl,
+      caption,
+      voteCount: 0,
+      timestamp,
+      createdAt: timestamp,
+    });
+    tx.update(challengeRef, {
+      entryCount: FieldValue.increment(1),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+    tx.set(statsRef, {
+      totalXP: FieldValue.increment(20),
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+    tx.set(historyRef, {
+      challengeId,
+      theme: challenge.theme || '',
+      prompt: challenge.prompt || '',
+      petPhotoUrl,
+      petName,
+      entryId: entryRef.id,
+      joinedAt: timestamp,
+      voteCount: 0,
+    }, { merge: true });
+  });
+
+  return { success: true, entryId: entryRef.id, challengeId };
+});
+
+// Votes are immutable documents keyed by voter uid. Keeping the counter on the
+// trusted backend prevents clients from manufacturing arbitrary vote totals.
+exports.onChallengeVoteCreated = functions.firestore
+  .document('challenges/{challengeId}/votes/{voterId}')
+  .onCreate(async (snapshot, context) => {
+    const { challengeId, voterId } = context.params;
+    const vote = snapshot.data() || {};
+    const entryId = vote.entryId;
+    if (!entryId) return null;
+    // Cached legacy clients already increment the entry in their write batch.
+    // Only new clients opt into the server-owned counter to avoid double votes
+    // during the staged PWA rollout.
+    if (vote.counterManagedBy !== 'server') return null;
+
+    const db = getFirestore();
+    const challengeRef = db.doc(`challenges/${challengeId}`);
+    const entryRef = challengeRef.collection('entries').doc(entryId);
+
+    await db.runTransaction(async (tx) => {
+      const [challengeSnap, entrySnap] = await Promise.all([
+        tx.get(challengeRef),
+        tx.get(entryRef),
+      ]);
+      if (!challengeSnap.exists || !entrySnap.exists) {
+        throw new Error('Vote target no longer exists.');
+      }
+      const challenge = challengeSnap.data();
+      const entry = entrySnap.data();
+      const now = Date.now();
+      const start = challenge.startTime?.toMillis?.() || 0;
+      const end = challenge.endTime?.toMillis?.() || Number.MAX_SAFE_INTEGER;
+      if (now < start || now > end || challenge.isActive === false) {
+        throw new Error('Challenge is not accepting votes.');
+      }
+      if (entry.uid === voterId || entry.userId === voterId) {
+        throw new Error('Users cannot vote for their own entry.');
+      }
+      tx.update(entryRef, {
+        voteCount: FieldValue.increment(1),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+    });
+    return null;
+  });
+
 exports.onChallengeEntryVoted = functions.firestore
   .document('challenges/{challengeId}/entries/{entryId}')
   .onWrite(async (change, context) => {
@@ -643,7 +771,7 @@ exports.onChallengeEntryVoted = functions.firestore
       const theme = challengeDoc.data()?.theme || 'the challenge';
 
       const { title, body } = T.challenge_vote({ theme, voteCount: after.voteCount || 1 });
-      await notifyUser(after.userId, {
+      await notifyUser(after.userId || after.uid, {
         type: 'challenge_vote', title, body,
         data: { type: 'challenge_vote', challengeId: context.params.challengeId, click_action: '/challenge/feed' },
       });
@@ -755,6 +883,110 @@ exports.notifyNewQuiz = functions.firestore
       console.error('[notifyNewQuiz]', err);
     }
   });
+
+function quizXpForScore(score, total) {
+  return 15 + (score === total ? 10 : 0);
+}
+
+function isPreviousWeek(previous, current) {
+  const matchPrevious = /^(\d{4})-W(\d{2})$/.exec(previous || '');
+  const matchCurrent = /^(\d{4})-W(\d{2})$/.exec(current || '');
+  if (!matchPrevious || !matchCurrent) return false;
+  const previousYear = Number(matchPrevious[1]);
+  const previousWeek = Number(matchPrevious[2]);
+  const currentYear = Number(matchCurrent[1]);
+  const currentWeek = Number(matchCurrent[2]);
+  if (previousYear === currentYear) return previousWeek === currentWeek - 1;
+  return previousYear === currentYear - 1 && currentWeek === 1 && previousWeek >= 52;
+}
+
+// Server-authoritative quiz completion. The client submits chosen answer
+// indexes; score, XP, streak and leaderboard data are computed here.
+exports.submitWeeklyQuiz = functions.https.onCall(async (data, context) => {
+  assertAuthed(context);
+  const quizId = String(data?.quizId || '');
+  const answers = Array.isArray(data?.answers) ? data.answers.map((answer) => Number(answer)) : [];
+  const timeTaken = Math.max(0, Math.min(3600, Math.floor(Number(data?.timeTaken || 0))));
+  if (!quizId) throw new functions.https.HttpsError('invalid-argument', 'quizId is required.');
+
+  const db = getFirestore();
+  const quizRef = db.doc(`weeklyQuiz/${quizId}`);
+  const quizSnap = await quizRef.get();
+  if (!quizSnap.exists) throw new functions.https.HttpsError('not-found', 'Quiz not found.');
+
+  const quiz = quizSnap.data();
+  const questions = Array.isArray(quiz.questions) ? quiz.questions : [];
+  if (!questions.length || answers.length !== questions.length) {
+    throw new functions.https.HttpsError('invalid-argument', 'Submit one answer for every quiz question.');
+  }
+  const now = Date.now();
+  const startsAt = quiz.startTime?.toMillis?.() || 0;
+  const endsAt = quiz.endTime?.toMillis?.() || Number.MAX_SAFE_INTEGER;
+  if (now < startsAt || now > endsAt || quiz.isActive === false) {
+    throw new functions.https.HttpsError('failed-precondition', 'This quiz is not active.');
+  }
+
+  const score = answers.reduce((total, answer, index) => total + (answer === Number(questions[index]?.correct) ? 1 : 0), 0);
+  const xpEarned = quizXpForScore(score, questions.length);
+  const weekId = quiz.weekId || getWeekId();
+  const uid = context.auth.uid;
+  const historyRef = db.doc(`users/${uid}/quizHistory/${weekId}`);
+  const statsRef = db.doc(`users/${uid}/quizStats/stats`);
+  const leaderboardRef = quizRef.collection('leaderboard').doc(uid);
+  let savedResult;
+
+  await db.runTransaction(async (tx) => {
+    const [historySnap, statsSnap] = await Promise.all([tx.get(historyRef), tx.get(statsRef)]);
+    if (historySnap.exists) {
+      savedResult = historySnap.data();
+      return;
+    }
+
+    const stats = statsSnap.exists ? statsSnap.data() : {};
+    const streak = isPreviousWeek(stats.lastCompletedWeek, weekId)
+      ? Number(stats.currentStreak || 0) + 1
+      : 1;
+    const completedAt = admin.firestore.Timestamp.now();
+    const history = {
+      score,
+      total: questions.length,
+      timeTaken,
+      answers,
+      completedAt,
+      xpEarned,
+      quizId,
+      quizTitle: quiz.title || '',
+      weekId,
+    };
+    tx.create(historyRef, history);
+    tx.set(statsRef, {
+      currentStreak: streak,
+      longestStreak: Math.max(streak, Number(stats.longestStreak || 0)),
+      totalXP: Number(stats.totalXP || 0) + xpEarned,
+      totalQuizzes: Number(stats.totalQuizzes || 0) + 1,
+      lastCompletedWeek: weekId,
+      updatedAt: completedAt,
+    }, { merge: true });
+    tx.set(leaderboardRef, {
+      displayName: context.auth.token.name || context.auth.token.email?.split('@')[0] || 'Pawppy User',
+      petName: String(data?.petName || '').slice(0, 80),
+      petPhotoUrl: String(data?.petPhotoUrl || '').slice(0, 2000),
+      score,
+      timeTaken,
+      xpEarned,
+      completedAt,
+    });
+    savedResult = history;
+  });
+
+  return {
+    score: Number(savedResult.score),
+    total: Number(savedResult.total || questions.length),
+    timeTaken: Number(savedResult.timeTaken || 0),
+    xpEarned: Number(savedResult.xpEarned || 0),
+    weekId,
+  };
+});
 
 // ============================================================================
 // DAILY HEALTH REMINDERS — push + email, 09:00 IST daily
