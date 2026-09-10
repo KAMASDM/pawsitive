@@ -9,7 +9,10 @@ http.createServer((req, res) => {
   const requested = new URL(req.url, 'http://localhost').pathname;
   let file = path.resolve(root, '.' + requested);
   if (!file.startsWith(root + path.sep) && file !== root) { res.writeHead(403); res.end(); return; }
-  if (!fs.existsSync(file) || fs.statSync(file).isDirectory()) file = path.join(root, 'index.html');
+  if (!fs.existsSync(file) || fs.statSync(file).isDirectory()) {
+    if (requested.startsWith('/assets/')) { res.writeHead(404, { 'Content-Type': 'text/plain', 'Cache-Control': 'no-store' }); res.end('Missing app asset'); return; }
+    file = path.join(root, 'index.html');
+  }
   res.setHeader('Content-Type', types[path.extname(file)] || 'application/octet-stream');
   res.setHeader('Cache-Control', 'no-store');
   const data = fs.readFileSync(file);

@@ -87,7 +87,14 @@ export function PWAUpdateProvider({ children }) {
     await updateServiceWorker(true);
   };
 
-  return <PWAUpdateContext.Provider value={{ offlineReady, setOfflineReady, needRefresh: waiting, showUpdatePrompt: waiting && !dismissed, dismissUpdate: () => setDismissed(true), updateApp, checkForUpdates }}>{children}</PWAUpdateContext.Provider>;
+  const reloadApp = async () => {
+    if (!navigator.onLine) throw new Error('Reconnect before reloading');
+    if (registrationRef.current) await checkForUpdates();
+    if (registrationRef.current?.waiting) await updateApp();
+    else window.location.reload();
+  };
+
+  return <PWAUpdateContext.Provider value={{ offlineReady, setOfflineReady, needRefresh: waiting, showUpdatePrompt: waiting && !dismissed, dismissUpdate: () => setDismissed(true), updateApp, checkForUpdates, reloadApp }}>{children}</PWAUpdateContext.Provider>;
 }
 
 export const usePWAUpdate = () => {

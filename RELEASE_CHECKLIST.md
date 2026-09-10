@@ -71,3 +71,10 @@ The emulator tests use `demo-pawppy` and local-only fixtures. Scheduled notifica
 
 
 PWA implementation references: [MDN install-prompt lifecycle](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/How_to/Trigger_install_prompt) and [Workbox update activation](https://developer.chrome.com/docs/workbox/handling-service-worker-updates/). The production-worker test verifies that accepting a waiting worker causes one reload and no repeated update banner on subsequent visits.
+
+**Recovery across Netlify releases (10 September 2026)**
+
+- Netlify builds retain the two previous production releases’ hashed assets after generating the current service worker. `release-assets.json` records immutable deploy origins and each release’s own assets, keeping retention bounded. The first rollout restores both releases that predate this manifest. A failed history download stops publication.
+- Missing `/assets/*` files return a plain-text 404 instead of the SPA HTML. Asset responses revalidate, and the app sends the popup-compatible `Cross-Origin-Opener-Policy: same-origin-allow-popups` header. Google’s own popup policies can still produce browser warnings; these are separate from route loading.
+- Failed route loads show a recovery button. It checks for and activates a waiting service worker before reloading; offline retries retain the recovery screen. There is no automatic reload loop. Tabs older than the retained releases may need this recovery step.
+- Verified the production build, restoration of 217 prior assets (including the reported Today, arrow-right and entry-point files), and all five PWA browser tests: successful retry, persistent failure, offline retry, missing-asset responses, and real worker activation.

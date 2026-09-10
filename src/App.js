@@ -17,6 +17,7 @@ import PR from "./components/PR/PR";
 import ScrollToTop from "./UI/ScrollToTop";
 import UpdateNotification from "./components/PWA/UpdateNotification";
 import { PWAUpdateProvider } from "./hooks/usePWAUpdate";
+import RouteLoadBoundary from "./components/Errors/RouteLoadBoundary";
 import GlobalSearch from "./components/Search/GlobalSearch";
 import PawLoader from "./components/Loaders/PawLoader";
 
@@ -421,5 +422,5 @@ function AppContent() {
 }
 
 export default function App() {
-  return <PWAUpdateProvider><AppContent /></PWAUpdateProvider>;
+  return <PWAUpdateProvider><RouteLoadBoundary><AppContent /></RouteLoadBoundary></PWAUpdateProvider>;
 }

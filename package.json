@@ -33,7 +33,7 @@
     "dev": "vite",
     "dev:netlify": "netlify dev",
     "prebuild": "node scripts/generate-firebase-sw.js",
-    "build": "vite build && npm run generate-sitemap",
+    "build": "vite build && node scripts/retain-deploy-assets.cjs && npm run generate-sitemap",
     "generate-sitemap": "node generate-sitemap.js",
     "preview": "vite preview",
     "deploy": "netlify deploy --prod",
