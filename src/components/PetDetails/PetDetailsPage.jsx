@@ -1,3 +1,4 @@
+import { trackProductEvent } from "../../services/productAnalytics";
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ref, get, set } from 'firebase/database';
@@ -277,6 +278,7 @@ const PetDetailsPage = () => {
 
     const success = await savePetToFirebase(updatedPet);
     if (success) {
+      trackProductEvent("health_record_saved", "care");
       setEditingVaccination(null);
       setVaccinationDateError('');
       setVaccinationNextDueError('');
@@ -337,6 +339,7 @@ const PetDetailsPage = () => {
 
     const success = await savePetToFirebase(updatedPet);
     if (success) {
+      trackProductEvent("medication_saved", "care");
       setEditingMedication(null);
     }
   };

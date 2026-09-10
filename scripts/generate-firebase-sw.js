@@ -54,107 +54,45 @@ const appId           = process.env.VITE_FIREBASE_APP_ID           || '';
 const measurementId   = process.env.VITE_FIREBASE_MEASUREMENT_ID   || '';
 const databaseURL     = process.env.VITE_FIREBASE_DATABASE_URL     || '';
 
-const content = `// AUTO-GENERATED — do not edit by hand.
-// Regenerated at build time by scripts/generate-firebase-sw.js
-
-importScripts('https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.13.2/firebase-messaging-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.13.2/firebase-database-compat.js');
-
-const BASE_URL = 'https://pawppy.in';
-
-firebase.initializeApp({
-  apiKey: "${apiKey}",
-  authDomain: "${authDomain}",
-  projectId: "${projectId}",
-  storageBucket: "${storageBucket}",
-  messagingSenderId: "${senderId}",
-  appId: "${appId}",
-  measurementId: "${measurementId}",
-  databaseURL: "${databaseURL}"
-});
-
-const messaging = firebase.messaging();
-const database = firebase.database();
-
-async function updateBadge(userId) {
-  if (!userId) return 0;
-  try {
-    const snapshot = await database.ref(\`users/\${userId}/unreadNotifications\`).once('value');
-    const count = snapshot.val() || 0;
-    if (navigator.setAppBadge) {
-      if (count > 0) {
-        await navigator.setAppBadge(count);
-      } else {
-        await navigator.clearAppBadge();
+const content = `// AUTO-GENERATED — scripts/generate-firebase-sw.js
+// Register before Firebase so custom notification clicks are handled reliably.
+self.addEventListener('notificationclick', (event) => {
+  const path = event.notification.data?.click_action;
+  // FCM handles its automatically displayed notifications and fcm_options.link.
+  if (!path) return;
+  event.stopImmediatePropagation();
+  event.notification.close();
+  const target = new URL(path, self.location.origin);
+  if (target.origin !== self.location.origin) return;
+  target.searchParams.set('notificationSource', 'push');
+  event.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async (windows) => {
+    for (const client of windows) {
+      if (new URL(client.url).origin === self.location.origin && 'navigate' in client) {
+        const navigated = await client.navigate(target.href);
+        if (navigated) return navigated.focus();
       }
     }
-    return count;
-  } catch (error) {
-    console.error('Error updating badge:', error);
-    return 0;
-  }
-}
-
-messaging.onBackgroundMessage(async (payload) => {
-  const userId = payload.data?.receiverId;
-  let badgeCount = 0;
-  if (userId) {
-    badgeCount = await updateBadge(userId);
-  }
-  const notificationTitle = payload.notification?.title || 'Pawppy';
-  let notificationBody = payload.notification?.body || 'You have a new notification';
-  if (badgeCount > 0) {
-    notificationBody += \` (\${badgeCount} unread)\`;
-  }
-  const notificationOptions = {
-    body: notificationBody,
-    icon: BASE_URL + '/favicon.png',
-    badge: BASE_URL + '/favicon.png',
+    return clients.openWindow(target.href);
+  }));
+});
+importScripts('https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.13.2/firebase-messaging-compat.js');
+firebase.initializeApp(${JSON.stringify({ apiKey, authDomain, projectId, storageBucket, messagingSenderId: senderId, appId })});
+firebase.messaging().onBackgroundMessage((payload) => {
+  // Notification payloads are already displayed by Firebase. Only render data-only messages.
+  if (payload.notification) return;
+  return self.registration.showNotification(payload.data?.title || 'Pawppy', {
+    body: payload.data?.body || 'Open Pawppy to view your update.',
+    icon: '/favicon.png', badge: '/favicon.png',
+    tag: payload.data?.notificationId || payload.data?.type,
     data: payload.data || {},
-    actions: [{ action: 'open', title: 'Open Pawppy' }],
-    tag: payload.data?.notificationId || payload.data?.type || 'default',
-    requireInteraction: false,
-    vibrate: [200, 100, 200],
-  };
-  return self.registration.showNotification(notificationTitle, notificationOptions);
+  });
 });
-
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-  if (event.action === 'open' || !event.action) {
-    // click_action is a path like "/challenge" — always resolve to an absolute URL
-    const path = event.notification.data?.click_action || '/';
-    const fullUrl = path.startsWith('http') ? path : BASE_URL + path;
-    event.waitUntil(
-      clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-        // Focus an existing tab that matches the target path
-        for (const client of windowClients) {
-          try {
-            const clientPath = new URL(client.url).pathname;
-            const targetPath = new URL(fullUrl).pathname;
-            if (clientPath === targetPath && 'focus' in client) {
-              return client.focus();
-            }
-          } catch (_) {}
-        }
-        // Navigate any open Pawppy tab to the target URL
-        for (const client of windowClients) {
-          if (client.url.startsWith(BASE_URL) && 'navigate' in client) {
-            return client.navigate(fullUrl).then((c) => c && c.focus());
-          }
-        }
-        // No existing tab — open a new one
-        return clients.openWindow(fullUrl);
-      })
-    );
-  }
-});
-
-self.addEventListener('message', async (event) => {
-  if (event.data && event.data.type === 'UPDATE_BADGE') {
-    await updateBadge(event.data.userId);
-  }
+self.addEventListener('message', (event) => {
+  if (event.data?.type !== 'UPDATE_BADGE') return;
+  const count = Math.max(0, Number(event.data.count) || 0);
+  if (count && self.navigator.setAppBadge) event.waitUntil(self.navigator.setAppBadge(count));
+  else if (self.navigator.clearAppBadge) event.waitUntil(self.navigator.clearAppBadge());
 });
 `;
 

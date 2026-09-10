@@ -1,6 +1,7 @@
+import { getAuth, signOut } from 'firebase/auth';
 import emailjs from '@emailjs/browser';
 import { getDatabase, ref, set, push, get } from 'firebase/database';
-import { getMessaging, getToken, onMessage } from 'firebase/messaging';
+import { getMessaging, getToken, onMessage, deleteToken } from 'firebase/messaging';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 
 // EmailJS Configuration
@@ -33,18 +34,14 @@ export const initializeForegroundNotifications = () => {
       const body = payload.notification?.body || 'Open Pawppy to see what is new.';
       const clickAction = payload.data?.click_action || '/';
 
-      const notification = new Notification(title, {
-        body,
-        icon: payload.notification?.icon || '/favicon.png',
-        badge: '/favicon.png',
-        data: payload.data || {},
-      });
-
-      notification.onclick = () => {
-        window.focus();
-        window.location.assign(clickAction);
-        notification.close();
-      };
+      navigator.serviceWorker.getRegistration('/firebase-push/').then((registration) => {
+        if (!registration) return;
+        return registration.showNotification(title, {
+          body, icon: '/favicon.png', badge: '/favicon.png',
+          tag: payload.data?.notificationId || payload.data?.type,
+          data: { ...payload.data, click_action: clickAction },
+        });
+      }).catch(() => {});
     });
   } catch (error) {
     console.warn('[FCM] Foreground notification listener unavailable:', error.message);
@@ -57,6 +54,7 @@ export const initializeForegroundNotifications = () => {
  * Get user notification preferences
  */
 export const getUserPreferences = async (userId) => {
+  if (getAuth().currentUser?.uid !== userId) return { email: { enabled: false }, push: { enabled: false } };
   const db = getDatabase();
   const prefsRef = ref(db, `users/${userId}/notificationPreferences`);
   const snapshot = await get(prefsRef);
@@ -89,7 +87,7 @@ export const getUserPreferences = async (userId) => {
  */
 const shouldSendNotification = async (userId, notificationType, channel) => {
   const prefs = await getUserPreferences(userId);
-  return prefs?.[channel]?.[notificationType] !== false;
+  return prefs?.[channel]?.enabled !== false && prefs?.[channel]?.[notificationType] !== false;
 };
 
 /**
@@ -135,36 +133,9 @@ export const sendEmail = async (templateParams, templateId = EMAIL_TEMPLATES.WEL
 /**
  * Send Push Notification
  */
-export const sendPushNotification = async (userId, title, body, data = {}) => {
-  try {
-    const db = getDatabase();
-    const tokenRef = ref(db, `users/${userId}/fcmToken`);
-    const snapshot = await get(tokenRef);
-    
-    if (!snapshot.exists()) {
-      console.log('No FCM token found for user');
-      return { success: false, error: 'No FCM token' };
-    }
-    
-    const token = snapshot.val();
-    
-    // Store notification for in-app display
-    await logNotification(userId, {
-      type: 'push',
-      title,
-      body,
-      data,
-    });
-    
-    // Note: Actual push notification sending would require a backend
-    // For now, we'll just log it and store it in the database
-    console.log('Push notification queued:', { title, body, token });
-    
-    return { success: true };
-  } catch (error) {
-    console.error('Push notification failed:', error);
-    return { success: false, error };
-  }
+export const sendPushNotification = async () => {
+  // Database-triggered Cloud Functions own delivery. A browser cannot queue FCM.
+  return { success: false, reason: 'server_delivery_managed' };
 };
 
 // =============================================================================
@@ -1038,68 +1009,64 @@ export const sendNewMessageNotification = async (recipientData, senderData, mess
 /**
  * Request FCM Permission and Get Token
  */
-export const requestNotificationPermission = async (userId) => {
-  try {
-    // Check if service worker and messaging are supported
-    if (!('serviceWorker' in navigator) || !('Notification' in window)) {
-      console.log('Push notifications not supported in this browser');
-      return { success: false, error: 'Not supported' };
-    }
-
-    // First, ensure service worker is registered
-    console.log('Registering service worker...');
-    let registration;
-    try {
-      registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-      console.log('Service Worker registered:', registration);
-      
-      // Wait for service worker to be ready
-      await navigator.serviceWorker.ready;
-      console.log('Service Worker is ready');
-    } catch (swError) {
-      console.error('Service Worker registration failed:', swError);
-      return { success: false, error: 'Service Worker registration failed: ' + swError.message };
-    }
-
-    // Request notification permission
-    const permission = await Notification.requestPermission();
-    console.log('Notification permission:', permission);
-    
-    if (permission === 'granted') {
-      const messaging = getMessaging();
-      
-      // Get FCM token
-      const token = await getToken(messaging, {
-        vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
-        serviceWorkerRegistration: registration
-      });
-      
-      console.log('FCM Token obtained:', token);
-      
-      // Save token to database
-      const db = getDatabase();
-      const tokenRef = ref(db, `users/${userId}/fcmToken`);
-      await set(tokenRef, token);
-
-      console.log('FCM Token saved to database');
-
-      // Subscribe this device to broadcast topics via Firebase callable
-      try {
-        const subscribeToNotifications = httpsCallable(getFunctions(), 'subscribeToNotifications');
-        await subscribeToNotifications({ token });
-        console.log('[FCM] Subscribed to new-challenges + new-quizzes topics');
-      } catch (topicErr) {
-        // Non-fatal — token is saved, topics subscription failed silently
-        console.warn('[FCM] Topic subscription failed:', topicErr.message);
-      }
-
-      return { success: true, token };
-    } else {
-      console.log('Notification permission denied');
-      return { success: false, error: 'Permission denied' };
-    }
-  } catch (error) {
-    console.error('Push notification setup error:', error);
-    return { success: false, error: error.message };
+const getDeviceId = () => {
+  let id = localStorage.getItem('pawppy_notification_device');
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem('pawppy_notification_device', id);
   }
+  return id;
+};
+
+export const requestNotificationPermission = async (userId, { prompt = true } = {}) => {
+  try {
+    if (!userId || !('serviceWorker' in navigator) || !('Notification' in window)) return { success: false, error: 'Notifications are not supported here. On iPhone, first add Pawppy to your Home Screen.' };
+    if (!prompt && localStorage.getItem(`pawppy_push_disabled_${userId}`)) return { success: false, error: 'Disabled on this device' };
+    if (!prompt && Notification.permission !== 'granted') return { success: false, error: 'Permission not enabled' };
+    // This must run before any asynchronous setup so the tap is still active.
+    const permission = Notification.permission === 'granted' ? 'granted' : prompt ? await Notification.requestPermission() : Notification.permission;
+    if (permission !== 'granted') return { success: false, error: 'Notifications are disabled. You can allow them in your browser settings.' };
+    const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/firebase-push/' });
+    // Keep push registration separate from the root PWA caching worker.
+    if (!registration.active) await new Promise((resolve, reject) => {
+      const worker = registration.installing || registration.waiting;
+      if (!worker) return reject(new Error('Notification worker is not ready'));
+      const timeout = setTimeout(() => { worker.removeEventListener('statechange', changed); reject(new Error('Notification setup timed out. Try again.')); }, 15000);
+      const changed = () => {
+        if (worker.state === 'activated') { clearTimeout(timeout); worker.removeEventListener('statechange', changed); resolve(); }
+        if (worker.state === 'redundant') { clearTimeout(timeout); worker.removeEventListener('statechange', changed); reject(new Error('Notification setup failed. Try again.')); }
+      };
+      worker.addEventListener('statechange', changed);
+      changed();
+    });
+    const token = await getToken(getMessaging(), { vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY, serviceWorkerRegistration: registration });
+    if (!token) throw new Error('No notification token was returned');
+    await httpsCallable(getFunctions(), 'subscribeToNotifications')({ token, deviceId: getDeviceId() });
+    localStorage.removeItem(`pawppy_push_disabled_${userId}`);
+    localStorage.setItem(`pawppy_push_enabled_${userId}`, 'true');
+    return { success: true };
+  } catch (error) {
+    console.warn('[FCM] Notification setup failed:', error.code || 'setup_failed');
+    return { success: false, error: error.message || 'Could not enable reminders. Please try again.' };
+  }
+};
+
+export const disableNotificationDevice = async () => {
+  const uid = getAuth().currentUser?.uid;
+  if (!uid) return;
+  const deviceId = localStorage.getItem('pawppy_notification_device');
+  if (deviceId) await httpsCallable(getFunctions(), 'unregisterNotificationDevice')({ deviceId });
+  localStorage.setItem(`pawppy_push_disabled_${uid}`, 'true');
+  localStorage.removeItem(`pawppy_push_enabled_${uid}`);
+  if ('Notification' in window && Notification.permission === 'granted') await deleteToken(getMessaging());
+};
+
+export const signOutWithNotifications = async () => {
+  const uid = getAuth().currentUser?.uid;
+  try {
+    if (uid && localStorage.getItem(`pawppy_push_enabled_${uid}`)) await disableNotificationDevice();
+  } catch {
+    // Invalidate the provider token even if server cleanup is temporarily unavailable.
+    try { await deleteToken(getMessaging()); } catch { /* network may be unavailable */ }
+  } finally { await signOut(getAuth()); }
 };

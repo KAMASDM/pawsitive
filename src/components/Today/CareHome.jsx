@@ -1,0 +1,12 @@
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { onValue, ref } from 'firebase/database';
+import { ArrowRight, PawPrint } from 'lucide-react';
+import { auth, database } from '../../firebase';
+
+export default function CareHome() {
+  const [pets, setPets] = useState(null);
+  const [error, setError] = useState('');
+  useEffect(() => onValue(ref(database, `userPets/${auth.currentUser.uid}`), snapshot => setPets(snapshot.val() || {}), () => setError('Your pet records could not be loaded. Please reload.')), []);
+  return <div className="max-w-5xl mx-auto px-4 py-10 pb-32"><p className="text-sm font-semibold text-violet-700">YOUR PET PARENT OS</p><h1 className="text-4xl font-bold mt-2">Care, in one place.</h1><p className="text-slate-600 mt-3 mb-8">Health records, weight, expenses, and everyday routines for every pet.</p>{error && <p role="alert">{error}</p>}{!pets ? <p>Loading your pets…</p> : !Object.keys(pets).length ? <Link to="/today" className="inline-flex rounded-xl bg-violet-700 text-white px-5 py-3">Add your first pet</Link> : <div className="grid sm:grid-cols-2 gap-5">{Object.entries(pets).map(([id, pet]) => <section key={id} className="rounded-3xl bg-white border border-violet-100 p-6"><div className="flex gap-4 items-center">{pet.image ? <img src={pet.image} alt="" className="w-16 h-16 rounded-2xl object-cover" /> : <PawPrint className="w-12 h-12 text-violet-600" />}<div><h2 className="font-bold text-2xl">{pet.name}</h2><p className="text-sm text-slate-500">{pet.type}{pet.breed ? ` · ${pet.breed}` : ''}</p></div></div><Link to={`/pet-details/${id}`} className="flex justify-between py-4 mt-5 border-t font-semibold text-violet-800">Health, weight & expenses <ArrowRight size={20} /></Link><Link to={`/care/${id}/visit`} className="flex justify-between py-3 text-violet-800">Prepare for a vet visit <ArrowRight size={20} /></Link><Link to={`/my-pets/${id}`} className="flex justify-between py-3 text-slate-700">Profile, memories & events <ArrowRight size={20} /></Link></section>)}</div>}<div className="flex flex-wrap gap-4 mt-8"><Link to="/today?add=1" className="rounded-xl bg-violet-700 px-5 py-3 text-white font-semibold">Add a daily routine</Link><Link to="/my-pets?picker=true" className="rounded-xl bg-white border border-violet-200 px-5 py-3 font-semibold text-violet-800">Manage pets</Link><Link to="/settings" className="px-5 py-3 text-violet-700 underline">Reminder preferences</Link></div></div>;
+}

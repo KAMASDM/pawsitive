@@ -1,3 +1,5 @@
+import { subscribePetContent } from "../../services/profileData";
+import { readPetSnapshot, readUserSnapshot } from "../../services/profileData";
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FiShare2, FiLock, FiCalendar, FiArrowLeft, FiEdit, FiInfo, FiPlus } from 'react-icons/fi';
@@ -46,173 +48,35 @@ const PetProfile = () => {
   }, []);
 
   useEffect(() => {
-    // Don't load pet data until auth state is determined
-    if (authLoading) {
-      console.log('Waiting for auth state...');
-      return;
-    }
-
-    const loadPetData = async () => {
-      setLoading(true);
-      
+    if (authLoading) return;
+    let cancelled = false;
+    const subscriptions = [];
+    const load = async () => {
+      setLoading(true); setNotFound(false); setPosts([]); setEvents([]);
       try {
-        console.log('Looking for pet with slug:', slug);
-        
-        // First, try to get pet location from slug index
-        const slugRef = ref(database, `petSlugs/${slug}`);
-        const slugSnapshot = await get(slugRef);
-        
-        console.log('Slug snapshot exists:', slugSnapshot.exists());
-        if (slugSnapshot.exists()) {
-          console.log('Slug data:', slugSnapshot.val());
+        const index = (await get(ref(database, `petSlugs/${slug}`))).val();
+        if (!index) { if (!cancelled) setNotFound(true); return; }
+        const snapshot = await readPetSnapshot(index.userId, index.petId);
+        if (cancelled) return;
+        if (!snapshot.exists()) { setNotFound(true); return; }
+        const record = { ...snapshot.val(), id: index.petId, userId: index.userId };
+        setPet(record);
+        const ownerSnapshot = await readUserSnapshot(index.userId);
+        if (cancelled) return;
+        setOwner(ownerSnapshot.val());
+        for (const [kind, setter] of [['petPosts', setPosts], ['petEvents', setEvents]]) {
+          subscriptions.push(subscribePetContent(kind, record, (content) => {
+            if (cancelled) return;
+            const list = Object.entries(content.val() || {}).map(([id, value]) => ({ id, ...value }));
+            setter(list.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)));
+          }, () => { if (!cancelled) setter([]); }));
         }
-        
-        let petData = null;
-        let ownerId = null;
-        let petId = null;
-        
-        if (slugSnapshot.exists()) {
-          const slugData = slugSnapshot.val();
-          ownerId = slugData.userId;
-          petId = slugData.petId;
-          
-          console.log('Fetching pet from userPets:', ownerId, petId);
-          
-          // Get the pet data
-          const petRef = ref(database, `userPets/${ownerId}/${petId}`);
-          const petSnapshot = await get(petRef);
-          
-          console.log('Pet snapshot exists:', petSnapshot.exists());
-          
-          if (petSnapshot.exists()) {
-            petData = { id: petSnapshot.key, ...petSnapshot.val() };
-            console.log('Found matching pet!', petData);
-          } else {
-            console.error('Pet not found at path:', `userPets/${ownerId}/${petId}`);
-          }
-        } else {
-          console.error('Slug not found in petSlugs index:', slug);
-        }
-        
-        if (!petData) {
-          console.log('No pet found with slug:', slug);
-          setNotFound(true);
-          setLoading(false);
-          return;
-        }
-        
-        // Check privacy settings - only block if private AND user is not the owner
-        const isOwner = ownerId === currentUser?.uid;
-        const isPrivate = petData.privacy?.isPrivate || false;
-        
-        console.log('Privacy check:', {
-          isPrivate,
-          ownerId,
-          currentUserId: currentUser?.uid,
-          isOwner
-        });
-        
-        if (isPrivate && !isOwner) {
-          console.log('Pet is private and user is not owner');
-          setNotFound(true);
-          setLoading(false);
-          return;
-        }
-
-        console.log('PetProfile: Setting pet state with data:', petData);
-        setPet(petData);
-
-        // Fetch owner data
-        if (ownerId) {
-          try {
-            const ownerRef = ref(database, `users/${ownerId}`);
-            const ownerSnapshot = await get(ownerRef);
-            if (ownerSnapshot.exists()) {
-              setOwner(ownerSnapshot.val());
-            }
-          } catch (error) {
-            console.error('Error fetching owner data:', error);
-            // Continue anyway - owner data is optional
-          }
-        }
-
-        // Listen to posts
-        try {
-          const postsRef = ref(database, `petPosts/${petId}`);
-          onValue(postsRef, (snapshot) => {
-            if (snapshot.exists()) {
-              const postsData = [];
-              snapshot.forEach((childSnapshot) => {
-                postsData.push({
-                  id: childSnapshot.key,
-                  ...childSnapshot.val()
-                });
-              });
-              // Sort by timestamp descending
-              postsData.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-              setPosts(postsData);
-            } else {
-              setPosts([]);
-            }
-          }, (error) => {
-            console.error('Error listening to posts:', error);
-            setPosts([]);
-          });
-        } catch (error) {
-          console.error('Error setting up posts listener:', error);
-          setPosts([]);
-        }
-
-        // Listen to events
-        try {
-          const eventsRef = ref(database, `petEvents/${petId}`);
-          onValue(eventsRef, (snapshot) => {
-            if (snapshot.exists()) {
-              const eventsData = [];
-              snapshot.forEach((childSnapshot) => {
-                eventsData.push({
-                  id: childSnapshot.key,
-                  ...childSnapshot.val()
-                });
-              });
-              // Sort by date ascending
-              eventsData.sort((a, b) => new Date(a.date) - new Date(b.date));
-              setEvents(eventsData);
-            } else {
-              setEvents([]);
-            }
-          }, (error) => {
-            console.error('Error listening to events:', error);
-            setEvents([]);
-          });
-        } catch (error) {
-          console.error('Error setting up events listener:', error);
-          setEvents([]);
-        }
-
-        console.log('PetProfile: Setting loading to false');
-        setLoading(false);
-
-        // Cleanup listeners
-        return () => {
-          try {
-            const postsRef = ref(database, `petPosts/${petId}`);
-            const eventsRef = ref(database, `petEvents/${petId}`);
-            off(postsRef);
-            off(eventsRef);
-          } catch (error) {
-            console.error('Error cleaning up listeners:', error);
-          }
-        };
-      } catch (error) {
-        console.error('Error loading pet profile:', error);
-        setNotFound(true);
-        setLoading(false);
-      }
+      } catch { if (!cancelled) setNotFound(true); }
+      finally { if (!cancelled) setLoading(false); }
     };
-
-    loadPetData();
-  }, [slug, currentUser, authLoading]);
+    load();
+    return () => { cancelled = true; subscriptions.forEach((unsubscribe) => unsubscribe()); };
+  }, [slug, currentUser?.uid, authLoading]);
 
   const calculateAge = (dateOfBirth) => {
     if (!dateOfBirth) return 'Unknown';

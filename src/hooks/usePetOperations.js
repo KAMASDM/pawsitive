@@ -1,6 +1,7 @@
+import { trackProductEvent } from "../services/productAnalytics";
 import { useState, useCallback } from "react";
 import { auth, database } from "../firebase";
-import { ref, set, remove } from "firebase/database";
+import { ref, set, remove, update } from "firebase/database";
 
 /**
  * Shared hook for pet CRUD operations.
@@ -29,7 +30,7 @@ export function usePetOperations(pets, setPets) {
 
   const handleAddPet = useCallback(() => {
     setCurrentPet({
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       name: "",
       type: "",
       breed: "",
@@ -84,7 +85,11 @@ export function usePetOperations(pets, setPets) {
       };
 
       const petRef = ref(database, `userPets/${user.uid}/${currentPet.id}`);
-      await set(petRef, petDataWithSlug);
+      await update(ref(database), {
+        [`petOwners/${currentPet.id}`]: user.uid,
+        [`userPets/${user.uid}/${currentPet.id}`]: petDataWithSlug,
+      });
+      if (!isEditMode) trackProductEvent("pet_created", "pets");
 
       if (isEditMode && currentPet.slug && currentPet.slug !== slug) {
         await remove(ref(database, `petSlugs/${currentPet.slug}`));
@@ -93,7 +98,6 @@ export function usePetOperations(pets, setPets) {
       await set(ref(database, `petSlugs/${slug}`), {
         userId: user.uid,
         petId: currentPet.id,
-        petName: currentPet.name,
         isPrivate: petDataWithSlug.privacy.isPrivate,
       });
 
@@ -176,7 +180,7 @@ export function usePetOperations(pets, setPets) {
       } else {
         updatedPet.vaccinations.push({
           ...currentVaccination,
-          id: Date.now().toString(),
+          id: crypto.randomUUID(),
         });
       }
       setCurrentPet(updatedPet);
@@ -185,6 +189,7 @@ export function usePetOperations(pets, setPets) {
           ref(database, `userPets/${user.uid}/${updatedPet.id}/vaccinations`),
           updatedPet.vaccinations
         );
+        trackProductEvent("health_record_saved", "care");
         setPets((prev) =>
           prev.map((pet) =>
             pet.id === updatedPet.id

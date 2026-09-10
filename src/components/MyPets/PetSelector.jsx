@@ -1,7 +1,8 @@
+import { readPetDirectorySnapshot } from "../../services/profileData";
 import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { signOut } from "firebase/auth";
+import { signOutWithNotifications } from "../../services/notificationService";
 import { auth, database } from "../../firebase";
 import { ref, get } from "firebase/database";
 import { FaPlus, FaPaw } from "react-icons/fa";
@@ -28,7 +29,7 @@ import {
   VaccinationDialog,
 } from "../Profile/components";
 import OnboardingChecklist from "./OnboardingChecklist";
-import { requestNotificationPermission } from "../../services/notificationService";
+
 
 // ---- helpers ----
 
@@ -60,7 +61,7 @@ const getHealthStatus = (vaccinations) => {
 };
 
 const HEALTH_DOT = { healthy: "#34d399", "due-soon": "#fbbf24", overdue: "#f87171", "no-data": "#d1d5db" };
-const HEALTH_LABEL = { healthy: "All good", "due-soon": "Due soon", overdue: "Overdue", "no-data": "No data" };
+const HEALTH_LABEL = { healthy: "Vaccines recorded", "due-soon": "Due soon", overdue: "Overdue", "no-data": "No data" };
 
 // ---- Decorative Paw SVG ----
 const PawPrint = ({ size = 24, color = "currentColor", opacity = 1, className = "" }) => (
@@ -296,7 +297,7 @@ function PetSelectorMobile() {
       return;
     }
     setIsDiscoveryLoading(true);
-    get(ref(database, "userPets")).then((snap) => {
+    readPetDirectorySnapshot().then((snap) => {
       if (!snap.exists()) return;
       const found = [];
       for (const uid of Object.keys(snap.val())) {
@@ -314,7 +315,7 @@ function PetSelectorMobile() {
     }).finally(() => setIsDiscoveryLoading(false));
   }, [user]);
 
-  const handleLogout = async () => { await signOut(auth); navigate("/"); };
+  const handleLogout = async () => { await signOutWithNotifications(); navigate("/"); };
   const hasPets = !isLoading && pets.length > 0;
   const openHealthRecordSetup = () => {
     const targetPet = pets.find((pet) => (pet.vaccinations || []).length === 0) || pets[0];
@@ -401,7 +402,7 @@ function PetSelectorMobile() {
           >
             {[
               { value: pets.length, label: "My Pets" },
-              { value: pets.filter(p => getHealthStatus(p.vaccinations) === "healthy").length, label: "Healthy" },
+              { value: pets.filter(p => getHealthStatus(p.vaccinations) === "healthy").length, label: "Vaccine records" },
               { value: pets.filter(p => p.availableForMating || p.availableForAdoption).length, label: "Available" },
             ].map((stat, i) => (
               <div key={i} className="flex-1 rounded-2xl px-3 py-2.5 text-center" style={{ background: "rgba(255,255,255,0.13)" }}>
@@ -530,7 +531,7 @@ function PetSelectorMobile() {
           pets={pets}
           onAddPet={petOps.handleAddPet}
           onAddHealthRecord={openHealthRecordSetup}
-          onEnableNotifications={() => user && requestNotificationPermission(user.uid)}
+          onEnableNotifications={() => navigate("/settings")}
         />
 
         {/* ── Explore Features ── */}

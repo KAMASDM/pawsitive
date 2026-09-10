@@ -19,14 +19,18 @@ const CreateEventModal = ({ isOpen, onClose, pet, event }) => {
   const [date, setDate] = useState('');
   const [type, setType] = useState('other');
   const [saving, setSaving] = useState(false);
+  const [publish, setPublish] = useState(false);
+  const canPublish = ['birthday', 'adoption', 'achievement'].includes(type);
 
   useEffect(() => {
     if (event) {
+      setPublish(event.visibility === "public");
       setTitle(event.title || '');
       setDescription(event.description || '');
       setDate(event.date || '');
       setType(event.type || 'other');
     } else {
+      setPublish(false);
       setTitle('');
       setDescription('');
       setDate('');
@@ -44,6 +48,7 @@ const CreateEventModal = ({ isOpen, onClose, pet, event }) => {
 
     try {
       const eventData = {
+        visibility: publish && canPublish ? "public" : "private",
         title: title.trim(),
         description: description.trim(),
         date,
@@ -62,6 +67,7 @@ const CreateEventModal = ({ isOpen, onClose, pet, event }) => {
       }
 
       // Reset and close
+      setPublish(false);
       setTitle('');
       setDescription('');
       setDate('');
@@ -93,6 +99,9 @@ const CreateEventModal = ({ isOpen, onClose, pet, event }) => {
           className="bg-white rounded-2xl w-full max-w-lg"
           onClick={(e) => e.stopPropagation()}
         >
+          <div className="px-6 pt-5 text-sm text-slate-600">
+            {canPublish ? <label className="flex gap-2"><input type="checkbox" checked={publish} onChange={(event) => setPublish(event.target.checked)} />Share this milestone on the public profile</label> : 'This event is visible only in your private care history.'}
+          </div>
           {/* Header */}
           <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
             <h2 className="text-xl font-bold text-gray-900">

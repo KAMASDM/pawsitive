@@ -164,7 +164,7 @@ const VaccinationDialog = ({
     
     setCurrentVaccination({
       ...currentVaccination,
-      date: newDate.toDateString(),
+      date: e.target.value,
     });
   };
 
@@ -198,7 +198,7 @@ const VaccinationDialog = ({
     
     setCurrentVaccination({
       ...currentVaccination,
-      nextDue: newDate ? newDate.toDateString() : null,
+      nextDue: e.target.value || null,
     });
   };
 

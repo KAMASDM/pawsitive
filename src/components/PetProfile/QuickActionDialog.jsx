@@ -172,6 +172,7 @@ const QuickActionDialog = ({ isOpen, onClose, pet, actionType }) => {
     const newEventRef = push(eventsRef);
     
     await set(newEventRef, {
+      visibility: "private",
       title: formData.title,
       description: formData.description || '',
       date: formData.date,

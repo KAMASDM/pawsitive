@@ -7,16 +7,15 @@ const CheckForUpdatesButton = () => {
   const { checkForUpdates, needRefresh } = usePWAUpdate();
   const [isChecking, setIsChecking] = useState(false);
   const [justChecked, setJustChecked] = useState(false);
+  const [checkError, setCheckError] = useState(false);
 
   const handleCheckForUpdates = async () => {
     setIsChecking(true);
     setJustChecked(false);
+    setCheckError(false);
 
     try {
       await checkForUpdates();
-      
-      // Wait a moment to let service worker check
-      await new Promise(resolve => setTimeout(resolve, 2000));
       
       setJustChecked(true);
       
@@ -25,7 +24,7 @@ const CheckForUpdatesButton = () => {
         setJustChecked(false);
       }, 3000);
     } catch (error) {
-      console.error('Error checking for updates:', error);
+      setCheckError(true);
     } finally {
       setIsChecking(false);
     }
@@ -58,6 +57,8 @@ const CheckForUpdatesButton = () => {
           <FiCheckCircle className="text-lg" />
           <span>You're up to date!</span>
         </>
+      ) : checkError ? (
+        <span>Couldn’t check for updates. Tap to retry.</span>
       ) : needRefresh ? (
         <>
           <FiRefreshCw className="text-lg" />

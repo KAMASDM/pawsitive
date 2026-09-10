@@ -1,3 +1,4 @@
+import { readPetDirectorySnapshot, readPetSnapshot } from "../../services/profileData";
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ref, get, set, onValue } from "firebase/database";
@@ -57,16 +58,14 @@ const PetDetail = () => {
           ownerId = slugData.userId;
           const actualPetId = slugData.petId;
           
-          const petRef = ref(database, `userPets/${ownerId}/${actualPetId}`);
-          const petSnapshot = await get(petRef);
+          const petSnapshot = await readPetSnapshot(ownerId, actualPetId);
           
           if (petSnapshot.exists()) {
             foundPet = { ...petSnapshot.val(), id: actualPetId, userId: ownerId };
           }
         } else {
           // Not a slug - try to find the pet by searching all users
-          const userPetsRef = ref(database, "userPets");
-          const allPetsSnapshot = await get(userPetsRef);
+          const allPetsSnapshot = await readPetDirectorySnapshot();
           
           if (allPetsSnapshot.exists()) {
             const allUsersData = allPetsSnapshot.val();

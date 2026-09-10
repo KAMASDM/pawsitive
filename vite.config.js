@@ -11,9 +11,9 @@ export default defineConfig({
       registerType: 'prompt',
       includeAssets: ['paw-icon.svg', 'favicon-v2.png', 'apple-touch-icon-v2.png', 'paw-icon-v2-192.png', 'paw-icon-v2-512.png', 'paw-icon-maskable-v2-512.png', 'robots.txt', 'sitemap.xml'],
       manifest: {
-        name: 'Pawppy App',
+        name: 'Pawppy - Pet Parent Operating System',
         short_name: 'Pawppy',
-        description: 'Pawppy is a web app that provides pet resources',
+        description: 'Daily routines, shared care, and pet records in one place.',
         theme_color: '#7c3aed',
         background_color: '#ffffff',
         display: 'standalone',

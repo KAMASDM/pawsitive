@@ -1,3 +1,5 @@
+import { readPetSnapshot, readUserSnapshot } from "../../services/profileData";
+import { signOutWithNotifications } from "../../services/notificationService";
 // import React, { useState, useEffect, useCallback, useRef } from "react";
 // import { Link, useLocation, useNavigate } from "react-router-dom";
 // import { auth, database } from "../../firebase";
@@ -191,9 +193,9 @@
 //           const otherUserId = direction === "incoming" ? req.senderId : req.receiverId;
 
 //           const [userSnap, senderPetSnap, receiverPetSnap] = await Promise.all([
-//             get(ref(database, `users/${otherUserId}`)),
-//             get(ref(database, `userPets/${req.senderId}/${req.senderPetId}`)),
-//             get(ref(database, `userPets/${req.receiverId}/${req.receiverPetId}`)),
+//             readUserSnapshot(otherUserId),
+//             readPetSnapshot(req.senderId, req.senderPetId),
+//             readPetSnapshot(req.receiverId, req.receiverPetId),
 //           ]);
 
 //           return {
@@ -245,9 +247,9 @@
 //             {/* Desktop Nav */}
 //             <nav className="hidden md:flex items-center space-x-2">
 //               <NavLink to="/dashboard"><FiHome className="mr-1" /> Home</NavLink>
-//               <NavLink to="/resource"><BsGrid className="mr-1" /> Resources</NavLink>
+//               <NavLink to="/discover"><BsGrid className="mr-1" /> Discover</NavLink>
 //               <NavLink to="/profile"><FiUser className="mr-1" /> Profile</NavLink>
-//               <NavLink to="/faq"><FiHelpCircle className="mr-1" /> FAQ</NavLink>
+//               <NavLink to="/family"><FiUsers className="mr-1" /> Family</NavLink>
 
 //               <div className="relative">
 //                 <button
@@ -316,14 +318,14 @@
 //               <MobileNavLink to="/dashboard" onClick={() => setIsMenuOpen(false)}>
 //                 <FiHome className="mr-2" /> Home
 //               </MobileNavLink>
-//               <MobileNavLink to="/resource" onClick={() => setIsMenuOpen(false)}>
-//                 <BsGrid className="mr-2" /> Resources
+//               <MobileNavLink to="/discover" onClick={() => setIsMenuOpen(false)}>
+//                 <BsGrid className="mr-2" /> Discover
 //               </MobileNavLink>
 //               <MobileNavLink to="/profile" onClick={() => setIsMenuOpen(false)}>
 //                 <FiUser className="mr-2" /> Profile
 //               </MobileNavLink>
-//               <MobileNavLink to="/faq" onClick={() => setIsMenuOpen(false)}>
-//                 <FiHelpCircle className="mr-2" /> FAQ
+//               <MobileNavLink to="/family" onClick={() => setIsMenuOpen(false)}>
+//                 <FiUsers className="mr-2" /> Family
 //               </MobileNavLink>
 //               <button
 //                 onClick={handleLogout}
@@ -385,7 +387,7 @@ import {
   FiX,
   FiBell,
   FiSearch,
-  FiHelpCircle,
+  FiUsers,
   FiArrowRight,
   FiInbox,
   FiShoppingBag,
@@ -526,7 +528,7 @@ const Header = () => {
   const [totalUnreadCount, setTotalUnreadCount] = useState(0);
 
   // Check if we're on the pet-first landing pages
-  const isHomePage = location.pathname === "/my-pets" || location.pathname.startsWith("/my-pets/") || location.pathname === "/";
+  const isHomePage = location.pathname === "/today" || location.pathname === "/";
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -554,8 +556,8 @@ const Header = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const handleLogout = () => {
-    auth.signOut();
+  const handleLogout = async () => {
+    await signOutWithNotifications();
     navigate("/");
     setIsMenuOpen(false);
   };
@@ -597,9 +599,9 @@ const Header = () => {
           const otherUserId = direction === "incoming" ? req.senderId : req.receiverId;
 
           const [userSnap, senderPetSnap, receiverPetSnap] = await Promise.all([
-            get(ref(database, `users/${otherUserId}`)),
-            get(ref(database, `userPets/${req.senderId}/${req.senderPetId}`)),
-            get(ref(database, `userPets/${req.receiverId}/${req.receiverPetId}`)),
+            readUserSnapshot(otherUserId),
+            readPetSnapshot(req.senderId, req.senderPetId),
+            readPetSnapshot(req.receiverId, req.receiverPetId),
           ]);
 
           return {
@@ -703,7 +705,7 @@ const Header = () => {
       <header className={`sticky top-0 z-[100] transition-all duration-300 ${getHeaderClasses()}`}>
         <div className="container mx-auto px-4 py-3">
           <div className="flex justify-between items-center">
-            <Link to="/my-pets" className="flex items-center hover:opacity-90 transition-opacity">
+            <Link to="/today" className="flex items-center hover:opacity-90 transition-opacity">
               <img src={logo} alt="Pawppy" className="h-10 mr-3" />
               <span className={`text-2xl font-bold hidden sm:inline transition-all duration-300 ${getLogoTextClasses()}`}>
                 Pawppy
@@ -713,22 +715,22 @@ const Header = () => {
             {/* Desktop Nav */}
             <nav className="hidden md:flex items-center space-x-2">
               <NavLink
-                to="/my-pets"
-                className={getNavLinkClasses(location.pathname === "/my-pets" || location.pathname.startsWith("/my-pets/"))}
+                to="/today"
+                className={getNavLinkClasses(location.pathname === "/today")}
               >
-                <FiHome className="mr-1" /> My Pets
+                <FiHome className="mr-1" /> Today
               </NavLink>
               <NavLink
-                to="/shop"
-                className={getNavLinkClasses(location.pathname.startsWith("/shop"))}
+                to="/care"
+                className={getNavLinkClasses(location.pathname.startsWith("/care"))}
               >
-                <FiShoppingBag className="mr-1" /> Shop
+                <FiShoppingBag className="mr-1" /> Care
               </NavLink>
               <NavLink
-                to="/resource"
-                className={getNavLinkClasses(location.pathname === "/resource")}
+                to="/discover"
+                className={getNavLinkClasses(location.pathname === "/discover")}
               >
-                <BsGrid className="mr-1" /> Resources
+                <BsGrid className="mr-1" /> Discover
               </NavLink>
               <NavLink
                 to="/profile"
@@ -737,10 +739,10 @@ const Header = () => {
                 <FiUser className="mr-1" /> Profile
               </NavLink>
               <NavLink
-                to="/faq"
-                className={getNavLinkClasses(location.pathname === "/faq")}
+                to="/family"
+                className={getNavLinkClasses(location.pathname === "/family")}
               >
-                <FiHelpCircle className="mr-1" /> FAQ
+                <FiUsers className="mr-1" /> Family
               </NavLink>
 
               <button
@@ -831,25 +833,25 @@ const Header = () => {
           <div className={`md:hidden animate-fadeIn ${getMobileMenuClasses()}`}>
             <div className="container mx-auto px-4 py-2 space-y-1">
               <MobileNavLink
-                to="/my-pets"
+                to="/today"
                 onClick={() => setIsMenuOpen(false)}
-                className={getMobileNavLinkClasses(location.pathname === "/my-pets" || location.pathname.startsWith("/my-pets/"))}
+                className={getMobileNavLinkClasses(location.pathname === "/today")}
               >
-                <FiHome className="mr-2" /> My Pets
+                <FiHome className="mr-2" /> Today
               </MobileNavLink>
               <MobileNavLink
-                to="/shop"
+                to="/care"
                 onClick={() => setIsMenuOpen(false)}
-                className={getMobileNavLinkClasses(location.pathname.startsWith("/shop"))}
+                className={getMobileNavLinkClasses(location.pathname.startsWith("/care"))}
               >
-                <FiShoppingBag className="mr-2" /> Shop
+                <FiShoppingBag className="mr-2" /> Care
               </MobileNavLink>
               <MobileNavLink
-                to="/resource"
+                to="/discover"
                 onClick={() => setIsMenuOpen(false)}
-                className={getMobileNavLinkClasses(location.pathname === "/resource")}
+                className={getMobileNavLinkClasses(location.pathname === "/discover")}
               >
-                <BsGrid className="mr-2" /> Resources
+                <BsGrid className="mr-2" /> Discover
               </MobileNavLink>
               <MobileNavLink
                 to="/profile"
@@ -859,11 +861,11 @@ const Header = () => {
                 <FiUser className="mr-2" /> Profile
               </MobileNavLink>
               <MobileNavLink
-                to="/faq"
+                to="/family"
                 onClick={() => setIsMenuOpen(false)}
-                className={getMobileNavLinkClasses(location.pathname === "/faq")}
+                className={getMobileNavLinkClasses(location.pathname === "/family")}
               >
-                <FiHelpCircle className="mr-2" /> FAQ
+                <FiUsers className="mr-2" /> Family
               </MobileNavLink>
               <button
                 onClick={handleLogout}

@@ -46,7 +46,8 @@ export const startBadgeListener = (userId) => {
     if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
       navigator.serviceWorker.controller.postMessage({
         type: 'UPDATE_BADGE',
-        userId: userId
+        userId: userId,
+        count
       });
     }
   });

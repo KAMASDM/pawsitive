@@ -1,71 +1,49 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiDownload, FiX, FiRefreshCw, FiAlertCircle } from 'react-icons/fi';
-import { useRegisterSW } from 'virtual:pwa-register/react';
+import { usePWAUpdate } from '../../hooks/usePWAUpdate';
 
 const UpdateNotification = () => {
-  const [showUpdatePrompt, setShowUpdatePrompt] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [updateError, setUpdateError] = useState('');
+  const [showOfflineReady, setShowOfflineReady] = useState(false);
   const fallbackTimerRef = useRef(null);
-
-  const {
-    offlineReady: [offlineReady, setOfflineReady],
-    needRefresh: [needRefresh, setNeedRefresh],
-    updateServiceWorker,
-  } = useRegisterSW({
-    onRegistered(registration) {
-      if (registration) {
-        // Poll for updates every hour
-        setInterval(() => registration.update(), 60 * 60 * 1000);
-      }
-    },
-    onRegisterError(error) {
-      console.warn('SW registration error', error);
-    },
-  });
+  const { offlineReady, setOfflineReady, needRefresh, showUpdatePrompt, dismissUpdate, updateApp } = usePWAUpdate();
 
   useEffect(() => {
-    if (needRefresh) setShowUpdatePrompt(true);
+    if (!offlineReady) return;
+    let alreadyShown = false;
+    try {
+      alreadyShown = localStorage.getItem('pwa-offline-ready-shown') === 'true';
+      localStorage.setItem('pwa-offline-ready-shown', 'true');
+    } catch { /* Storage may be unavailable in a private browser. */ }
+    setShowOfflineReady(!alreadyShown);
+    const timer = setTimeout(() => { setShowOfflineReady(false); setOfflineReady(false); }, 5000);
+    return () => clearTimeout(timer);
+  }, [offlineReady, setOfflineReady]);
+
+  useEffect(() => () => clearTimeout(fallbackTimerRef.current), []);
+  useEffect(() => {
+    if (!needRefresh) { clearTimeout(fallbackTimerRef.current); setIsUpdating(false); }
   }, [needRefresh]);
 
-  // Cleanup fallback timer on unmount
-  useEffect(() => () => { if (fallbackTimerRef.current) clearTimeout(fallbackTimerRef.current); }, []);
-
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     if (isUpdating) return;
     setIsUpdating(true);
-
-    // Step 1: Listen for controllerchange BEFORE triggering skipWaiting.
-    // This event fires only when the new SW has actually activated and taken
-    // control of the page — guaranteeing that the reload serves the new version.
-    if ('serviceWorker' in navigator) {
-      const onControllerChange = () => {
-        clearTimeout(fallbackTimerRef.current);
-        // Use location.href assignment instead of reload() — more reliable on
-        // mobile PWA standalone mode where reload() can serve stale cache.
-        window.location.href = window.location.href;
-      };
-
-      navigator.serviceWorker.addEventListener('controllerchange', onControllerChange, { once: true });
-
-      // Fallback: if controllerchange hasn't fired within 5 s something went
-      // wrong — force reload anyway so the user isn't stuck on a spinner.
-      fallbackTimerRef.current = setTimeout(() => {
-        navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
-        window.location.href = window.location.href;
-      }, 5000);
+    setUpdateError('');
+    fallbackTimerRef.current = setTimeout(() => {
+      setIsUpdating(false);
+      setUpdateError('The update is taking longer than expected. Please try again.');
+    }, 20000);
+    try { await updateApp(); }
+    catch {
+      clearTimeout(fallbackTimerRef.current);
+      setIsUpdating(false);
+      setUpdateError('The update could not finish. Check your connection and try again.');
     }
-
-    // Step 2: Send SKIP_WAITING to the waiting SW without reloading.
-    // The controllerchange listener above will trigger the reload once the new
-    // SW has taken over.
-    updateServiceWorker(false);
   };
 
-  const handleDismiss = () => {
-    setShowUpdatePrompt(false);
-    setNeedRefresh(false);
-  };
+  const handleDismiss = () => { dismissUpdate(); setUpdateError(''); };
 
   return (
     <>
@@ -111,6 +89,7 @@ const UpdateNotification = () => {
                 )}
               </div>
 
+              {updateError && <p role="alert" className="mb-3 text-sm text-white">{updateError}</p>}
               {!isUpdating && (
                 <div className="flex gap-3">
                   <button
@@ -146,7 +125,7 @@ const UpdateNotification = () => {
 
       {/* Offline Ready Notification */}
       <AnimatePresence>
-        {offlineReady && (
+        {showOfflineReady && (
           <motion.div
             className="fixed bottom-20 md:bottom-6 left-4 right-4 md:left-auto md:right-6 md:w-96 z-[9999]"
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
@@ -161,14 +140,14 @@ const UpdateNotification = () => {
                     <FiAlertCircle className="text-2xl" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-bold text-lg mb-1">Ready for Offline Use! 📱</h3>
+                    <h3 className="font-bold text-lg mb-1">App saved on this device</h3>
                     <p className="text-white/90 text-sm">
-                      Pawppy is now cached and works without internet
+                      The app can open offline. A connection is needed to load and save your care records.
                     </p>
                   </div>
                 </div>
                 <button
-                  onClick={() => setOfflineReady(false)}
+                  onClick={() => { setShowOfflineReady(false); setOfflineReady(false); }}
                   className="p-1 hover:bg-white/20 rounded-lg transition-colors ml-2"
                   aria-label="Dismiss offline notification"
                 >

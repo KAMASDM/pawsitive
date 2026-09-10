@@ -152,22 +152,21 @@ const MessageDialog = ({
       );
       const newMessageRef = push(messagesRef);
 
-      await set(newMessageRef, {
+      const messageData = {
         text: newMessage,
         senderId: user.uid,
         senderName: user.displayName || "You",
         timestamp: Date.now(),
         read: false,
-      });
+      };
 
       const conversationRef = ref(database, `conversations/${conversationId}`);
+      const existing = await get(conversationRef);
       await update(conversationRef, {
+        [`messages/${newMessageRef.key}`]: messageData,
         lastMessageText: newMessage,
         lastMessageTimestamp: Date.now(),
-        participants: {
-          [user.uid]: true,
-          [recipientId]: true,
-        },
+        ...(!existing.exists() ? { participants: { [user.uid]: true, [recipientId]: true } } : {}),
         matingRequestId: matingRequestId || null,
       });
 

@@ -3,13 +3,20 @@ import { Route, Routes, Navigate, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 
 // Eagerly loaded — tiny, always needed on first paint
-import Login from "./components/Login/Login";
+import Landing from "./components/Landing/Landing";
+const Login = lazy(() => import("./components/Login/Login"));
+const Family = lazy(() => import("./components/Today/Family"));
+const Today = lazy(() => import("./components/Today/Today"));
+const CareBrief = lazy(() => import("./components/Today/CareBrief"));
+const CareHome = lazy(() => import("./components/Today/CareHome"));
+const Discover = lazy(() => import("./components/Today/Discover"));
 import Header from "./components/Header/Header";
 import Footer from "./components/Footer/Footer";
 import NotFound from "./components/NotFound/NotFound";
 import PR from "./components/PR/PR";
 import ScrollToTop from "./UI/ScrollToTop";
 import UpdateNotification from "./components/PWA/UpdateNotification";
+import { PWAUpdateProvider } from "./hooks/usePWAUpdate";
 import GlobalSearch from "./components/Search/GlobalSearch";
 import PawLoader from "./components/Loaders/PawLoader";
 
@@ -75,36 +82,49 @@ const QuizLeaderboard = lazy(() => import("./features/quiz/components/QuizLeader
 // Activity page
 const ActivityPage = lazy(() => import("./features/activity/ActivityPage"));
 
-import { useVaccinationReminder } from "./hooks/useVaccinationReminder";
+
 import { initializeBadgeManagement } from "./services/badgeService";
 import { initializeForegroundNotifications, requestNotificationPermission } from "./services/notificationService";
 import { auth } from "./firebase";
+import { initializeProductAnalytics, trackProductEvent } from "./services/productAnalytics";
+const NotificationSettings = lazy(() => import("./components/Notifications/NotificationSettings"));
 import { getStoreSlugFromHost } from "./features/ecommerce/services/ecommerceService";
 import { RequireApprovedVendor, RequireAuth, RequireRole } from "./features/commerce/auth/commerceGuards";
 
-function App() {
-  // Initialize vaccination reminder checker
-  useVaccinationReminder();
+function AppContent() {
+  // Scheduled care notifications are owned by the backend.
   const location = useLocation();
   const subdomainStoreSlug = getStoreSlugFromHost();
-  
+  useEffect(() => initializeProductAnalytics(), []);
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (['push', 'email'].includes(params.get('notificationSource'))) {
+      sessionStorage.setItem('pawppy_notification_open_pending', 'true');
+      trackProductEvent('notification_opened').then((recorded) => { if (recorded) sessionStorage.removeItem('pawppy_notification_open_pending'); });
+      params.delete('notificationSource');
+      const query = params.toString();
+      window.history.replaceState(window.history.state, '', `${location.pathname}${query ? '?' + query : ''}${location.hash}`);
+    }
+  }, [location.pathname, location.search, location.hash]);
+
   useEffect(() => {
     // Initialize badge management for PWA
     initializeBadgeManagement();
     initializeForegroundNotifications();
 
     const unsubscribeAuth = auth.onAuthStateChanged((user) => {
-      if (!user || !('Notification' in window) || Notification.permission === 'denied') return;
+      if (user && !user.emailVerified && user.providerData.some((provider) => provider.providerId === 'password')) return;
+      if (!user || !('Notification' in window) || Notification.permission !== 'granted') return;
 
       const setupKey = `pawppy_push_setup_${user.uid}`;
       if (sessionStorage.getItem(setupKey)) return;
       sessionStorage.setItem(setupKey, 'true');
 
-      requestNotificationPermission(user.uid).catch((err) =>
+      requestNotificationPermission(user.uid, { prompt: false }).catch((err) =>
         console.log('Notification permission not granted:', err)
       );
     });
-    
+
     // Check if Google Maps script is already loaded or being loaded
     if (!window.google && !document.querySelector('script[src*="maps.googleapis.com"]')) {
       const script = document.createElement("script");
@@ -155,7 +175,14 @@ function App() {
                   <Storefront subdomainSlug={subdomainStoreSlug} />
                 ) : (
                 <Routes location={location}>
-                <Route path="/" element={<Login />} />
+                <Route path="/" element={<Landing />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/today" element={<PR><Today /></PR>} />
+                <Route path="/family" element={<PR><Family /></PR>} />
+                <Route path="/care/:petId/visit" element={<PR><CareBrief /></PR>} />
+                <Route path="/care" element={<PR><CareHome /></PR>} />
+                <Route path="/discover" element={<PR><Discover /></PR>} />
+                <Route path="/settings" element={<PR><NotificationSettings /></PR>} />
 
             {/* Pet-first landing — replaces /dashboard */}
             <Route
@@ -176,7 +203,7 @@ function App() {
             />
 
             {/* Legacy redirect so old bookmarks/links still work */}
-            <Route path="/dashboard" element={<Navigate to="/my-pets" replace />} />
+            <Route path="/dashboard" element={<Navigate to="/today" replace />} />
 
             <Route
               path="/faq"
@@ -393,4 +420,6 @@ function App() {
   );
 }
 
-export default App;
+export default function App() {
+  return <PWAUpdateProvider><AppContent /></PWAUpdateProvider>;
+}

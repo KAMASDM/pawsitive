@@ -20,12 +20,14 @@ const PrivacyPolicy = () => {
             </h2>
           </div>
           <p className="mt-4 text-lg text-lavender-700">
-            Last updated: June 15, 2023
+            Last updated: September 9, 2026
           </p>
         </div>
 
         <div className="bg-white p-8 rounded-xl shadow-soft-md">
           <div className="prose prose-lavender max-w-none">
+            <h3 className="text-xl font-semibold text-lavender-900 mb-4">Product improvement activity</h3>
+            <p className="mb-6">Pawppy records basic signed-in actions, such as app sessions and saving care records, in our Firebase database. These events are linked to your account and include a broad screen category, browser or installed-app mode, a session identifier, and a timestamp. They do not contain pet names, health notes, message content, or document text. Raw events are removed after 90 days by a scheduled cleanup. You can disable future collection in Reminders & preferences. We also respect supported browser Do Not Track and Global Privacy Control signals.</p>
             <h3 className="text-xl font-semibold text-lavender-900 mb-4">
               <Lock className="inline h-5 w-5 text-lavender-600 mr-2" />
               Your Privacy Matters

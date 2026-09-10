@@ -250,7 +250,7 @@ const MedicationScheduleDialog = ({
                         <span className="font-medium text-gray-900">Enable Reminders</span>
                       </div>
                       <p className="text-sm text-gray-600 mt-1">
-                        Get email and push notifications at scheduled times
+                        Save these times for your care record. Individual dose alerts are not available yet.
                       </p>
                     </div>
                   </div>

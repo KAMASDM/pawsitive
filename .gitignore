@@ -73,3 +73,7 @@ google-credentials.json
 
 # Generated at build time — do not commit
 public/firebase-messaging-sw.js
+
+# Local browser test artifacts
+test-results/
+playwright-report/

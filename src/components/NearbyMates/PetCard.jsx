@@ -40,10 +40,9 @@ const PetCard = ({ pet, onViewDetails }) => {
             </>
           )}
         </div>
-        {pet.distance && (
+        {(
           <div className="absolute top-3 right-3 bg-black/60 text-white text-xs px-2 py-1 rounded-full flex items-center">
-            <FiMapPin className="mr-1 h-3 w-3 text-lime-300" /> {pet.distance}{" "}
-            km
+            <FiMapPin className="mr-1 h-3 w-3 text-lime-300" /> {pet.distance == null ? 'Distance unavailable' : `About ${pet.distance} km`}
           </div>
         )}
       </div>

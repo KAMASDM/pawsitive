@@ -1,3 +1,5 @@
+import { readPetSnapshot, readUserSnapshot } from "../../services/profileData";
+import { trackProductEvent } from "../../services/productAnalytics";
 import React, { useEffect, useState, useCallback, memo, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { auth, database } from "../../firebase";
@@ -342,8 +344,8 @@ const Profile = () => {
 
             // Fetch user and pet data in parallel
             const [otherUserSnap, otherPetSnap] = await Promise.all([
-              get(ref(database, `users/${otherUserId}`)),
-              get(ref(database, `userPets/${otherUserId}/${otherPetId}`))
+              readUserSnapshot(otherUserId),
+              readPetSnapshot(otherUserId, otherPetId)
             ]);
 
             const otherUserData = otherUserSnap.exists() ? otherUserSnap.val() : {};
@@ -393,7 +395,7 @@ const Profile = () => {
 
   const handleAddPet = useCallback(() => {
     setCurrentPet({
-      id: Date.now().toString(), name: "", type: "", breed: "", gender: "", age: "",
+      id: crypto.randomUUID(), name: "", type: "", breed: "", gender: "", age: "",
       weight: "", color: "", description: "", image: "", availableForMating: false,
       availableForAdoption: false, medical: { conditions: [], allergies: [], medications: "" },
       vaccinations: [], petOwner: user.displayName,
@@ -442,7 +444,11 @@ const Profile = () => {
       
       console.log('Saving pet data:', petDataWithSlug);
       const petRef = ref(database, `userPets/${user.uid}/${currentPet.id}`);
-      await set(petRef, petDataWithSlug);
+      await update(ref(database), {
+        [`petOwners/${currentPet.id}`]: user.uid,
+        [`userPets/${user.uid}/${currentPet.id}`]: petDataWithSlug,
+      });
+      if (!isEditMode) trackProductEvent("pet_created", "pets");
       console.log('Pet saved successfully to database');
       
       // Delete old slug index if it exists and is different
@@ -457,7 +463,6 @@ const Profile = () => {
       await set(slugIndexRef, {
         userId: user.uid,
         petId: currentPet.id,
-        petName: currentPet.name,
         isPrivate: petDataWithSlug.privacy.isPrivate
       });
       console.log('Slug index saved:', slug);
@@ -568,7 +573,7 @@ const Profile = () => {
       // Send notification if request is accepted
       if (status === "accepted") {
         const senderRef = ref(database, `users/${request.senderId}`);
-        const senderSnapshot = await get(senderRef);
+        const senderSnapshot = await readUserSnapshot(request.senderId);
         
         if (senderSnapshot.exists()) {
           const senderData = senderSnapshot.val();
@@ -610,7 +615,7 @@ const Profile = () => {
         try {
           // Fetch user profile and pets data in parallel
           const [userSnapshot, petsSnapshot] = await Promise.all([
-            get(ref(database, `users/${user.uid}`)),
+            readUserSnapshot(user.uid),
             get(ref(database, `userPets/${user.uid}`))
           ]);
 

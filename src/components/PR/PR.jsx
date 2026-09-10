@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { auth } from "../../firebase";
 import SplashScreen from "../Loaders/SplashScreen";
 
 const PR = ({ children }) => {
+  const location = useLocation();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -24,8 +25,8 @@ const PR = ({ children }) => {
     );
   }
 
-  if (!user) {
-    return <Navigate to="/" />;
+  if (!user || (!user.emailVerified && user.providerData.some(provider => provider.providerId === 'password'))) {
+    return <Navigate to={`/login?next=${encodeURIComponent(location.pathname + location.search)}`} replace />;
   }
 
   return children;

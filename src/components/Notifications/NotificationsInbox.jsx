@@ -224,6 +224,7 @@ export default function NotificationsInbox() {
         </button>
         <div className="flex-1 min-w-0">
           <h1 className="text-lg font-extrabold text-slate-800">Notifications</h1>
+          <button onClick={() => navigate("/settings")} className="text-xs font-semibold text-violet-700 py-1">Reminders & preferences</button>
           <p className="text-xs text-gray-400 truncate">{unreadCount} unread across personal and Pawppy updates</p>
         </div>
         <button

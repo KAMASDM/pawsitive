@@ -120,6 +120,7 @@ const PetDialog = ({
   const handleTabChange = onTabChange;
 
   const [isSaving, setIsSaving] = useState(false);
+  const [locationStatus, setLocationStatus] = useState('');
   const [isDeletingVaccination, setIsDeletingVaccination] = useState(false);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [vaccinationToDelete, setVaccinationToDelete] = useState(null);
@@ -1235,6 +1236,19 @@ const PetDialog = ({
                     <p className="text-sm text-gray-600 mb-4">
                       Control how {currentPet?.name || 'your pet'}'s profile is shared and who can interact with it.
                     </p>
+                    <div className="bg-white rounded-xl p-4 mb-4 border border-violet-100">
+                      <label className="flex items-center gap-3 text-sm font-semibold"><input type="checkbox" checked={currentPet?.privacy?.shareLocation === true} onChange={event => setPet({ ...currentPet, privacy: { ...currentPet?.privacy, shareLocation: event.target.checked } })} />Share an approximate area on my public profile</label>
+                      <p className="text-xs text-slate-600 mt-2">Optional. Location is rounded to two decimal places for approximate discovery. It is visible only while your profile is public. Save the pet to apply your changes.</p>
+                      {currentPet?.privacy?.shareLocation && <button type="button" className="mt-3 text-sm font-semibold text-violet-700 underline" onClick={() => {
+                        if (!navigator.geolocation) { setLocationStatus('Location is not available in this browser.'); return; }
+                        setLocationStatus('Finding your approximate area…');
+                        navigator.geolocation.getCurrentPosition(position => {
+                          setPet(previous => ({ ...previous, location: { latitude: Math.round(position.coords.latitude * 100) / 100, longitude: Math.round(position.coords.longitude * 100) / 100 } }));
+                          setLocationStatus('Approximate area added to this draft. Save the pet to share it.');
+                        }, () => setLocationStatus('Location was not available. You can continue without sharing an area.'), { enableHighAccuracy: false, timeout: 10000 });
+                      }}>Use my current area</button>}
+                      <p role="status" className="text-xs text-slate-600 mt-2">{locationStatus}</p>
+                    </div>
 
                     {/* Profile Visibility */}
                     <div className="bg-white rounded-lg p-4 mb-4">

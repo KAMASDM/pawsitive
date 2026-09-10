@@ -1,28 +1,22 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiAward, FiShoppingBag, FiUser } from "react-icons/fi";
+import { FiSun, FiHeart, FiCompass, FiPlus, FiUsers } from "react-icons/fi";
 import { FaPaw } from "react-icons/fa";
 import { HiOutlineLightBulb } from "react-icons/hi";
 
 const MENUS = [
-  { id: "challenge", label: "Challenges", Icon: FiAward,            path: "/challenge"              },
-  { id: "shop",      label: "Shop",       Icon: FiShoppingBag,      path: "/shop"                   },
-  { id: "home",      label: "Home",       Icon: FaPaw,              path: "/my-pets?picker=true", featured: true },
-  { id: "quiz",      label: "Quiz",       Icon: HiOutlineLightBulb, path: "/quiz"                   },
-  { id: "profile",   label: "Profile",    Icon: FiUser,             path: "/profile"                },
+  { id: "today", label: "Today", Icon: FiSun, path: "/today" },
+  { id: "care", label: "Care", Icon: FiHeart, path: "/care" },
+  { id: "add", label: "Add", Icon: FiPlus, path: "/today?add=1", featured: true },
+  { id: "discover", label: "Discover", Icon: FiCompass, path: "/discover" },
+  { id: "profile", label: "Family", Icon: FiUsers, path: "/family" },
 ];
-
 const matchId = (pathname) => {
-  if (pathname.startsWith("/challenge"))   return "challenge";
-  if (
-    pathname.startsWith("/shop") || pathname.startsWith("/store") ||
-    pathname.startsWith("/products") || pathname.startsWith("/cart") ||
-    pathname.startsWith("/checkout") || pathname.startsWith("/orders")
-  ) return "shop";
-  if (pathname === "/my-pets" || pathname.startsWith("/my-pets/")) return "home";
-  if (pathname.startsWith("/quiz"))        return "quiz";
-  if (pathname === "/profile")             return "profile";
+  if (pathname === '/today') return 'today';
+  if (/^\/(care|my-pets|pet-details)/.test(pathname)) return 'care';
+  if (pathname === '/family') return 'profile';
+  if (/^\/(discover|shop|quiz|challenge|resource|adopt|nearby|lost|place)/.test(pathname)) return 'discover';
   return null;
 };
 
@@ -31,7 +25,7 @@ const FORM_TAGS = new Set(["INPUT", "TEXTAREA", "SELECT"]);
 
 const BottomNavigation = () => {
   const location  = useLocation();
-  const activeId  = matchId(location.pathname);
+  const activeId  = location.search === '?add=1' ? 'add' : matchId(location.pathname);
   const [visible, setVisible] = useState(true);
   const lastY     = useRef(0);
   const formFocus = useRef(false);

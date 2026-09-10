@@ -1,3 +1,4 @@
+import { readPetSnapshot, readUserSnapshot, subscribeMyConversations } from "../../../services/profileData";
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ref, onValue, get } from "firebase/database";
@@ -62,7 +63,7 @@ const ConversationsList = ({ onOpenConversation }) => {
 
           // Prepare all database references
           const userRef = ref(database, `users/${otherParticipantId}`);
-          const fetchPromises = [get(userRef)];
+          const fetchPromises = [readUserSnapshot(otherParticipantId)];
 
           // If there's a mating request, prepare those refs too
           let sentRequestRef = null;
@@ -95,8 +96,8 @@ const ConversationsList = ({ onOpenConversation }) => {
               
               // Fetch both pets in parallel
               const [userPetSnapshot, otherPetSnapshot] = await Promise.all([
-                get(ref(database, `userPets/${user.uid}/${request.senderPetId}`)),
-                get(ref(database, `userPets/${otherParticipantId}/${request.receiverPetId}`))
+                readPetSnapshot(user.uid, request.senderPetId),
+                readPetSnapshot(otherParticipantId, request.receiverPetId)
               ]);
 
               senderPet = userPetSnapshot.exists()
@@ -112,8 +113,8 @@ const ConversationsList = ({ onOpenConversation }) => {
               
               // Fetch both pets in parallel
               const [userPetSnapshot, otherPetSnapshot] = await Promise.all([
-                get(ref(database, `userPets/${user.uid}/${request.receiverPetId}`)),
-                get(ref(database, `userPets/${otherParticipantId}/${request.senderPetId}`))
+                readPetSnapshot(user.uid, request.receiverPetId),
+                readPetSnapshot(otherParticipantId, request.senderPetId)
               ]);
 
               receiverPet = userPetSnapshot.exists()
@@ -157,7 +158,7 @@ const ConversationsList = ({ onOpenConversation }) => {
 
     console.log("ConversationsList: About to set up onValue listener");
     
-    const unsubscribe = onValue(conversationsRef, handleConversationsSnapshot, (error) => {
+    const unsubscribe = subscribeMyConversations(handleConversationsSnapshot, (error) => {
       console.error("ConversationsList: Firebase listener error:", error);
       setLoading(false);
     });

@@ -1,3 +1,4 @@
+import { readPetDirectorySnapshot, readUserSnapshot } from "../../services/profileData";
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -33,6 +34,7 @@ const NearbyMates = () => {
   const [userPets, setUserPets] = useState([]);
   const [selectedUserPet, setSelectedUserPet] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
+  const [browseWithoutLocation, setBrowseWithoutLocation] = useState(false);
   const [locationError, setLocationError] = useState(null);
   const [activeCategory, setActiveCategory] = useState("all");
   const [maxDistance, setMaxDistance] = useState(10);
@@ -122,12 +124,11 @@ const NearbyMates = () => {
   useEffect(() => {
     const fetchAvailablePets = async () => {
       setPetsLoading(true);
-      if (!userLocation || !selectedUserPet) {
+      if (!selectedUserPet) {
         return;
       }
       try {
-        const userPetsRef = ref(database, "userPets");
-        const snapshot = await get(userPetsRef);
+        const snapshot = await readPetDirectorySnapshot();
 
         if (snapshot.exists()) {
           const allPets = [];
@@ -145,18 +146,14 @@ const NearbyMates = () => {
               if (!pet || !pet.availableForMating) return;
               
               console.log('[NearbyMates] Found available pet:', pet.name);
-              const petLocation = {
-                latitude: userLocation.latitude + (Math.random() - 0.5) * 0.1,
-                longitude:
-                  userLocation.longitude + (Math.random() - 0.5) * 0.1,
-              };
+              const petLocation = pet.location && Number.isFinite(pet.location.latitude) && Number.isFinite(pet.location.longitude) ? pet.location : null;
 
-              const distance = calculateDistance(
+              const distance = petLocation && userLocation ? calculateDistance(
                 userLocation.latitude,
                 userLocation.longitude,
                 petLocation.latitude,
                 petLocation.longitude
-              );
+              ) : null;
 
               const ownerData = {
                 id: userId,
@@ -167,13 +164,13 @@ const NearbyMates = () => {
                 ...pet,
                 id: petId,
                 userId: userId,
-                distance: distance.toFixed(1),
+                distance: distance === null ? null : distance.toFixed(1),
                 location: petLocation,
                 owner: ownerData,
               });
             });
           });
-          allPets.sort((a, b) => a.distance - b.distance);
+          allPets.sort((a, b) => (a.distance === null ? Infinity : Number(a.distance)) - (b.distance === null ? Infinity : Number(b.distance)));
           console.log('[NearbyMates] Found', allPets.length, 'pets available for mating');
           setAvailablePets(allPets);
         } else {
@@ -187,7 +184,7 @@ const NearbyMates = () => {
       }
     };
 
-    if (userLocation && selectedUserPet) {
+    if (selectedUserPet) {
       fetchAvailablePets();
     }
   }, [userLocation, selectedUserPet?.id, user?.uid]); // Only refetch when these specific values change
@@ -281,7 +278,7 @@ const NearbyMates = () => {
       
       // Get receiver's data and send notification
       const receiverRef = ref(database, `users/${selectedPet.userId}`);
-      const receiverSnapshot = await get(receiverRef);
+      const receiverSnapshot = await readUserSnapshot(selectedPet.userId);
       
       if (receiverSnapshot.exists()) {
         const receiverData = receiverSnapshot.val();
@@ -323,7 +320,7 @@ const NearbyMates = () => {
     );
   }
 
-  if (showLocationPrompt) {
+  if (showLocationPrompt && !browseWithoutLocation) {
     return (
       <div className="min-h-screen bg-lavender-50 p-4 sm:p-8">
         <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-lg p-6 sm:p-8">
@@ -332,19 +329,18 @@ const NearbyMates = () => {
               <FiMapPin className="h-12 w-12 text-red-500" />
             </div>
             <h2 className="text-2xl font-bold text-lavender-900 mb-2">
-              Location Access Required
+              Explore with or without location
             </h2>
             <p className="text-gray-600 mb-6">
-              We need access to your location to find pets near you. Please
-              enable location services in your browser and try again.
+              Location helps estimate distances. You can also browse profiles without it.
             </p>
             <p className="text-sm text-gray-500 mb-8">Error: {locationError}</p>
             <div className="flex flex-col sm:flex-row gap-3">
               <button
-                onClick={() => navigate(-1)}
+                onClick={() => setBrowseWithoutLocation(true)}
                 className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-full transition-colors duration-300"
               >
-                Go Back
+                Browse without distances
               </button>
               <button
                 onClick={() => window.location.reload()}
@@ -376,10 +372,10 @@ const NearbyMates = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
               <button
-                onClick={() => navigate(-1)}
+                onClick={() => setBrowseWithoutLocation(true)}
                 className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-full transition-colors duration-300"
               >
-                Go Back
+                Browse without distances
               </button>
               <button
                 onClick={() => navigate('/profile')}
@@ -403,7 +399,7 @@ const NearbyMates = () => {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center">
                   <button
-                    onClick={() => navigate(-1)}
+                    onClick={() => setBrowseWithoutLocation(true)}
                     className="mr-3 p-2 hover:bg-lavender-100 rounded-full transition-colors text-lavender-700 hover:text-lavender-900"
                   >
                     <FiArrowLeft className="w-5 h-5" />

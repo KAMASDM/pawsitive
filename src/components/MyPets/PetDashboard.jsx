@@ -1,3 +1,4 @@
+import { readPetSnapshot, readUserSnapshot } from "../../services/profileData";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
@@ -677,7 +678,7 @@ export default function PetDashboard() {
     if (!user || !petId) return;
     const fetchData = async () => {
       try {
-        const snap = await get(ref(database, `userPets/${user.uid}/${petId}`));
+        const snap = await readPetSnapshot(user.uid, petId);
         if (snap.exists()) {
           const petData = { id: petId, ...snap.val() };
           setPet(petData);
@@ -738,8 +739,8 @@ export default function PetDashboard() {
               const otherId = direction === "incoming" ? req.senderId : req.receiverId;
               const otherPetId = direction === "incoming" ? req.senderPetId : req.receiverPetId;
               const [userSnap, petSnap] = await Promise.all([
-                get(ref(database, `users/${otherId}`)),
-                get(ref(database, `userPets/${otherId}/${otherPetId}`)),
+                readUserSnapshot(otherId),
+                readPetSnapshot(otherId, otherPetId),
               ]);
               const ud = userSnap.exists() ? userSnap.val() : {};
               const pd = petSnap.exists() ? petSnap.val() : {};
@@ -784,7 +785,7 @@ export default function PetDashboard() {
           prev.map((r) => (r.id === request.id ? { ...r, status } : r))
         );
         if (status === "accepted") {
-          const senderSnap = await get(ref(database, `users/${request.senderId}`));
+          const senderSnap = await readUserSnapshot(request.senderId);
           if (senderSnap.exists()) {
             sendMatingRequestAcceptedNotification(
               senderSnap.val(),

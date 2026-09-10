@@ -1,3 +1,4 @@
+import { interactWithPost } from "../../services/profileData";
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiHeart, FiMessageCircle, FiX, FiSend, FiMoreVertical, FiTrash2, FiShare2 } from 'react-icons/fi';
@@ -57,27 +58,12 @@ const PostCard = ({ post, pet, owner, isOwner, currentUser, isModal, onClose }) 
       return;
     }
 
-    const postRef = ref(database, `petPosts/${pet.id}/${post.id}/likes`);
-    const snapshot = await get(postRef);
-    const currentLikes = snapshot.val() || [];
+    try {
+      const updated = await interactWithPost(pet, post.id, 'like', { liked: !isLiked });
+      setIsLiked(updated.likes.includes(currentUser.uid));
+      setLikesCount(updated.likes.length);
+    } catch (error) { alert(error.message || 'Could not update your like.'); }
 
-    if (isLiked) {
-      // Unlike
-      const updatedLikes = currentLikes.filter(uid => uid !== currentUser.uid);
-      await update(ref(database, `petPosts/${pet.id}/${post.id}`), {
-        likes: updatedLikes
-      });
-      setIsLiked(false);
-      setLikesCount(updatedLikes.length);
-    } else {
-      // Like
-      const updatedLikes = [...currentLikes, currentUser.uid];
-      await update(ref(database, `petPosts/${pet.id}/${post.id}`), {
-        likes: updatedLikes
-      });
-      setIsLiked(true);
-      setLikesCount(updatedLikes.length);
-    }
   };
 
   const handleComment = async () => {
@@ -94,19 +80,13 @@ const PostCard = ({ post, pet, owner, isOwner, currentUser, isModal, onClose }) 
       return;
     }
 
-    const commentData = {
-      userId: currentUser.uid,
-      userName: currentUser.name || 'Anonymous',
-      userEmail: currentUser.email,
-      text: newComment.trim(),
-      timestamp: Date.now()
-    };
+    try {
+      const updated = await interactWithPost(pet, post.id, 'comment', { text: newComment });
+      setComments(Object.entries(updated.comments || {}).map(([id, comment]) => ({ id, ...comment })));
+      setNewComment('');
+      setShowComments(true);
+    } catch (error) { alert(error.message || 'Could not add your comment.'); }
 
-    const commentsRef = ref(database, `petPosts/${pet.id}/${post.id}/comments`);
-    await push(commentsRef, commentData);
-
-    setNewComment('');
-    setShowComments(true);
   };
 
   const handleDeleteComment = async (commentId) => {
@@ -119,8 +99,10 @@ const PostCard = ({ post, pet, owner, isOwner, currentUser, isModal, onClose }) 
     }
 
     if (window.confirm('Delete this comment?')) {
-      const commentRef = ref(database, `petPosts/${pet.id}/${post.id}/comments/${commentId}`);
-      await remove(commentRef);
+      try {
+        await interactWithPost(pet, post.id, 'deleteComment', { commentId });
+        setComments((current) => current.filter((item) => item.id !== commentId));
+      } catch (error) { alert(error.message || 'Could not remove this comment.'); }
     }
   };
 

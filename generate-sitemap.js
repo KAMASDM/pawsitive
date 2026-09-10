@@ -16,7 +16,7 @@ async function generateSitemap() {
 
     const staticLinks = [
       // Highest priority
-      { url: "/dashboard", changefreq: "daily", priority: 1.0 },
+      { url: "/", changefreq: "daily", priority: 1.0 },
 
       // High priority
       { url: "/about-us", changefreq: "daily", priority: 0.8 },

@@ -1,3 +1,4 @@
+import { auth } from "../../firebase";
 import React from "react";
 import { FiActivity, FiBell, FiCheck, FiPlus, FiShare2 } from "react-icons/fi";
 
@@ -5,7 +6,7 @@ export default function OnboardingChecklist({ pets = [], onAddPet, onAddHealthRe
   const hasPet = pets.length > 0;
   const hasHealthRecord = pets.some((pet) => (pet.vaccinations || []).length > 0);
   const hasSharedProfile = pets.some((pet) => Boolean(pet.slug));
-  const notificationsEnabled = typeof Notification !== "undefined" && Notification.permission === "granted";
+  const notificationsEnabled = typeof Notification !== "undefined" && Notification.permission === "granted" && Boolean(auth.currentUser && localStorage.getItem(`pawppy_push_enabled_${auth.currentUser.uid}`));
 
   const items = [
     {

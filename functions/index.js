@@ -1,5 +1,7 @@
 const functions = require('firebase-functions/v1');
 const admin = require('firebase-admin');
+const { buildHealthReminders, buildWeeklyDigest, buildRoutineBriefing, channelEnabled, isQuietTime, timeZoneFor, localClock, dateOnly, daysBetween, hashKey, escapeHtml } = require('./domain/careReminders');
+const { deliverOnce } = require('./domain/delivery');
 
 admin.initializeApp();
 
@@ -82,47 +84,53 @@ async function writeBroadcastNotification(id, { type, title, body, data = {} }) 
   });
 }
 
-/** Push + in-app inbox + badge counter in one call. Cleans stale FCM tokens. */
-async function notifyUser(userId, { type, title, body, data = {} }) {
+/** In-app persistence plus preference-aware push. Acceptance is not delivery. */
+async function notifyUser(userId, { type, title, body, data = {}, deliveryKey }) {
   if (!userId) return;
   const db = admin.database();
-  const clickAction = data.click_action || '/';
+  const user = (await db.ref(`users/${userId}`).once('value')).val() || {};
+  const key = deliveryKey || db.ref(`notifications/${userId}`).push().key;
+  const inboxRef = db.ref(`notifications/${userId}/${key}`);
+  const inserted = await inboxRef.transaction((current) => current ? undefined : {
+    id: key, type, title, body, data, timestamp: Date.now(), read: false,
+  });
+  // Increment the legacy badge counter only when this inbox item is first created.
+  if (inserted.committed) {
+    await db.ref(`users/${userId}/unreadNotifications`).transaction((n) => (n || 0) + 1);
+  }
+  if (['message', 'mating_request', 'mating_accepted', 'mating_declined', 'adoption_inquiry'].includes(type)) {
+    await sendScheduledEmail(userId, user, { id: key, type, title, body, data: { click_action: '/notifications', ...data } });
+  }
+  if (!channelEnabled(user, 'push', type) || isQuietTime(user, new Date())) return;
 
-  await Promise.all([
-    writeUserNotification(userId, { type, title, body, data }),
-    db.ref(`users/${userId}/unreadNotifications`).transaction((n) => (n || 0) + 1),
-  ]);
+  const devices = (await db.ref(`notificationDevices/${userId}`).once('value')).val() || {};
+  const tokens = [...new Set(Object.values(devices).map((device) => device?.token).filter(Boolean))];
+  // Legacy tokens are used only until this account has registered its devices.
+  if (!tokens.length && user.fcmToken) tokens.push(user.fcmToken);
+  const link = new URL(data.click_action || '/', BASE_URL);
+  if (link.origin !== BASE_URL) throw new Error('Notification link must stay within Pawppy');
+  link.searchParams.set('notificationSource', 'push');
+  const stringData = Object.fromEntries(Object.entries({ ...data, type, notificationId: key, click_action: link.pathname + link.search }).map(([k, v]) => [k, String(v)]));
 
-  const tokenSnap = await db.ref(`users/${userId}/fcmToken`).once('value');
-  const fcmToken = tokenSnap.val();
-  if (!fcmToken) return;
-
-  try {
-    const stringData = Object.fromEntries(
-      Object.entries({ type, click_action: clickAction, ...data }).map(([k, v]) => [k, String(v)])
-    );
-    await admin.messaging().send({
-      token: fcmToken,
-      notification: { title, body },
-      data: stringData,
-      webpush: {
-        notification: {
-          icon: `${BASE_URL}/favicon.png`,
-          badge: `${BASE_URL}/favicon.png`,
-          vibrate: [200, 100, 200],
-          requireInteraction: false,
-        },
-        fcm_options: { link: `${BASE_URL}${clickAction}` },
-      },
-      android: {
-        notification: { icon: 'ic_notification', color: '#7c3aed', clickAction: `${BASE_URL}${clickAction}` },
-      },
+  for (const token of tokens) {
+    await deliverOnce(db, `notificationDeliveries/${userId}/${key}/push_${hashKey(token)}`, async () => {
+      try {
+        await admin.messaging().send({
+          token, notification: { title, body }, data: stringData,
+          webpush: { headers: { TTL: '3600' }, notification: { icon: `${BASE_URL}/favicon.png`, badge: `${BASE_URL}/favicon.png`, tag: key }, fcm_options: { link: link.href } },
+        });
+        return { success: true };
+      } catch (error) {
+        if (['messaging/registration-token-not-registered', 'messaging/invalid-registration-token'].includes(error.code)) {
+          for (const [deviceId, device] of Object.entries(devices)) {
+            if (device.token === token) await db.ref(`notificationDevices/${userId}/${deviceId}`).remove();
+          }
+          if (user.fcmToken === token) await db.ref(`users/${userId}/fcmToken`).remove();
+          return { skipped: true };
+        }
+        throw error;
+      }
     });
-  } catch (err) {
-    if (err.code === 'messaging/registration-token-not-registered') {
-      await db.ref(`users/${userId}/fcmToken`).remove();
-    }
-    console.warn(`[notifyUser] Push failed for ${userId}:`, err.code || err.message);
   }
 }
 
@@ -136,12 +144,12 @@ function haversineKm(lat1, lon1, lat2, lon2) {
 }
 
 async function getUsersNearby(lat, lon, radiusKm, excludeUserId) {
-  const snap = await admin.database().ref('users').once('value');
+  const snap = await admin.database().ref('userPets').once('value');
   const users = snap.val() || {};
   const nearby = [];
   for (const [uid, userData] of Object.entries(users)) {
     if (uid === excludeUserId) continue;
-    for (const petData of Object.values(userData.pets || {})) {
+    for (const petData of Object.values(userData || {})) {
       const loc = petData.location;
       if (loc?.latitude && loc?.longitude) {
         const dist = haversineKm(lat, lon, loc.latitude, loc.longitude);
@@ -390,7 +398,7 @@ exports.onAdoptionConversationCreated = functions.database
 
       if (petId) {
         for (const uid of participants) {
-          const petSnap = await admin.database().ref(`users/${uid}/pets/${petId}`).once('value');
+          const petSnap = await admin.database().ref(`userPets/${uid}/${petId}`).once('value');
           if (petSnap.exists()) { ownerId = uid; break; }
         }
       }
@@ -398,7 +406,7 @@ exports.onAdoptionConversationCreated = functions.database
       inquirerId = participants.find((id) => id !== ownerId);
 
       const [petSnap, inquirerSnap] = await Promise.all([
-        petId ? admin.database().ref(`users/${ownerId}/pets/${petId}`).once('value') : Promise.resolve(null),
+        petId ? admin.database().ref(`userPets/${ownerId}/${petId}`).once('value') : Promise.resolve(null),
         admin.database().ref(`users/${inquirerId}`).once('value'),
       ]);
 
@@ -531,13 +539,49 @@ exports.clearUnreadNotifications = functions.https.onCall(async (data, context) 
 });
 
 exports.subscribeToNotifications = functions.https.onCall(async (data, context) => {
-  if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Must be authenticated');
-  const { token } = data;
-  if (!token) throw new functions.https.HttpsError('invalid-argument', 'Missing FCM token');
-  await Promise.all([
-    admin.messaging().subscribeToTopic([token], 'new-challenges'),
-    admin.messaging().subscribeToTopic([token], 'new-quizzes'),
-  ]);
+  assertAuthed(context);
+  const { token, deviceId } = data || {};
+  if (typeof token !== 'string' || token.length < 20 || token.length > 4096 || !/^[a-zA-Z0-9_-]{8,100}$/.test(deviceId || '')) {
+    throw new functions.https.HttpsError('invalid-argument', 'A valid token and device ID are required.');
+  }
+  const db = admin.database();
+  const uid = context.auth.uid;
+  const user = (await db.ref(`users/${uid}`).once('value')).val() || {};
+  // Transfer this installation on account switch without exposing its old owner.
+  const deviceRef = db.ref(`notificationInstallations/${deviceId}`);
+  const previous = (await deviceRef.once('value')).val();
+  if (previous?.uid && previous.uid !== uid) {
+    await db.ref(`notificationDevices/${previous.uid}/${deviceId}`).remove();
+    const legacy = (await db.ref(`users/${previous.uid}/fcmToken`).once('value')).val();
+    if (legacy === previous.token) await db.ref(`users/${previous.uid}/fcmToken`).remove();
+  }
+  await db.ref().update({
+    [`notificationDevices/${uid}/${deviceId}`]: { token, updatedAt: Date.now() },
+    [`notificationInstallations/${deviceId}`]: { uid, token },
+    [`users/${uid}/fcmToken`]: null,
+  });
+  if (user.fcmToken && user.fcmToken !== token) {
+    await Promise.all(['new-challenges', 'new-quizzes'].map((topic) => admin.messaging().unsubscribeFromTopic([user.fcmToken], topic)));
+  }
+  for (const [topic, category] of [['new-challenges', 'challenges'], ['new-quizzes', 'quizzes']]) {
+    // Broadcasts require an explicit opt-in; they are not care reminders.
+    const optedIn = user.notificationPreferences?.push?.enabled !== false && user.notificationPreferences?.push?.[category] === true;
+    await admin.messaging()[optedIn ? 'subscribeToTopic' : 'unsubscribeFromTopic']([token], topic);
+  }
+  return { success: true };
+});
+
+exports.unregisterNotificationDevice = functions.https.onCall(async (data, context) => {
+  assertAuthed(context);
+  const deviceId = data?.deviceId;
+  if (!/^[a-zA-Z0-9_-]{8,100}$/.test(deviceId || '')) throw new functions.https.HttpsError('invalid-argument', 'Invalid device ID');
+  const db = admin.database();
+  const snapshot = await db.ref(`notificationDevices/${context.auth.uid}/${deviceId}`).once('value');
+  const token = snapshot.val()?.token;
+  if (token) await Promise.all(['new-challenges', 'new-quizzes'].map((topic) => admin.messaging().unsubscribeFromTopic([token], topic)));
+  await db.ref(`notificationDevices/${context.auth.uid}/${deviceId}`).remove();
+  const owner = (await db.ref(`notificationInstallations/${deviceId}`).once('value')).val();
+  if (owner?.uid === context.auth.uid) await db.ref(`notificationInstallations/${deviceId}`).remove();
   return { success: true };
 });
 
@@ -790,166 +834,92 @@ async function sendEmail(to_email, to_name, subject, html) {
   }
 }
 
+async function sendScheduledEmail(userId, user, reminder) {
+  if (!user.email || !channelEnabled(user, 'email', reminder.type)) return;
+  await deliverOnce(admin.database(), `notificationDeliveries/${userId}/${reminder.id}/email`, () => sendEmail(
+    user.email, user.displayName || 'Pet Parent', reminder.title,
+    `<div style="${ES.container}"><div style="${ES.content}"><h2>${escapeHtml(reminder.title)}</h2><p>${escapeHtml(reminder.body)}</p><a href="${BASE_URL}${escapeHtml(reminder.data.click_action)}?notificationSource=email" style="${ES.button}">Review in Pawppy</a></div></div>`
+  ));
+}
+
+// Hourly checks allow each household to receive its daily reminder after 09:00
+// in its own time zone, outside quiet hours. Delivery keys make retries safe.
 exports.dailyHealthNotifications = functions
   .runWith({ memory: '512MB', timeoutSeconds: 540 })
-  .pubsub.schedule('30 3 * * *')
-  .timeZone('UTC')
+  .pubsub.schedule('0 * * * *').timeZone('UTC')
   .onRun(async () => {
     const db = admin.database();
-    const usersSnap = await db.ref('users').once('value');
-    if (!usersSnap.exists()) return null;
-
-    const users = usersSnap.val();
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    const d1 = new Date(today); d1.setDate(d1.getDate() + 1);
-    const d3 = new Date(today); d3.setDate(d3.getDate() + 3);
-    const d7 = new Date(today); d7.setDate(d7.getDate() + 7);
-    const sameDay = (a, b) => a.toISOString().slice(0, 10) === b.toISOString().slice(0, 10);
-
-    let sent = 0;
-
-    for (const [userId, userData] of Object.entries(users)) {
-      if (!userData.pets) continue;
-
-      for (const [petId, petData] of Object.entries(userData.pets)) {
-        const petName = petData.name || 'your pet';
-
-        // Vaccinations
-        for (const vac of Object.values(petData.vaccinations || {})) {
-          if (!vac.nextDue) continue;
-          const due = new Date(vac.nextDue);
-          const dueStr = fmtDate(due);
-
-          if (sameDay(due, d7)) {
-            const { title, body } = T.vacc_7d({ petName, vaccineName: vac.name, dueDate: dueStr });
-            await notifyUser(userId, { type: 'vacc_7d', title, body, data: { petId, click_action: '/profile?tab=pets' } });
-            if (userData.email) {
-              await sendEmail(userData.email, userData.displayName || 'Pet Parent',
-                `💉 Vaccination Reminder: ${vac.name} due for ${petName}`,
-                `<div style="${ES.container}"><div style="${ES.header}"><h1 style="margin:0">💉 Vaccination Reminder</h1></div><div style="${ES.content}"><h2 style="color:#7c3aed">Hi ${userData.displayName || 'there'}! 👋</h2><p><strong>${petName}</strong>'s ${vac.name} is due on ${dueStr}.</p><div style="${ES.petInfo}"><strong>Pet:</strong> ${petName} (${petData.breed || 'Mixed'})</div><div style="${ES.highlight}"><strong>Due Date:</strong> ${dueStr}</div><div style="text-align:center"><a href="${BASE_URL}/profile?tab=pets" style="${ES.button}">View Pet Profile →</a></div></div><div style="${ES.footer}">Pawppy — Never miss important pet care dates</div></div>`);
-              sent++;
-            }
-          } else if (sameDay(due, d1)) {
-            const { title, body } = T.vacc_1d({ petName, vaccineName: vac.name, dueDate: dueStr });
-            await notifyUser(userId, { type: 'vacc_1d', title, body, data: { petId, click_action: '/profile?tab=pets' } });
-          } else if (due < today) {
-            const key = `vacc_overdue_${petId}_${(vac.name || '').replace(/\s/g, '_')}_${today.toISOString().slice(0, 10)}`;
-            const already = await db.ref(`notificationsSent/${userId}/${key}`).once('value');
-            if (!already.exists()) {
-              const { title, body } = T.vacc_overdue({ petName, vaccineName: vac.name, dueDate: dueStr });
-              await notifyUser(userId, { type: 'vacc_overdue', title, body, data: { petId, click_action: '/profile?tab=pets' } });
-              await db.ref(`notificationsSent/${userId}/${key}`).set({ sentAt: Date.now(), type: 'vacc_overdue', petId });
-            }
-          }
+    const now = new Date();
+    const [usersSnapshot, petsSnapshot] = await Promise.all([db.ref('users').once('value'), db.ref('userPets').once('value')]);
+    const users = usersSnapshot.val() || {};
+    let processed = 0;
+    for (const [userId, pets] of Object.entries(petsSnapshot.val() || {})) {
+      const user = users[userId];
+      if (!user || localClock(now, timeZoneFor(user)).time < '09:00' || isQuietTime(user, now)) continue;
+      try {
+        for (const reminder of buildHealthReminders(pets, user, now)) {
+          await notifyUser(userId, { ...reminder, deliveryKey: reminder.id });
+          await sendScheduledEmail(userId, user, reminder);
+          processed++;
         }
-
-        // Birthdays
-        if (petData.dateOfBirth) {
-          const birth = new Date(petData.dateOfBirth);
-          const bday = new Date(today.getFullYear(), birth.getMonth(), birth.getDate());
-          const age = today.getFullYear() - birth.getFullYear();
-
-          if (sameDay(bday, today)) {
-            const { title, body } = T.birthday_today({ petName, age });
-            await notifyUser(userId, { type: 'birthday_today', title, body, data: { petId, click_action: '/profile?tab=pets' } });
-          } else if (sameDay(bday, d1)) {
-            const { title, body } = T.birthday_tomorrow({ petName, age });
-            await notifyUser(userId, { type: 'birthday_tomorrow', title, body, data: { petId, click_action: '/profile?tab=pets' } });
-          } else if (sameDay(bday, d3)) {
-            const { title, body } = T.birthday_3d({ petName, age });
-            await notifyUser(userId, { type: 'birthday_3d', title, body, data: { petId, click_action: '/profile?tab=pets' } });
-            if (userData.email) {
-              await sendEmail(userData.email, userData.displayName || 'Pet Parent',
-                `🎂 Birthday Reminder: ${petName} turns ${age} in 3 days!`,
-                `<div style="${ES.container}"><div style="${ES.header}"><h1 style="margin:0">🎂 Birthday in 3 Days!</h1></div><div style="${ES.content}"><h2 style="color:#7c3aed">Hi ${userData.displayName || 'there'}! 👋</h2><div style="${ES.petInfo}"><strong>${petName}</strong> is turning ${age}! 🎉</div><p>Plan something special — extra treats, a new toy, or a birthday photoshoot!</p><div style="text-align:center"><a href="${BASE_URL}/profile?tab=pets" style="${ES.button}">View ${petName}'s Profile →</a></div></div><div style="${ES.footer}">Pawppy — Your pet's lifelong companion app</div></div>`);
-              sent++;
-            }
-          }
-        }
-
-        // Health checkup
-        const sixMonthsAgo = new Date(today); sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-        const lastCheckup = petData.lastCheckup ? new Date(petData.lastCheckup) : null;
-        if (!lastCheckup || lastCheckup < sixMonthsAgo) {
-          const key = `healthCheckup_${petId}_${today.toISOString().slice(0, 10)}`;
-          const already = await db.ref(`notificationsSent/${userId}/${key}`).once('value');
-          if (!already.exists()) {
-            const { title, body } = T.health_checkup({ petName });
-            await notifyUser(userId, { type: 'health_checkup', title, body, data: { petId, click_action: '/profile?tab=pets' } });
-            if (userData.email) {
-              await sendEmail(userData.email, userData.displayName || 'Pet Parent',
-                `🏥 Health Checkup Overdue for ${petName}`,
-                `<div style="${ES.container}"><div style="${ES.header}"><h1 style="margin:0">🏥 Vet Visit Overdue</h1></div><div style="${ES.content}"><h2 style="color:#7c3aed">Hi ${userData.displayName || 'there'}! 👋</h2><div style="${ES.highlight}"><strong>${petName}</strong> hasn't had a checkup in 6+ months. Regular visits catch problems early! 🐾</div><div style="text-align:center"><a href="${BASE_URL}/profile?tab=pets" style="${ES.button}">Update Health Records →</a></div></div><div style="${ES.footer}">Pawppy — Your pet's health companion</div></div>`);
-              sent++;
-            }
-            await db.ref(`notificationsSent/${userId}/${key}`).set({ sentAt: Date.now(), type: 'healthCheckup', petId });
-          }
-        }
+      } catch (error) {
+        console.warn('[dailyHealthNotifications] Account processing failed', error.code || 'unknown');
       }
     }
-
-    console.log(`[dailyHealthNotifications] Done. Emails sent: ${sent}`);
-    return { success: true, sent };
+    console.log('[dailyHealthNotifications] Reminder occurrences checked:', processed);
+    return { processed };
   });
 
-// ============================================================================
-// WEEKLY DIGEST — every Monday 09:00 IST
-// ============================================================================
+// One opt-in daily care briefing, checked every 15 minutes. Activity times on
+// Today are planning aids; this is a single reminder at the parent's chosen time.
+exports.dailyRoutineBriefing = functions
+  .runWith({ memory: '512MB', timeoutSeconds: 540 })
+  .pubsub.schedule('*/15 * * * *').timeZone('UTC')
+  .onRun(async () => {
+    const db = admin.database();
+    const now = new Date();
+    const users = (await db.ref('users').once('value')).val() || {};
+    for (const [userId, user] of Object.entries(users)) {
+      if (user.notificationPreferences?.push?.routines !== true && user.notificationPreferences?.email?.routines !== true) continue;
+      const { date } = localClock(now, timeZoneFor(user));
+      try {
+        const [routines, records, pets] = await Promise.all([db.ref(`careRoutines/${userId}`).once('value'), db.ref(`careDays/${userId}/${date}`).once('value'), db.ref(`userPets/${userId}`).once('value')]);
+        const reminder = buildRoutineBriefing(routines.val(), records.val(), pets.val(), user, now);
+        if (!reminder) continue;
+        // The new channel is explicitly opt-in, including for existing accounts.
+        await notifyUser(userId, { ...reminder, deliveryKey: reminder.id });
+        await sendScheduledEmail(userId, user, reminder);
+      } catch (error) { console.warn('[dailyRoutineBriefing] Account processing failed', error.code || 'unknown'); }
+    }
+    return null;
+  });
 
 exports.weeklyDigestNotifications = functions
   .runWith({ memory: '512MB', timeoutSeconds: 540 })
-  .pubsub.schedule('30 3 * * 1')
-  .timeZone('UTC')
+  .pubsub.schedule('15 * * * *').timeZone('UTC')
   .onRun(async () => {
     const db = admin.database();
-    const usersSnap = await db.ref('users').once('value');
-    if (!usersSnap.exists()) return null;
-
-    const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-    let sent = 0;
-
-    for (const [userId, userData] of Object.entries(usersSnap.val())) {
-      if (!userData.email) continue;
+    const now = new Date();
+    const [usersSnapshot, petsSnapshot] = await Promise.all([db.ref('users').once('value'), db.ref('userPets').once('value')]);
+    const users = usersSnapshot.val() || {};
+    for (const [userId, pets] of Object.entries(petsSnapshot.val() || {})) {
+      const user = users[userId];
+      if (!user) continue;
+      const { date: today, time } = localClock(now, timeZoneFor(user));
+      if (new Date(`${today}T00:00:00Z`).getUTCDay() !== 1 || time < '09:00' || isQuietTime(user, now)) continue;
+      const requests = (await db.ref(`matingRequests/received/${userId}`).once('value')).val();
+      const start = new Date(Date.parse(`${today}T00:00:00Z`) - 7 * 86400000).toISOString().slice(0, 10);
+      const careDays = (await db.ref(`careDays/${userId}`).orderByKey().startAt(start).endAt(today).once('value')).val();
+      const items = buildWeeklyDigest(pets, requests, user, now, careDays);
+      if (!items.length) continue;
+      const reminder = { id: hashKey(`digest|${today}`), type: 'weekly_digest', title: 'Your week in Pawppy', body: items.join(' '), data: { click_action: '/today' } };
       try {
-        const [reqSnap, petsSnap] = await Promise.all([
-          db.ref(`matingRequests/received/${userId}`).orderByChild('timestamp').startAt(oneWeekAgo).once('value'),
-          db.ref(`users/${userId}/pets`).once('value'),
-        ]);
-
-        const newRequests = reqSnap.exists() ? Object.keys(reqSnap.val() || {}).length : 0;
-
-        const reminders = [];
-        const today = new Date(); today.setHours(0, 0, 0, 0);
-        const in7d = new Date(today); in7d.setDate(in7d.getDate() + 7);
-
-        for (const petData of Object.values(petsSnap.val() || {})) {
-          for (const vac of Object.values(petData.vaccinations || {})) {
-            if (!vac.nextDue) continue;
-            const due = new Date(vac.nextDue);
-            if (due >= today && due <= in7d)
-              reminders.push(`💉 <strong>${petData.name}</strong> — ${vac.name} due ${fmtDate(due)}`);
-          }
-          if (petData.dateOfBirth) {
-            const birth = new Date(petData.dateOfBirth);
-            const bday = new Date(today.getFullYear(), birth.getMonth(), birth.getDate());
-            if (bday >= today && bday <= in7d)
-              reminders.push(`🎂 <strong>${petData.name}</strong> — Birthday on ${fmtDate(bday)}`);
-          }
-        }
-
-        if (newRequests === 0 && reminders.length === 0) continue;
-
-        const remindersHtml = reminders.map((r) => `<li style="margin:5px 0">${r}</li>`).join('');
-        await sendEmail(userData.email, userData.displayName || 'Pet Parent', '🐾 Your Weekly Pawppy Digest',
-          `<div style="${ES.container}"><div style="${ES.header}"><h1 style="margin:0">🐾 Weekly Digest</h1></div><div style="${ES.content}"><h2 style="color:#7c3aed">Hi ${userData.displayName || 'there'}! 👋</h2>${newRequests > 0 ? `<div style="${ES.petInfo}">💕 <strong>${newRequests} new mating request${newRequests > 1 ? 's' : ''}</strong> this week</div>` : ''}${remindersHtml ? `<div style="${ES.highlight}"><h3 style="margin-top:0;color:#7c3aed">📅 This Week's Reminders</h3><ul style="padding-left:20px">${remindersHtml}</ul></div>` : ''}<div style="text-align:center"><a href="${BASE_URL}" style="${ES.button}">Open Pawppy →</a></div></div><div style="${ES.footer}">Pawppy — India's #1 Pet Community App</div></div>`);
-        sent++;
-      } catch (err) {
-        console.warn(`[weeklyDigest] Failed for ${userId}:`, err.message);
-      }
+        await notifyUser(userId, { ...reminder, deliveryKey: reminder.id });
+        // Link construction handles the existing query string in this digest.
+        if (user.email && channelEnabled(user, 'email', reminder.type)) await deliverOnce(db, `notificationDeliveries/${userId}/${reminder.id}/email`, () => sendEmail(user.email, user.displayName || 'Pet Parent', reminder.title, `<p>${escapeHtml(reminder.body)}</p><a href="${BASE_URL}/today?notificationSource=email">Review your week</a>`));
+      } catch (error) { console.warn('[weeklyDigestNotifications] Account processing failed', error.code || 'unknown'); }
     }
-
-    console.log(`[weeklyDigestNotifications] Sent ${sent} digests`);
-    return { success: true, sent };
+    return null;
   });
 
 // ============================================================================
@@ -1626,8 +1596,8 @@ exports.checkAndNotify = functions
       ]);
 
       await Promise.all([
-        ...newChallenges.map((data) => messaging.send({ topic: 'new-challenges', notification: { title: '🏆 New Pawppy Challenge!', body: `${data.theme || 'New Challenge'}: "${data.prompt || 'Show us your pet!'}"` }, webpush: { notification: { icon: `${BASE_URL}/favicon.png`, badge: `${BASE_URL}/favicon.png` }, fcm_options: { link: `${BASE_URL}/challenge` } }, data: { type: 'new_challenge', challengeId: data.id, click_action: '/challenge' } }).catch((e) => console.warn('[checkAndNotify] challenge push:', e.message))),
-        ...newQuizzes.map((data) => messaging.send({ topic: 'new-quizzes', notification: { title: '🧠 New Weekly Quiz!', body: `${data.title || 'New Quiz'} — ${data.topic || 'Pet Knowledge'}` }, webpush: { notification: { icon: `${BASE_URL}/favicon.png`, badge: `${BASE_URL}/favicon.png` }, fcm_options: { link: `${BASE_URL}/quiz` } }, data: { type: 'new_quiz', quizId: data.id, click_action: '/quiz' } }).catch((e) => console.warn('[checkAndNotify] quiz push:', e.message))),
+        ...newChallenges.map((data) => messaging.send({ topic: 'new-challenges', notification: { title: '🏆 New Pawppy Challenge!', body: `${data.theme || 'New Challenge'}: "${data.prompt || 'Show us your pet!'}"` }, webpush: { headers: { TTL: '3600' }, notification: { icon: `${BASE_URL}/favicon.png`, badge: `${BASE_URL}/favicon.png` }, fcm_options: { link: `${BASE_URL}/challenge` } }, data: { type: 'new_challenge', challengeId: data.id, click_action: '/challenge' } }).catch((e) => console.warn('[checkAndNotify] challenge push:', e.message))),
+        ...newQuizzes.map((data) => messaging.send({ topic: 'new-quizzes', notification: { title: '🧠 New Weekly Quiz!', body: `${data.title || 'New Quiz'} — ${data.topic || 'Pet Knowledge'}` }, webpush: { headers: { TTL: '3600' }, notification: { icon: `${BASE_URL}/favicon.png`, badge: `${BASE_URL}/favicon.png` }, fcm_options: { link: `${BASE_URL}/quiz` } }, data: { type: 'new_quiz', quizId: data.id, click_action: '/quiz' } }).catch((e) => console.warn('[checkAndNotify] quiz push:', e.message))),
       ]);
 
       console.log(`[checkAndNotify] Activated ${newChallenges.length} challenge(s), ${newQuizzes.length} quiz(zes)`);
@@ -1635,3 +1605,22 @@ exports.checkAndNotify = functions
       console.error('[checkAndNotify]', err);
     }
   });
+
+// Raw first-party activity expires after 90 days; reports contain aggregate counts.
+exports.pruneProductEvents = functions.runWith({ memory: '256MB', timeoutSeconds: 540 })
+  .pubsub.schedule('0 2 * * *').timeZone('UTC').onRun(async () => {
+    const db = admin.database();
+    const accounts = (await db.ref('productEvents').once('value')).val() || {};
+    const cutoff = Date.now() - 90 * 86400000;
+    for (const [uid, events] of Object.entries(accounts)) {
+      const stale = Object.entries(events || {}).filter(([, event]) => typeof event?.timestamp === 'number' && event.timestamp < cutoff);
+      for (let i = 0; i < stale.length; i += 500) {
+        await db.ref(`productEvents/${uid}`).update(Object.fromEntries(stale.slice(i, i + 500).map(([id]) => [id, null])));
+      }
+    }
+    return null;
+  });
+
+Object.assign(exports, require("./publicApi")({ functions, admin }));
+
+Object.assign(exports, require("./familyApi")({ functions, admin }));

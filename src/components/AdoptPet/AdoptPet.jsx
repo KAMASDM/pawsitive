@@ -1,3 +1,4 @@
+import { readPetDirectorySnapshot } from "../../services/profileData";
 import React, { useState, useEffect } from "react";
 import { ref, get, set, query, orderByChild, equalTo } from "firebase/database";
 import { database, auth } from "../../firebase";
@@ -74,7 +75,7 @@ const PetDetailPopup = ({ pet, onClose, onMessageOwner }) => {
                 </div>
                 <div className="flex items-center">
                   <FiMapPin className="mr-2 text-lavender-600" />
-                  <span>{pet.distance} km away</span>
+                  <span>{pet.distance == null ? 'Distance unavailable' : `About ${pet.distance} km away`}</span>
                 </div>
               </div>
 
@@ -161,6 +162,7 @@ const AdoptPet = () => {
   const [filteredPets, setFilteredPets] = useState([]);
    const [selectedUserPetData, setSelectedUserPetData] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
+  const [browseWithoutLocation, setBrowseWithoutLocation] = useState(false);
   const [maxDistance, setMaxDistance] = useState(25);
   const [locationError, setLocationError] = useState(null);
   const [tabValue, setTabValue] = useState(0);
@@ -257,13 +259,10 @@ const AdoptPet = () => {
   useEffect(() => {
     const fetchAvailablePets = async () => {
       setLoading(true);
-      if (!userLocation) {
-        return;
-      }
+      if (!user) return;
 
       try {
-        const userPetsRef = ref(database, "userPets");
-        const snapshot = await get(userPetsRef);
+        const snapshot = await readPetDirectorySnapshot();
 
         if (snapshot.exists()) {
           const allPets = [];
@@ -281,18 +280,14 @@ const AdoptPet = () => {
               if (!pet || !pet.availableForAdoption) return;
               
               console.log('[AdoptPet] Found available pet:', pet.name);
-              const petLocation = {
-                latitude: userLocation.latitude + (Math.random() - 0.5) * 0.1,
-                longitude:
-                  userLocation.longitude + (Math.random() - 0.5) * 0.1,
-              };
+              const petLocation = pet.location && Number.isFinite(pet.location.latitude) && Number.isFinite(pet.location.longitude) ? pet.location : null;
 
-              const distance = calculateDistance(
+              const distance = petLocation && userLocation ? calculateDistance(
                 userLocation.latitude,
                 userLocation.longitude,
                 petLocation.latitude,
                 petLocation.longitude
-              );
+              ) : null;
 
               const ownerData = {
                 id: userId,
@@ -303,14 +298,14 @@ const AdoptPet = () => {
                 ...pet,
                 id: petId,
                 userId: userId,
-                distance: distance.toFixed(1),
+                distance: distance === null ? null : distance.toFixed(1),
                 location: petLocation,
                 owner: ownerData,
               });
             });
           });
 
-          allPets.sort((a, b) => a.distance - b.distance);
+          allPets.sort((a, b) => (a.distance === null ? Infinity : Number(a.distance)) - (b.distance === null ? Infinity : Number(b.distance)));
           console.log('[AdoptPet] Found', allPets.length, 'pets available for adoption');
           setAvailablePets(allPets);
         } else {
@@ -324,7 +319,7 @@ const AdoptPet = () => {
       }
     };
 
-    if (userLocation) {
+    if (user) {
       fetchAvailablePets();
     }
   }, [userLocation, user?.uid]); // Only refetch when these specific values change
@@ -438,16 +433,16 @@ const AdoptPet = () => {
     );
   }
 
-  if (locationError) {
+  if (locationError && !browseWithoutLocation) {
     return (
       <div className="p-4 sm:p-8 min-h-screen bg-lavender-50">
         <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6">
           <p>
-            Error: {locationError}. We need your location to find nearby pets.
+            Your location is unavailable. You can still browse pet profiles.
           </p>
         </div>
         <p className="text-gray-700">
-          Please enable location services in your browser and try again.
+          <button className="text-violet-700 underline" onClick={() => setBrowseWithoutLocation(true)}>Browse without distances</button>
         </p>
       </div>
     );
@@ -459,7 +454,7 @@ const AdoptPet = () => {
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center">
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => setBrowseWithoutLocation(true)}
               className="p-2 rounded-full hover:bg-lavender-100 text-lavender-700"
             >
               <FiArrowLeft className="w-5 h-5" />
@@ -599,7 +594,7 @@ const AdoptPet = () => {
                   <div className="absolute top-3 right-3 z-10">
                     <span className="inline-flex items-center px-3 py-1 rounded-full bg-black bg-opacity-70 text-white text-sm">
                       <FiMapPin className="mr-1" />
-                      {pet.distance} km
+                      {pet.distance === null ? 'Distance unavailable' : `About ${pet.distance} km`}
                     </span>
                   </div>
                   <div className="absolute top-3 left-3 z-10">

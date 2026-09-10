@@ -377,7 +377,7 @@ const MedicationDialog = ({
                 />
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                We'll send you a reminder on this date
+                A date reminder can be sent after 9 AM in your chosen time zone. This does not schedule individual doses.
               </p>
             </div>
 

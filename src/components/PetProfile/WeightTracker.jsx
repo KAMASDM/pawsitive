@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiPlus, FiTrendingUp, FiTrendingDown, FiActivity, FiCalendar, FiEdit2, FiTrash2, FiX } from 'react-icons/fi';
 import { FaWeight, FaChartLine } from 'react-icons/fa';
-import { ref as dbRef, update, push } from 'firebase/database';
+import { ref as dbRef, update, push, remove } from 'firebase/database';
 import { database, auth } from '../../firebase';
 
 const WeightTracker = ({ pet, onUpdate }) => {
@@ -12,6 +12,9 @@ const WeightTracker = ({ pet, onUpdate }) => {
   const [weightDate, setWeightDate] = useState(new Date().toISOString().split('T')[0]);
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
+  const [targetMin, setTargetMin] = useState(pet?.weightTarget?.min || '');
+  const [targetMax, setTargetMax] = useState(pet?.weightTarget?.max || '');
+  const [targetNotice, setTargetNotice] = useState('');
 
   useEffect(() => {
     if (pet?.weightHistory) {
@@ -20,36 +23,30 @@ const WeightTracker = ({ pet, onUpdate }) => {
         ...data
       })).sort((a, b) => new Date(b.date) - new Date(a.date));
       setWeightHistory(history);
-    }
+    } else setWeightHistory([]);
   }, [pet]);
 
-  const currentWeight = weightHistory[0]?.weight || pet?.weight || 0;
+  const currentWeight = Number(weightHistory[0]?.weight || pet?.weight || 0);
   const previousWeight = weightHistory[1]?.weight;
   const weightChange = previousWeight ? currentWeight - previousWeight : 0;
   const weightTrend = weightChange > 0 ? 'up' : weightChange < 0 ? 'down' : 'stable';
 
-  // Calculate ideal weight range based on breed/type
-  const getIdealWeightRange = () => {
-    if (!pet?.type) return null;
-    
-    // This is simplified - in production, you'd have a database of breed weights
-    if (pet.type === 'dog') {
-      if (pet.breed?.toLowerCase().includes('chihuahua')) return { min: 2, max: 3 };
-      if (pet.breed?.toLowerCase().includes('labrador')) return { min: 25, max: 36 };
-      if (pet.breed?.toLowerCase().includes('german shepherd')) return { min: 30, max: 40 };
-      return { min: 10, max: 30 }; // Default range
-    } else if (pet.type === 'cat') {
-      return { min: 3, max: 5 }; // Average cat weight
-    }
-    return null;
+  const idealRange = Number(pet?.weightTarget?.min) > 0 && Number(pet?.weightTarget?.max) >= Number(pet?.weightTarget?.min) ? pet.weightTarget : null;
+  const isWithinTarget = idealRange && currentWeight >= idealRange.min && currentWeight <= idealRange.max;
+  const saveTarget = async event => {
+    event.preventDefault();
+    const min = Number(targetMin), max = Number(targetMax);
+    if (!Number.isFinite(min) || !Number.isFinite(max) || min <= 0 || max < min) { setTargetNotice('Enter a positive minimum and a maximum at least as large.'); return; }
+    setLoading(true);
+    try {
+      await update(dbRef(database, `userPets/${auth.currentUser.uid}/${pet.id}`), { weightTarget: { min, max, source: 'parent_entered_veterinary_target', updatedAt: Date.now() } });
+      setTargetNotice('Target saved.'); onUpdate?.();
+    } catch { setTargetNotice('Could not save the target. Try again.'); }
+    finally { setLoading(false); }
   };
 
-  const idealRange = getIdealWeightRange();
-  const isHealthyWeight = idealRange ? 
-    currentWeight >= idealRange.min && currentWeight <= idealRange.max : null;
-
   const handleAddWeight = async () => {
-    if (!newWeight || !weightDate) return;
+    if (!newWeight || !weightDate || !Number.isFinite(Number(newWeight)) || Number(newWeight) <= 0) return;
 
     setLoading(true);
     try {
@@ -91,7 +88,7 @@ const WeightTracker = ({ pet, onUpdate }) => {
       if (!user) return;
 
       const entryRef = dbRef(database, `userPets/${user.uid}/${pet.id}/weightHistory/${entryId}`);
-      await update(entryRef, null);
+      await remove(entryRef);
 
       if (onUpdate) onUpdate();
     } catch (error) {
@@ -146,20 +143,30 @@ const WeightTracker = ({ pet, onUpdate }) => {
           {idealRange && (
             <>
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
-                <p className="text-xs opacity-90 mb-1">Ideal Range</p>
+                <p className="text-xs opacity-90 mb-1">Saved target</p>
                 <p className="text-lg font-bold">{idealRange.min}-{idealRange.max} kg</p>
               </div>
 
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
                 <p className="text-xs opacity-90 mb-1">Status</p>
                 <p className="text-lg font-bold">
-                  {isHealthyWeight ? '✓ Healthy' : currentWeight < idealRange.min ? '⚠️ Low' : '⚠️ High'}
+                  {!currentWeight ? 'No reading' : isWithinTarget ? 'Within saved range' : currentWeight < idealRange.min ? 'Below saved range' : 'Above saved range'}
                 </p>
               </div>
             </>
           )}
         </div>
       </motion.div>
+
+      <section className="bg-white rounded-2xl border p-5">
+        <h3 className="font-bold">A target from your veterinarian</h3>
+        <p className="text-sm text-slate-600 mt-2">Save a range provided for this pet. Pawppy compares your entries with that saved range; it does not assess health from weight alone.</p>
+        <form onSubmit={saveTarget} className="flex flex-wrap gap-3 items-end mt-4">
+          <label className="text-sm">Minimum (kg)<input required type="number" step="0.01" min="0.01" value={targetMin} onChange={event => setTargetMin(event.target.value)} className="block border rounded-lg p-2 mt-1 w-28" /></label>
+          <label className="text-sm">Maximum (kg)<input required type="number" step="0.01" min="0.01" value={targetMax} onChange={event => setTargetMax(event.target.value)} className="block border rounded-lg p-2 mt-1 w-28" /></label>
+          <button disabled={loading} className="bg-violet-700 text-white px-4 py-2 rounded-lg">Save target</button>
+        </form><p role="status" className="text-sm mt-3">{targetNotice}</p>
+      </section>
 
       {/* Weight History Chart */}
       {weightHistory.length > 1 && (
