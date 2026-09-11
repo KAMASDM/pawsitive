@@ -10,7 +10,7 @@ function waitForInstall(worker) {
       if (['installed', 'activated'].includes(worker.state)) finish();
       if (worker.state === 'redundant') finish(new Error('The update could not be downloaded. Please retry.'));
     };
-    const timer = setTimeout(() => finish(new Error('The update download timed out. Please retry.')), 25000);
+    const timer = setTimeout(() => finish(new Error('The update download timed out. Please retry.')), 120000);
     worker.addEventListener('statechange', changed);
     changed();
   });

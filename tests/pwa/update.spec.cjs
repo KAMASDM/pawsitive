@@ -82,3 +82,25 @@ test('the independent release check detects stale code even without a waiting wo
   await expect(page.getByRole('button', { name: 'Update Now', exact: true })).toBeVisible();
   expect(await page.evaluate(async () => Boolean((await navigator.serviceWorker.getRegistration()).waiting))).toBe(false);
 });
+
+test('a slow update remains in progress beyond 25 seconds and finishes without reinstalling', async ({ page, context, request }) => {
+  test.setTimeout(70000);
+  await installedPage(page, context);
+  const release = await (await request.get('/version.json')).json();
+  let downloading = true;
+  await page.route('**/version.json', route => route.fulfill({ contentType: 'application/json', body: JSON.stringify(downloading ? { buildId: 'slow-next-release' } : release) }));
+  await request.post('/__slow-worker');
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await expect(page.getByRole('button', { name: 'Update Now', exact: true })).toBeVisible();
+  let navigations = 0;
+  page.on('framenavigated', frame => { if (frame === page.mainFrame()) navigations++; });
+  await page.getByRole('button', { name: 'Update Now', exact: true }).click();
+  await page.waitForTimeout(28000);
+  await expect(page.getByText('Updating Pawppy…', { exact: true })).toBeVisible();
+  await expect(page.getByText('The update could not finish.', { exact: false })).toHaveCount(0);
+  expect(navigations).toBe(0);
+  downloading = false;
+  await expect.poll(() => navigations, { timeout: 25000 }).toBe(1);
+  await expect(page.getByRole('button', { name: 'Update Now', exact: true })).toHaveCount(0);
+  await request.post('/__next-worker');
+});

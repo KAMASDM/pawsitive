@@ -34,7 +34,7 @@ const UpdateNotification = () => {
     fallbackTimerRef.current = setTimeout(() => {
       setIsUpdating(false);
       setUpdateError('The update is taking longer than expected. Please try again.');
-    }, 60000);
+    }, 180000);
     try { await updateApp(); }
     catch {
       clearTimeout(fallbackTimerRef.current);
@@ -73,7 +73,7 @@ const UpdateNotification = () => {
                     </h3>
                     <p className="text-white/80 text-sm">
                       {isUpdating
-                        ? 'Downloading and applying the update…'
+                        ? 'Downloading the update. Keep Pawppy open.'
                         : 'Get the latest improvements without reinstalling'}
                     </p>
                   </div>
@@ -112,9 +112,10 @@ const UpdateNotification = () => {
                 <div className="w-full bg-white/20 rounded-full h-1.5 overflow-hidden">
                   <motion.div
                     className="h-full bg-white rounded-full"
-                    initial={{ width: '0%' }}
-                    animate={{ width: '90%' }}
-                    transition={{ duration: 4, ease: 'easeOut' }}
+                    style={{ width: '33%' }}
+                    initial={{ x: '-100%' }}
+                    animate={{ x: '300%' }}
+                    transition={{ duration: 1.6, repeat: Infinity, ease: 'linear' }}
                   />
                 </div>
               )}

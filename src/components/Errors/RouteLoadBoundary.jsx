@@ -12,7 +12,7 @@ function RecoveryScreen({ error }) {
     if (busy) return;
     setBusy(true);
     setMessage('');
-    timer.current = setTimeout(() => { setBusy(false); setMessage('The update is taking longer than expected. Please try again.'); }, 60000);
+    timer.current = setTimeout(() => { setBusy(false); setMessage('The update is taking longer than expected. Please try again.'); }, 180000);
     try {
       await reloadApp();
     } catch {
