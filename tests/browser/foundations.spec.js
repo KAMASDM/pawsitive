@@ -33,8 +33,10 @@ test('an authenticated parent can change reminder preferences and opt out of mea
   await page.locator('input[type=password]').fill(password);
   await page.getByRole('button', { name: 'Sign In', exact: true }).click();
   await expect(page).toHaveURL(/today/);
+  await expect(page.getByRole('button', { name: 'Check for updates', exact: true })).toBeVisible();
   await page.goto('/settings');
   await expect(page.getByRole('heading', { name: 'Reminders & preferences' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Check for updates', exact: true })).toBeVisible();
   await expect(page.getByLabel('Vaccination dates: email')).toBeChecked();
   await page.getByLabel('Vaccination dates: email').uncheck();
   await page.getByLabel('Time zone', { exact: true }).fill('Europe/London');
@@ -59,6 +61,14 @@ test('an authenticated parent can change reminder preferences and opt out of mea
   await expect(page.getByRole('button', { name: 'Undo Fresh water for Milo' })).toBeVisible();
   await page.getByRole('button', { name: 'Undo Fresh water for Milo' }).click();
   await expect(page.getByRole('button', { name: 'Complete Fresh water for Milo' })).toBeVisible();
+  const seededPet = await request.put(`http://127.0.0.1:9015/userPets/${account.localId}/luna.json?ns=demo-pawppy-default-rtdb&access_token=owner`, { data: { name: 'Luna', type: 'Cat', image: '/missing-pet-photo-test.jpg' } });
+  expect(seededPet.ok()).toBe(true);
+  await page.getByRole('button', { name: 'Show Luna’s routines', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Complete Fresh water for Milo' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Show Milo’s routines', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Complete Fresh water for Milo' })).toBeVisible();
+  await page.getByRole('button', { name: 'Everyone', exact: false }).click();
+  await expect(page.getByRole('navigation', { name: 'Pet care shortcuts' })).toBeVisible();
   await page.getByRole('button', { name: 'Manage routines' }).click();
   await page.getByRole('button', { name: 'Pause', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Complete Fresh water for Milo' })).toHaveCount(0);

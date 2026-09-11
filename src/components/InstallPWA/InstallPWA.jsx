@@ -82,8 +82,8 @@ const InstallPWA = () => {
     finally { setDeferredPrompt(null); }
   };
 
-  // Don't show if already installed
-  if (isStandalone) {
+  // Remove a dismissed card immediately, including its interactive controls.
+  if (isStandalone || !showInstallPrompt) {
     return null;
   }
 

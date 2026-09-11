@@ -5,6 +5,7 @@ import { get, ref, update } from 'firebase/database';
 import { auth, database } from '../../firebase';
 import { requestNotificationPermission, disableNotificationDevice } from '../../services/notificationService';
 import { setProductMeasurementEnabled, trackProductEvent } from '../../services/productAnalytics';
+import CheckForUpdatesButton from '../PWA/CheckForUpdatesButton';
 
 const CATEGORIES = [
   ['routines', 'Daily routine briefing'],
@@ -61,6 +62,11 @@ export default function NotificationSettings() {
     <div className="max-w-2xl mx-auto space-y-6">
       <Link to="/notifications" className="text-violet-700 text-sm font-semibold">← Notifications</Link>
       <div><h1 className="text-3xl font-bold text-slate-900">Reminders & preferences</h1><p className="text-slate-600 mt-2">Choose the updates that help you care for your pet.</p></div>
+      <section className="rounded-2xl bg-white border border-slate-200 p-5">
+        <h2 className="font-bold text-slate-900">App updates</h2>
+        <p className="text-sm text-slate-600 mt-2 mb-4">Get the latest Pawppy here, without reinstalling. Your account and saved records stay in place.</p>
+        <CheckForUpdatesButton />
+      </section>
       <div className="rounded-2xl bg-white border border-slate-200 p-5">
         <h2 className="font-bold text-slate-900">This device</h2>
         <p className="text-sm text-slate-600 mt-2">On iPhone, add Pawppy to your Home Screen and open it there before enabling reminders. Scheduled dates are checked after 9 AM in your chosen time zone.</p>

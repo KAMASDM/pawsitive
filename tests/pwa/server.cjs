@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 let version = 1;
 const root = path.resolve('build');
-const types = { '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css', '.webp': 'image/webp', '.png': 'image/png', '.svg': 'image/svg+xml', '.webmanifest': 'application/manifest+json' };
+const types = { '.json': 'application/json', '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css', '.webp': 'image/webp', '.png': 'image/png', '.svg': 'image/svg+xml', '.webmanifest': 'application/manifest+json' };
 http.createServer((req, res) => {
   if (req.url === '/__next-worker' && req.method === 'POST') { version++; res.end('ok'); return; }
   const requested = new URL(req.url, 'http://localhost').pathname;

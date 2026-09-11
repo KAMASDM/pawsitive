@@ -2,13 +2,21 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
+const buildId = process.env.DEPLOY_ID || `${Date.now().toString(36)}`;
+
 export default defineConfig({
+  define: { __APP_BUILD__: JSON.stringify(buildId) },
   plugins: [
+    {
+      name: 'pawppy-release-version',
+      generateBundle() { this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify({ buildId }) }); },
+    },
     react({
       include: '**/*.{jsx,js}',
     }),
     VitePWA({
       registerType: 'prompt',
+      injectRegister: false, // PWAUpdateProvider owns the single registration.
       includeAssets: ['paw-icon.svg', 'favicon-v2.png', 'apple-touch-icon-v2.png', 'paw-icon-v2-192.png', 'paw-icon-v2-512.png', 'paw-icon-maskable-v2-512.png', 'robots.txt', 'sitemap.xml'],
       manifest: {
         name: 'Pawppy - Pet Parent Operating System',

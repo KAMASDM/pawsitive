@@ -34,7 +34,7 @@ const UpdateNotification = () => {
     fallbackTimerRef.current = setTimeout(() => {
       setIsUpdating(false);
       setUpdateError('The update is taking longer than expected. Please try again.');
-    }, 20000);
+    }, 60000);
     try { await updateApp(); }
     catch {
       clearTimeout(fallbackTimerRef.current);
@@ -73,8 +73,8 @@ const UpdateNotification = () => {
                     </h3>
                     <p className="text-white/80 text-sm">
                       {isUpdating
-                        ? 'Installing update, please wait…'
-                        : 'A fresh version is ready to install'}
+                        ? 'Downloading and applying the update…'
+                        : 'Get the latest improvements without reinstalling'}
                     </p>
                   </div>
                 </div>

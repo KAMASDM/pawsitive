@@ -1,77 +1,29 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { FiRefreshCw, FiCheckCircle } from 'react-icons/fi';
+import { FiRefreshCw } from 'react-icons/fi';
 import { usePWAUpdate } from '../../hooks/usePWAUpdate';
 
-const CheckForUpdatesButton = () => {
-  const { checkForUpdates, needRefresh } = usePWAUpdate();
-  const [isChecking, setIsChecking] = useState(false);
-  const [justChecked, setJustChecked] = useState(false);
-  const [checkError, setCheckError] = useState(false);
-
-  const handleCheckForUpdates = async () => {
-    setIsChecking(true);
-    setJustChecked(false);
-    setCheckError(false);
-
+export default function CheckForUpdatesButton({ compact = false }) {
+  const { checkForUpdates, updateApp, needRefresh } = usePWAUpdate();
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState('');
+  const [failed, setFailed] = useState(false);
+  const check = async () => {
+    if (busy) return;
+    setBusy(true); setMessage(''); setFailed(false);
     try {
-      await checkForUpdates();
-      
-      setJustChecked(true);
-      
-      // Reset after 3 seconds
-      setTimeout(() => {
-        setJustChecked(false);
-      }, 3000);
-    } catch (error) {
-      setCheckError(true);
-    } finally {
-      setIsChecking(false);
-    }
+      if (needRefresh) await updateApp();
+      else {
+        const available = await checkForUpdates();
+        setMessage(available ? 'A new version is ready. Tap Update app.' : 'You’re using the latest version.');
+      }
+    } catch (error) { setMessage(error.message || 'Couldn’t update. Please try again.'); setFailed(true); }
+    finally { setBusy(false); }
   };
-
-  return (
-    <motion.button
-      onClick={handleCheckForUpdates}
-      disabled={isChecking}
-      className={`w-full px-4 py-3 rounded-xl font-medium text-sm transition-all flex items-center justify-center gap-2 ${
-        justChecked && !needRefresh
-          ? 'bg-green-500 text-white'
-          : 'bg-gradient-to-r from-violet-600 to-purple-600 text-white hover:from-violet-700 hover:to-purple-700'
-      }`}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-    >
-      {isChecking ? (
-        <>
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-          >
-            <FiRefreshCw className="text-lg" />
-          </motion.div>
-          <span>Checking for updates...</span>
-        </>
-      ) : justChecked && !needRefresh ? (
-        <>
-          <FiCheckCircle className="text-lg" />
-          <span>You're up to date!</span>
-        </>
-      ) : checkError ? (
-        <span>Couldn’t check for updates. Tap to retry.</span>
-      ) : needRefresh ? (
-        <>
-          <FiRefreshCw className="text-lg" />
-          <span>Update Available - Check notification</span>
-        </>
-      ) : (
-        <>
-          <FiRefreshCw className="text-lg" />
-          <span>Check for Updates</span>
-        </>
-      )}
-    </motion.button>
-  );
-};
-
-export default CheckForUpdatesButton;
+  return <div className={compact ? 'app-update-control' : ''}>
+    <button type="button" onClick={check} disabled={busy} className={`inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-colors disabled:opacity-60 ${compact ? 'px-3 py-2 text-xs bg-white/90 text-violet-800 border border-violet-200 hover:bg-violet-50' : 'w-full px-4 py-3 text-sm bg-violet-700 text-white hover:bg-violet-800'}`}>
+      <FiRefreshCw className={busy ? 'animate-spin' : ''} aria-hidden="true" />
+      {busy ? needRefresh ? 'Updating…' : 'Checking…' : needRefresh ? 'Update app' : 'Check for updates'}
+    </button>
+    {message && <p role={failed ? 'alert' : 'status'} className={`mt-2 text-xs ${failed ? 'text-red-700' : 'text-slate-600'}`}>{message}</p>}
+  </div>;
+}

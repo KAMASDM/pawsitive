@@ -1,100 +1,173 @@
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { useRegisterSW } from 'virtual:pwa-register/react';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 
 const PWAUpdateContext = createContext(null);
 
-// One registration and one update state for the banner and the settings button.
+function waitForInstall(worker) {
+  if (!worker) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const finish = error => { clearTimeout(timer); worker.removeEventListener('statechange', changed); error ? reject(error) : resolve(); };
+    const changed = () => {
+      if (['installed', 'activated'].includes(worker.state)) finish();
+      if (worker.state === 'redundant') finish(new Error('The update could not be downloaded. Please retry.'));
+    };
+    const timer = setTimeout(() => finish(new Error('The update download timed out. Please retry.')), 25000);
+    worker.addEventListener('statechange', changed);
+    changed();
+  });
+}
+
+// One native registration for the app. Push uses its own /firebase-push/ scope.
+// Read actual worker state instead of Workbox's time-based update heuristics.
 export function PWAUpdateProvider({ children }) {
   const registrationRef = useRef(null);
+  const registrationPromise = useRef(null);
+  const checkingRef = useRef(null);
+  const updatingRef = useRef(null);
+  const reloadRequested = useRef(false);
+  const activatedUpdate = useRef(false);
+  const remoteUpdate = useRef(false);
   const [registration, setRegistration] = useState(null);
-  const [waiting, setWaiting] = useState(false);
+  const [offlineReady, setOfflineReady] = useState(false);
+  const [needRefresh, setNeedRefresh] = useState(false);
   const [dismissed, setDismissed] = useState(false);
-  const {
-    offlineReady: [offlineReady, setOfflineReady],
-    needRefresh: [reportedRefresh],
-    updateServiceWorker,
-  } = useRegisterSW({
-    immediate: true,
-    onRegisteredSW(_url, value) {
-      registrationRef.current = value;
-      setRegistration(value);
-    },
-    onRegisterError(error) { console.warn('PWA registration failed:', error); },
-  });
+
+  const register = useCallback(() => {
+    if (!('serviceWorker' in navigator)) return Promise.reject(new Error('App updates are unavailable in this browser.'));
+    if (!registrationPromise.current) {
+      registrationPromise.current = navigator.serviceWorker.register(import.meta.env.PROD ? '/sw.js' : '/dev-sw.js?dev-sw', { scope: '/', updateViaCache: 'none' }).then(value => {
+        registrationRef.current = value;
+        setRegistration(value);
+        return value;
+      }).catch(error => { registrationPromise.current = null; throw error; });
+    }
+    return registrationPromise.current;
+  }, []);
+
+  const checkForUpdates = useCallback(() => {
+    if (!navigator.onLine) return Promise.reject(new Error('Reconnect to check for updates.'));
+    if (checkingRef.current) return checkingRef.current;
+    checkingRef.current = (async () => {
+      const current = await register();
+      // This file is deliberately outside the worker's precache. It also detects
+      // an old open page after another tab has already activated the new worker.
+      const checkVersion = async () => {
+        if (!import.meta.env.PROD) return;
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 10000);
+        try {
+          const response = await fetch('/version.json', { cache: 'no-store', signal: controller.signal });
+          if (!response.ok || !response.headers.get('content-type')?.includes('application/json')) throw new Error('Could not check the latest release. Please retry.');
+          const version = await response.json();
+          if (typeof version.buildId !== 'string' || !version.buildId) throw new Error('Invalid release information.');
+          remoteUpdate.current = version.buildId !== __APP_BUILD__;
+          if (remoteUpdate.current) setNeedRefresh(true);
+        } finally { clearTimeout(timer); }
+      };
+      const [versionResult, workerResult] = await Promise.allSettled([checkVersion(), current.update()]);
+      if (workerResult.status === 'rejected') throw workerResult.reason;
+      await waitForInstall(current.installing);
+      // The registration's waiting slot can be assigned just after statechange.
+      await new Promise(resolve => setTimeout(resolve, 0));
+      const available = Boolean(current.waiting || activatedUpdate.current || remoteUpdate.current);
+      setNeedRefresh(available);
+      if (!available && versionResult.status === 'rejected') throw versionResult.reason;
+      return available;
+    })().finally(() => { checkingRef.current = null; });
+    return checkingRef.current;
+  }, [register]);
+
+  useEffect(() => { register().catch(error => console.warn('PWA registration failed:', error.message)); }, [register]);
 
   useEffect(() => {
     if (!registration) return;
+    let previousController = navigator.serviceWorker.controller;
     let observedWorker;
-    const watchedWorkers = new Set();
+    let disposed = false;
+    const watched = new Set();
     const sync = () => {
-      // Workbox can also report an external/first installation. Only an actual
-      // waiting worker is an update the user can apply.
+      if (disposed) return;
       const worker = registration.waiting;
-      setWaiting(Boolean(worker && worker.state === 'installed'));
+      setNeedRefresh(Boolean(worker || activatedUpdate.current || remoteUpdate.current));
       if (worker && worker !== observedWorker) setDismissed(false);
       observedWorker = worker;
     };
+    const changed = () => { sync(); setTimeout(sync, 0); };
     const watch = () => {
       const worker = registration.installing;
-      if (worker && !watchedWorkers.has(worker)) {
-        watchedWorkers.add(worker);
-        worker.addEventListener('statechange', sync);
+      if (worker && !watched.has(worker)) {
+        watched.add(worker);
+        worker.addEventListener('statechange', changed);
       }
       sync();
     };
-    const check = () => { if (!document.hidden && navigator.onLine) registration.update().catch(() => {}); };
+    const controlled = () => {
+      const controller = navigator.serviceWorker.controller;
+      if (controller && reloadRequested.current) {
+        reloadRequested.current = false;
+        window.location.reload();
+        return;
+      }
+      if (previousController && controller !== previousController) {
+        activatedUpdate.current = true;
+        setDismissed(false);
+      } else if (!previousController && controller) setOfflineReady(true);
+      previousController = controller;
+      sync();
+    };
+    const check = () => {
+      if (!document.hidden && navigator.onLine) checkForUpdates().catch(() => {});
+    };
     registration.addEventListener('updatefound', watch);
-    navigator.serviceWorker.addEventListener('controllerchange', sync);
+    navigator.serviceWorker.addEventListener('controllerchange', controlled);
     document.addEventListener('visibilitychange', check);
-    const timer = window.setInterval(check, 60 * 60 * 1000);
+    for (const event of ['focus', 'pageshow', 'online']) window.addEventListener(event, check);
+    const timer = setInterval(check, 5 * 60 * 1000);
     watch();
+    check();
     return () => {
+      disposed = true;
       clearInterval(timer);
       registration.removeEventListener('updatefound', watch);
-      watchedWorkers.forEach(worker => worker.removeEventListener('statechange', sync));
-      navigator.serviceWorker.removeEventListener('controllerchange', sync);
+      watched.forEach(worker => worker.removeEventListener('statechange', changed));
+      navigator.serviceWorker.removeEventListener('controllerchange', controlled);
       document.removeEventListener('visibilitychange', check);
+      for (const event of ['focus', 'pageshow', 'online']) window.removeEventListener(event, check);
     };
-  }, [registration]);
+  }, [registration, checkForUpdates]);
 
-  useEffect(() => {
-    if (reportedRefresh) setWaiting(Boolean(registrationRef.current?.waiting));
-  }, [reportedRefresh]);
-
-  const checkForUpdates = async () => {
-    const current = registrationRef.current;
-    if (!current) throw new Error('Update checks are not available yet.');
-    await current.update();
-    const installing = current.installing;
-    if (installing) await new Promise((resolve, reject) => {
-      const timer = setTimeout(() => finish(new Error('The update check timed out. Try again.')), 20000);
-      const finish = error => { clearTimeout(timer); installing.removeEventListener('statechange', changed); error ? reject(error) : resolve(); };
-      const changed = () => {
-        if (['installed', 'activated'].includes(installing.state)) finish();
-        if (installing.state === 'redundant') finish(new Error('The update could not be downloaded.'));
-      };
-      installing.addEventListener('statechange', changed);
-      changed();
-    });
-    setWaiting(Boolean(current.waiting));
-    setDismissed(false);
-  };
-
-  const updateApp = async () => {
-    if (!registrationRef.current?.waiting) { setWaiting(false); return; }
-    // Workbox reloads once the new worker takes control. Never force a timed
-    // reload: that can load the old worker again and repeat the same prompt.
-    await updateServiceWorker(true);
+  const updateApp = () => {
+    if (updatingRef.current) return updatingRef.current;
+    updatingRef.current = (async () => {
+      if (!navigator.onLine) throw new Error('Reconnect to update Pawppy.');
+      const available = await checkForUpdates();
+      if (!available) return;
+      const worker = registrationRef.current?.waiting;
+      if (worker) {
+        // Reload only after the accepted worker controls this page. Never delete
+        // registrations, app data, or caches to force an update.
+        await new Promise((resolve, reject) => {
+          const finish = error => { clearTimeout(timer); navigator.serviceWorker.removeEventListener('controllerchange', changed); error ? reject(error) : resolve(); };
+          const changed = () => { if (navigator.serviceWorker.controller === worker) finish(); };
+          const timer = setTimeout(() => { reloadRequested.current = false; finish(new Error('Update activation timed out. Please retry.')); }, 15000);
+          navigator.serviceWorker.addEventListener('controllerchange', changed);
+          reloadRequested.current = true;
+          worker.postMessage({ type: 'SKIP_WAITING' });
+        });
+      } else if (activatedUpdate.current || remoteUpdate.current) {
+        // The new worker may already be active, e.g. accepted in another tab.
+        window.location.reload();
+      }
+    })().finally(() => { updatingRef.current = null; });
+    return updatingRef.current;
   };
 
   const reloadApp = async () => {
     if (!navigator.onLine) throw new Error('Reconnect before reloading');
-    if (registrationRef.current) await checkForUpdates();
-    if (registrationRef.current?.waiting) await updateApp();
+    if (registrationRef.current && await checkForUpdates()) await updateApp();
     else window.location.reload();
   };
 
-  return <PWAUpdateContext.Provider value={{ offlineReady, setOfflineReady, needRefresh: waiting, showUpdatePrompt: waiting && !dismissed, dismissUpdate: () => setDismissed(true), updateApp, checkForUpdates, reloadApp }}>{children}</PWAUpdateContext.Provider>;
+  return <PWAUpdateContext.Provider value={{ offlineReady, setOfflineReady, needRefresh, showUpdatePrompt: needRefresh && !dismissed, dismissUpdate: () => setDismissed(true), updateApp, checkForUpdates, reloadApp }}>{children}</PWAUpdateContext.Provider>;
 }
 
 export const usePWAUpdate = () => {
