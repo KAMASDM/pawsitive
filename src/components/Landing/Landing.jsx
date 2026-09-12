@@ -19,7 +19,7 @@ const QUESTIONS = [
   ['Can my family or pet sitter help?', 'Yes. Invite a caregiver to view and record daily care, a viewer to follow along, or a temporary sitter. You can revoke access. Shared daily care includes basic pet profiles and routines, while medical records and expenses stay with the owner.'],
   ['How do reminders work?', 'Opt in to one daily briefing when routines remain open, at a time you choose. Saved health-date reminders and weekly digests have separate settings. Individual activity times organise your Today list; they do not trigger individual alerts.'],
   ['What does it cost?', 'There is no subscription checkout for the care features in this version. Shop purchases are separate, with prices shown before checkout.'],
-  ['Does Pawppy give medical advice or use its own AI?', 'Pawppy organises the routines and records you save. This version does not provide a diagnostic assistant or proprietary neural network. Veterinary decisions belong with your veterinarian.'],
+  ['Does Pawppy have an AI assistant?', 'Pawppy Copilot is an optional beta powered by Google Gemini. Ask general care questions or approve a preview of your own pet’s records for a draft summary. It cannot diagnose, prescribe, or change records. Pawppy does not have a proprietary neural network; veterinary decisions belong with your veterinarian.'],
 ];
 
 function Brand({ inverse = false }) {

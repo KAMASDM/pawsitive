@@ -1624,3 +1624,5 @@ exports.pruneProductEvents = functions.runWith({ memory: '256MB', timeoutSeconds
 Object.assign(exports, require("./publicApi")({ functions, admin }));
 
 Object.assign(exports, require("./familyApi")({ functions, admin }));
+
+Object.assign(exports, require("./copilotApi")({ functions, admin }));

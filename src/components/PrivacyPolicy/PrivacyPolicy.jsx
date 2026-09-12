@@ -20,12 +20,14 @@ const PrivacyPolicy = () => {
             </h2>
           </div>
           <p className="mt-4 text-lg text-lavender-700">
-            Last updated: September 9, 2026
+            Last updated: September 12, 2026
           </p>
         </div>
 
         <div className="bg-white p-8 rounded-xl shadow-soft-md">
           <div className="prose prose-lavender max-w-none">
+            <h3 className="text-xl font-semibold text-lavender-900 mb-4">Optional AI assistance</h3>
+            <p className="mb-6">Pawppy Copilot sends a question to Google Gemini on Vertex AI only after you approve that request. General questions do not include saved pet records. For a record summary, you choose your own pet, review the specific fields, and separately approve that preview. Summaries exclude medication dose fields, free-form notes, uploaded documents, messages, expenses, contact details and photos. Family care access does not grant AI access to another owner’s records. Processing may occur outside your country through Google’s global service. Pawppy does not store questions, previews or answers in a conversation database, or include them in application logs. They remain in the open page until cleared or you leave. The backend keeps hashed account/request identifiers, timestamps and counters for the current UTC day to enforce limits; these are replaced when the next day’s request is processed. Google’s <a href="https://docs.cloud.google.com/vertex-ai/generative-ai/docs/data-governance" target="_blank" rel="noreferrer" className="underline">data-handling terms</a> apply, including applicable abuse-monitoring retention. We do not request model training with your data and do not claim zero provider retention. AI responses are drafts and do not change care records.</p>
             <h3 className="text-xl font-semibold text-lavender-900 mb-4">Product improvement activity</h3>
             <p className="mb-6">Pawppy records basic signed-in actions, such as app sessions and saving care records, in our Firebase database. These events are linked to your account and include a broad screen category, browser or installed-app mode, a session identifier, and a timestamp. They do not contain pet names, health notes, message content, or document text. Raw events are removed after 90 days by a scheduled cleanup. You can disable future collection in Reminders & preferences. We also respect supported browser Do Not Track and Global Privacy Control signals.</p>
             <h3 className="text-xl font-semibold text-lavender-900 mb-4">

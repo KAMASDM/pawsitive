@@ -7,6 +7,7 @@ import Landing from "./components/Landing/Landing";
 const Login = lazy(() => import("./components/Login/Login"));
 const Family = lazy(() => import("./components/Today/Family"));
 const Today = lazy(() => import("./components/Today/Today"));
+const Copilot = lazy(() => import("./components/Copilot/Copilot"));
 const CareBrief = lazy(() => import("./components/Today/CareBrief"));
 const CareHome = lazy(() => import("./components/Today/CareHome"));
 const Discover = lazy(() => import("./components/Today/Discover"));
@@ -179,6 +180,7 @@ function AppContent() {
                 <Route path="/" element={<Landing />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/today" element={<PR><Today /></PR>} />
+                <Route path="/copilot" element={<PR><Copilot /></PR>} />
                 <Route path="/family" element={<PR><Family /></PR>} />
                 <Route path="/care/:petId/visit" element={<PR><CareBrief /></PR>} />
                 <Route path="/care" element={<PR><CareHome /></PR>} />

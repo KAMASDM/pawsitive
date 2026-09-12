@@ -349,6 +349,14 @@
         ".read": "auth != null && auth.uid == $uid",
         ".write": false
       }
+    },
+    "copilotConfig": {
+      ".read": false,
+      ".write": false
+    },
+    "copilotUsage": {
+      ".read": false,
+      ".write": false
     }
   }
 }

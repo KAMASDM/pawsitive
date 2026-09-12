@@ -1,10 +1,10 @@
-Pawppy contextual AI — implementation contract for the next phase
+Pawppy contextual AI — beta and next-phase contract
 
-Status: design, not a deployed feature. The current app uses saved routines and records, and its visit summary is deterministic. No model provider, model weights, training pipeline, or model evaluation result is claimed by this branch.
+Status: Pet Care Copilot beta implemented with Google Gemini 3.1 Flash-Lite on Vertex AI. General care questions and explicitly approved, owner-only text record summaries are available at `/copilot`. Existing visit exports remain deterministic. Document import, voice, proprietary model weights and training are not implemented. See COPILOT_EVALUATION.md for validation and operating controls.
 
-**First useful workflow**
+**Next workflow: document import (not implemented)**
 
-Start with importing an existing document into a draft and reducing the effort of preparing a visit summary. Keep Today, reminders and saved records usable without AI. Use a hosted model as the initial evaluation baseline unless the owner chooses a self-hosted-only constraint. Provider selection and credentials remain unconfigured.
+Start with importing an existing document into a draft and reducing the effort of preparing a visit summary. Keep Today, reminders and saved records usable without AI. Use a hosted model as the initial evaluation baseline unless the owner chooses a self-hosted-only constraint. The Copilot beta uses server-side Google application credentials; document processing requires its own implementation and evaluation.
 
 1. The owner selects a pet and a document, sees which provider processes it and the applicable data-handling terms, and opts in to that processing. Model-training consent is separate and off by default.
 2. The backend verifies the owner and the selected pet, then validates size and actual file type. It stores the upload under an owner-scoped private path with an expiry. Do not use the current catch-all storage rule or a public media host for private documents.

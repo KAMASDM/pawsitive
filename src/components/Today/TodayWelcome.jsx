@@ -31,6 +31,7 @@ export default function TodayWelcome({ user, now, timeZone, pets, filter, onFilt
       <div className="today-hero-art"><img src={companions} alt="A golden retriever and a ginger cat, ready for a day together" /><span className="today-hero-note"><Heart size={16} fill="currentColor" /> More happy moments</span></div>
       <PawPrint className="today-hero-paw" size={95} aria-hidden="true" />
     </section>
+    {!isShared && <Link to="/copilot" className="today-copilot-link"><span><Sparkles size={20} /><span><strong>A little help from Pawppy Copilot</strong><small>Everyday care ideas & summaries you approve · AI beta</small></span></span><ArrowRight size={18} /></Link>}
     {ready && pets.length > 0 && <section className="today-pets" aria-label="Your pets">
       <div className="today-section-heading"><div><h2>{isShared ? 'Your care companions' : 'Your little family'} <span>{pets.length}</span></h2><p>Tap a pet to see their day.</p></div>{!isShared && <Link to="/my-pets?picker=true">Manage pets <ArrowRight size={15} /></Link>}</div>
       <div className="today-pet-strip">
