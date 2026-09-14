@@ -57,8 +57,9 @@ const databaseURL     = process.env.VITE_FIREBASE_DATABASE_URL     || '';
 const content = `// AUTO-GENERATED — scripts/generate-firebase-sw.js
 // Register before Firebase so custom notification clicks are handled reliably.
 self.addEventListener('notificationclick', (event) => {
-  const path = event.notification.data?.click_action;
-  // FCM handles its automatically displayed notifications and fcm_options.link.
+  const message = event.notification.data?.FCM_MSG;
+  const path = event.notification.data?.click_action || message?.data?.click_action || message?.fcmOptions?.link || message?.webpush?.fcm_options?.link;
+  // Handle both Firebase-displayed and app-displayed notifications.
   if (!path) return;
   event.stopImmediatePropagation();
   event.notification.close();

@@ -57,3 +57,17 @@ test('daily routine briefing sends once per device only after explicit opt-in', 
   assert.equal(sends.length, before + 2);
   assert.match(sends.at(-1).webpush.fcm_options.link, /\/today\?notificationSource=push$/);
 });
+
+test('device self-test targets only the caller, requires registration and limits repeated sends', async () => {
+  const context = { auth: { uid: 'selftest', token: { email_verified: true } } };
+  await assert.rejects(handlers.testNotificationDevice.run({ deviceId: 'test-device-id' }, {}), error => error.code === 'unauthenticated');
+  await db.ref('notificationDevices/selftest/test-device-id').set({ token: 'self-test-token' });
+  const before = sends.length;
+  assert.deepEqual(await handlers.testNotificationDevice.run({ deviceId: 'test-device-id', uid: 'alice', token: 'other-token' }, context), { accepted: true });
+  assert.equal(sends.length, before + 1);
+  assert.equal(sends.at(-1).token, 'self-test-token');
+  assert.equal(sends.at(-1).topic, undefined);
+  assert.match(sends.at(-1).webpush.fcm_options.link, /\/settings\?notificationSource=push$/);
+  await assert.rejects(handlers.testNotificationDevice.run({ deviceId: 'test-device-id' }, context), error => error.code === 'resource-exhausted');
+  await assert.rejects(handlers.testNotificationDevice.run({ deviceId: 'test-device-id' }, { auth: { uid: 'other', token: { email_verified: true } } }), error => error.code === 'failed-precondition');
+});

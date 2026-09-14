@@ -233,6 +233,10 @@
       ".read": false,
       ".write": false
     },
+    "notificationTestRequests": {
+      ".read": false,
+      ".write": false
+    },
     "notificationDeliveries": {
       ".read": false,
       ".write": false

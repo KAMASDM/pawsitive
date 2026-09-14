@@ -571,6 +571,34 @@ exports.subscribeToNotifications = functions.https.onCall(async (data, context) 
   return { success: true };
 });
 
+// Explicit, rate-limited self-test. Never targets another account or a topic.
+exports.testNotificationDevice = functions.runWith({ timeoutSeconds: 30, maxInstances: 3 }).https.onCall(async (data, context) => {
+  assertAuthed(context);
+  const deviceId = data?.deviceId;
+  if (!/^[a-zA-Z0-9_-]{8,100}$/.test(deviceId || '')) throw new functions.https.HttpsError('invalid-argument', 'Enable reminders on this device first.');
+  const db = admin.database(), uid = context.auth.uid;
+  const device = (await db.ref(`notificationDevices/${uid}/${deviceId}`).once('value')).val();
+  if (!device?.token) throw new functions.https.HttpsError('failed-precondition', 'This device is not registered. Enable reminders first.');
+  const now = Date.now();
+  const claim = await db.ref(`notificationTestRequests/${uid}`).transaction(last => last && now - last < 60000 ? undefined : now);
+  if (!claim.committed) throw new functions.https.HttpsError('resource-exhausted', 'Please wait one minute before sending another test.');
+  try {
+    await admin.messaging().send({ token: device.token,
+      notification: { title: 'Pawppy test notification', body: 'If you can see this, push notifications have reached this device.' },
+      data: { type: 'device_test', click_action: '/settings', notificationId: `device-test-${now}` },
+      webpush: { headers: { TTL: '300' }, notification: { icon: `${BASE_URL}/favicon.png`, badge: `${BASE_URL}/favicon.png`, tag: 'pawppy-device-test' }, fcm_options: { link: `${BASE_URL}/settings?notificationSource=push` } },
+    });
+    return { accepted: true };
+  } catch (error) {
+    if (['messaging/registration-token-not-registered', 'messaging/invalid-registration-token'].includes(error.code)) {
+      // Do not delete a replacement token registered while the test was in flight.
+      await db.ref(`notificationDevices/${uid}/${deviceId}`).transaction(current => current?.token === device.token ? null : undefined);
+      throw new functions.https.HttpsError('failed-precondition', 'This registration expired. Enable reminders again, then retry.');
+    }
+    throw new functions.https.HttpsError('unavailable', 'The notification provider could not accept the test. Please try later.');
+  }
+});
+
 exports.unregisterNotificationDevice = functions.https.onCall(async (data, context) => {
   assertAuthed(context);
   const deviceId = data?.deviceId;

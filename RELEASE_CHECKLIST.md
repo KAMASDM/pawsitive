@@ -66,7 +66,7 @@ The emulator tests use `demo-pawppy` and local-only fixtures. Scheduled notifica
 - Cohorts begin at the first measured session, which can be an existing account. D1/D7/D30 are exact UTC calendar-day returns and exclude immature denominators. Activation requires a pet creation plus a health save or routine completion within 24 hours. Household-level retention and acquisition-channel segmentation are not implemented yet.
 - Public discovery and the conversation-list API currently scan their existing data sets server-side. Replace these with maintained, indexed projections before scaling to large datasets. Profile polling and family projections should also be monitored for read cost.
 - Existing storage rules, third-party hosted media URLs, legacy community write paths and commerce permissions need their own access review before making a blanket privacy claim. This branch’s care and conversation boundaries are not a complete application security audit. Previously shared download URLs cannot be recalled by hiding a profile.
-- Routine assignment, timed routine reminders, a richer weekly recap, playdate-specific profiles, replenishment estimates, wearable integrations, document extraction and voice AI workflows remain follow-up work. The current app does not contain a diagnostic assistant, proprietary neural network, or automatic medication decisions.
+- Routine assignment, timed routine reminders, playdate-specific profiles, replenishment estimates, wearable integrations, document extraction and voice AI workflows remain follow-up work. The current app does not contain a diagnostic assistant, proprietary neural network, or automatic medication decisions.
 - Pet Care Copilot beta uses Gemini 3.1 Flash-Lite through authenticated Firebase callables, explicit question/record consent, owner checks, and daily request limits. See COPILOT_EVALUATION.md. Training an owned model still requires consented data and evidence of improvement over this baseline.
 
 
@@ -88,3 +88,9 @@ PWA implementation references: [MDN install-prompt lifecycle](https://developer.
 - Validation: production build; seven app/install browser tests (including pet filtering, shared-care revocation, and persistent routine changes); ten production PWA browser tests covering resume, reconnection, reopening a dismissed update, activation from a second tab, stale-version detection, slow downloads, and route recovery. Mobile and desktop layouts visually inspected. Physical iOS/Android installed-device behavior still needs device verification.
 
 Release-transition review used the actual prior and new deployed bundles through a local proxy: update acceptance preserved local storage and did not repeat the prompt. The download exceeded one minute; the updater now allows two minutes for installation and shows indeterminate download activity instead of a simulated percentage. The first direct live check hit its one-minute test deadline while the release was still downloading.
+
+**September 14 daily-care increment**
+
+- Added an explicit weekly breakdown by pet, routine and day, using existing saved care records and corrections. Missing entries are labelled as no entries, not missed care.
+- Replaced the routine form’s native time field with hour/minute selectors, AM/PM, and morning/afternoon/evening presets; the underlying HH:mm storage format is unchanged.
+- Push audit and the remaining public-key/device receipt gate are documented in PUSH_NOTIFICATION_AUDIT.md.

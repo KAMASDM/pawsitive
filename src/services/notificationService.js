@@ -28,10 +28,10 @@ export const initializeForegroundNotifications = () => {
   try {
     const messaging = getMessaging();
     foregroundMessageUnsubscribe = onMessage(messaging, (payload) => {
-      if (Notification.permission !== 'granted') return;
+      if (Notification.permission !== 'granted' || !getAuth().currentUser || localStorage.getItem(`pawppy_push_disabled_${getAuth().currentUser.uid}`)) return;
 
-      const title = payload.notification?.title || 'New Pawppy update';
-      const body = payload.notification?.body || 'Open Pawppy to see what is new.';
+      const title = payload.notification?.title || payload.data?.title || 'New Pawppy update';
+      const body = payload.notification?.body || payload.data?.body || 'Open Pawppy to see what is new.';
       const clickAction = payload.data?.click_action || '/';
 
       navigator.serviceWorker.getRegistration('/firebase-push/').then((registration) => {
@@ -1020,6 +1020,7 @@ const getDeviceId = () => {
 
 export const requestNotificationPermission = async (userId, { prompt = true } = {}) => {
   try {
+    if (getAuth().currentUser?.uid !== userId) return { success: false, error: 'Sign in before enabling reminders.' };
     if (!userId || !('serviceWorker' in navigator) || !('Notification' in window)) return { success: false, error: 'Notifications are not supported here. On iPhone, first add Pawppy to your Home Screen.' };
     if (!prompt && localStorage.getItem(`pawppy_push_disabled_${userId}`)) return { success: false, error: 'Disabled on this device' };
     if (!prompt && Notification.permission !== 'granted') return { success: false, error: 'Permission not enabled' };
@@ -1041,6 +1042,7 @@ export const requestNotificationPermission = async (userId, { prompt = true } = 
     });
     const token = await getToken(getMessaging(), { vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY, serviceWorkerRegistration: registration });
     if (!token) throw new Error('No notification token was returned');
+    if (getAuth().currentUser?.uid !== userId) return { success: false, error: 'Your account changed. Please enable reminders again.' };
     await httpsCallable(getFunctions(), 'subscribeToNotifications')({ token, deviceId: getDeviceId() });
     localStorage.removeItem(`pawppy_push_disabled_${userId}`);
     localStorage.setItem(`pawppy_push_enabled_${userId}`, 'true');

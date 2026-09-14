@@ -34,7 +34,7 @@ We expect clearer daily care, lower input effort, and shared responsibility to i
 - Optional memories/enrichment challenges; separate playdates from breeding; contextual shopping/replenishment estimates.
 - Gate: authorization/concurrency tests; useful repeat actions improve without excessive logging effort or notification fatigue.
 
-**Phase 4 — contextual AI (queued; provider and evaluation gates)**
+**Phase 4 — contextual AI (Copilot beta deployed; document/voice workflows queued)**
 
 - Authenticated backend with permissions, request limits, cost tracking, and source-linked pet-history retrieval.
 - Photo/PDF extraction into reviewed fields, receipts into reviewed expenses, voice into editable care logs.
@@ -61,8 +61,8 @@ We expect clearer daily care, lower input effort, and shared responsibility to i
 - Phase 1: canonical scheduled reminders, per-device notification registration, preferences, first-party measurement and reporting, public profile projections, ownership backfill tool, and tighter care/conversation rules are implemented locally. Production backfill, deployment and device checks remain.
 - Phase 2: new public landing and separate login; common Today experience; private minimal pet setup; daily routine completion/correction/pause/resume; opt-in daily briefings; Care and Discover hubs; navigation and truthful discovery distances are implemented locally.
 - Phase 3: one-use caregiver/viewer/sitter invitations, revocation and shared daily care; seven-day action counts and completed-care counts in weekly digests; printable/downloadable visit preparation; and parent-entered veterinary weight targets are implemented locally. Assignment, richer recaps, playdates and replenishment work remain.
-- Phase 4/5: no model provider or production evaluation data has been configured. The app does not claim that AI or an owned neural network is live.
-- See `AI_IMPLEMENTATION_SPEC.md` for the next-phase contract. See `RELEASE_CHECKLIST.md` for the coordinated release sequence, checks, precise feature limits and remaining work. Nothing has been deployed.
+- Phase 4: consent-based Gemini Copilot questions and owner-approved text summaries deployed on September 12; see COPILOT_EVALUATION.md. Document/voice extraction remains queued. Phase 5 owned-model work has not started.
+- See `AI_IMPLEMENTATION_SPEC.md` for the next-phase contract. See `RELEASE_CHECKLIST.md` for the coordinated release sequence, checks, precise feature limits and remaining work. The foundations, Today, shared-care core and Copilot have since been deployed; the older local-only notes below describe their original validation stage.
 
 **Verified locally on 10 September 2026**
 
@@ -71,3 +71,10 @@ We expect clearer daily care, lower input effort, and shared responsibility to i
 - 4 browser tests passed: landing/demo responsiveness, onboarding and routine persistence/correction, saved preferences, and shared-care revocation.
 - Production build, Functions syntax check and `git diff --check` passed.
 - Production data, migrations, deployment, actual email and installed-device push delivery were not exercised. Retention improvement has not yet been measured.
+
+**September 14 continuation — useful return loops**
+
+- Push audit: retry and navigation fixes, per-device status, and an explicit caller-only test notification. Backend/rules deployed September 12. The saved VAPID public key was validated and synced to the production build environment on September 14; physical-device receipt remains unverified. See PUSH_NOTIFICATION_AUDIT.md.
+- Routine time picker: accessible hour/minute selectors, AM/PM, three everyday presets, and the household time zone. Stores the same HH:mm routine value; selecting a time does not schedule an individual alert.
+- Phase 3 next increment: expandable seven-day recap by pet, routine and day, respecting the pet filter and completion corrections. No health inference, missed-care claim or additional data collection.
+- Next pending increments: routine assignment and sitter handover; per-activity notifications require a separate opt-in and delivery implementation. Document extraction needs reviewed examples and the private-file workflow in AI_IMPLEMENTATION_SPEC.md.

@@ -24,3 +24,22 @@ export function nextCareRecord(current, { routine, uid, status, expectedRevision
   if ((current?.revision || 0) !== expectedRevision || current?.status === status) return undefined;
   return { petId: routine.petId, title: routine.title, status, updatedBy: uid, updatedAt: timestamp, revision: expectedRevision + 1 };
 }
+
+// Count saved completions only. Missing entries are not evidence of missed care.
+export function weeklyCareSummary(days, pets, endDate, petFilter = '') {
+  const byPet = Object.create(null), byRoutine = Object.create(null);
+  const activity = Array.from({ length: 7 }, (_, index) => {
+    const date = shiftDate(endDate, index - 6);
+    const records = Object.values(days?.[date] || {}).filter(record => record?.status === 'done' && (!petFilter || record.petId === petFilter));
+    for (const record of records) {
+      const id = record.petId || 'unknown';
+      byPet[id] = (byPet[id] || 0) + 1;
+      const title = typeof record.title === 'string' && record.title.trim() ? record.title.trim() : 'Daily care';
+      byRoutine[title] = (byRoutine[title] || 0) + 1;
+    }
+    return { date, count: records.length };
+  });
+  return { activity, total: activity.reduce((sum, day) => sum + day.count, 0), activeDays: activity.filter(day => day.count > 0).length,
+    pets: Object.entries(byPet).map(([id, count]) => ({ id, name: pets?.[id]?.name || 'Pet record', count })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)),
+    routines: Object.entries(byRoutine).map(([title, count]) => ({ title, count })).sort((a, b) => b.count - a.count || a.title.localeCompare(b.title)).slice(0, 3) };
+}

@@ -1,8 +1,9 @@
 import { readUserSnapshot } from "../../services/profileData";
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { get, ref, update } from 'firebase/database';
-import { auth, database } from '../../firebase';
+import { onValue, ref, update } from 'firebase/database';
+import { httpsCallable } from 'firebase/functions';
+import { auth, database, functions } from '../../firebase';
 import { requestNotificationPermission, disableNotificationDevice } from '../../services/notificationService';
 import { setProductMeasurementEnabled, trackProductEvent } from '../../services/productAnalytics';
 import CheckForUpdatesButton from '../PWA/CheckForUpdatesButton';
@@ -21,6 +22,11 @@ export default function NotificationSettings() {
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);
   const [loadError, setLoadError] = useState('');
+  const [registered, setRegistered] = useState(false);
+  useEffect(() => onValue(ref(database, `notificationDevices/${auth.currentUser.uid}`), snapshot => {
+    const deviceId = localStorage.getItem('pawppy_notification_device');
+    setRegistered(Boolean(deviceId && snapshot.val()?.[deviceId]?.token));
+  }), []);
   useEffect(() => {
     let live = true;
     readUserSnapshot(auth.currentUser.uid).then((snapshot) => {
@@ -46,6 +52,14 @@ export default function NotificationSettings() {
     catch { setStatus('Could not disable this device. Please try again.'); }
     finally { setBusy(false); }
   };
+  const testDevice = async () => {
+    setBusy(true); setStatus('');
+    try {
+      await httpsCallable(functions, 'testNotificationDevice')({ deviceId: localStorage.getItem('pawppy_notification_device') });
+      setStatus('Firebase accepted the test. Look for “Pawppy test notification” on this device. Acceptance does not guarantee display; check browser permission and Focus / Do Not Disturb settings if nothing appears.');
+    } catch (error) { setStatus(error.message || 'Could not send the test. Please try again.'); }
+    finally { setBusy(false); }
+  };
   const save = async (event) => {
     event.preventDefault(); setBusy(true); setStatus('');
     try {
@@ -69,11 +83,15 @@ export default function NotificationSettings() {
       </section>
       <div className="rounded-2xl bg-white border border-slate-200 p-5">
         <h2 className="font-bold text-slate-900">This device</h2>
+        <p className="text-sm font-semibold mt-2">{registered && typeof Notification !== 'undefined' && Notification.permission === 'granted' ? 'This device is registered for push notifications.' : 'Push notifications are not connected on this device. Enable reminders below.'}</p>
+        {prefs?.push?.enabled === false && <p className="text-sm text-amber-800 mt-2">Push is turned off for your account. Enable “Allow this channel” in the Push column and save your preferences.</p>}
         <p className="text-sm text-slate-600 mt-2">On iPhone, add Pawppy to your Home Screen and open it there before enabling reminders. Scheduled dates are checked after 9 AM in your chosen time zone.</p>
         <div className="flex flex-wrap gap-3 mt-4">
           <button type="button" disabled={busy} onClick={enable} className="rounded-xl bg-violet-600 text-white px-4 py-3 font-semibold disabled:opacity-50">Enable reminders</button>
+          <button type="button" disabled={busy || !registered} onClick={testDevice} className="rounded-xl border border-violet-300 text-violet-800 px-4 py-3 font-semibold disabled:opacity-50">Send test notification</button>
           <button type="button" disabled={busy} onClick={disable} className="rounded-xl border border-slate-200 px-4 py-3 font-semibold disabled:opacity-50">Disable this device</button>
         </div>
+        <p className="text-xs text-slate-500 mt-3">The test sends one push to this device, even during quiet hours. To check background delivery, send a test and switch to another app. Allow up to a minute and check your notification centre.</p>
       </div>
       {loadError ? <p role="alert">{loadError}</p> : !prefs ? <p role="status">Loading preferences…</p> : <form onSubmit={save} className="space-y-6">
         <div className="rounded-2xl bg-white border border-slate-200 p-5"><label className="block font-semibold">Daily care reminder time<input type="time" required className="block mt-2 rounded-xl border p-3" value={prefs.routineReminderTime || '08:00'} onChange={event => setPrefs({ ...prefs, routineReminderTime: event.target.value })} /></label><p className="text-sm text-slate-600 mt-3">Opt in to Daily routine briefing below for one reminder when routines remain open. Checked every 15 minutes after your chosen time, outside quiet hours. This does not send an alert for each activity.</p></div>

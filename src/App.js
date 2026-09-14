@@ -86,6 +86,7 @@ const ActivityPage = lazy(() => import("./features/activity/ActivityPage"));
 
 
 import { initializeBadgeManagement } from "./services/badgeService";
+import { createPushRegistrationSync } from "./services/pushRegistration.mjs";
 import { initializeForegroundNotifications, requestNotificationPermission } from "./services/notificationService";
 import { auth } from "./firebase";
 import { initializeProductAnalytics, trackProductEvent } from "./services/productAnalytics";
@@ -114,18 +115,13 @@ function AppContent() {
     initializeBadgeManagement();
     initializeForegroundNotifications();
 
-    const unsubscribeAuth = auth.onAuthStateChanged((user) => {
-      if (user && !user.emailVerified && user.providerData.some((provider) => provider.providerId === 'password')) return;
-      if (!user || !('Notification' in window) || Notification.permission !== 'granted') return;
-
-      const setupKey = `pawppy_push_setup_${user.uid}`;
-      if (sessionStorage.getItem(setupKey)) return;
-      sessionStorage.setItem(setupKey, 'true');
-
-      requestNotificationPermission(user.uid, { prompt: false }).catch((err) =>
-        console.log('Notification permission not granted:', err)
-      );
-    });
+    const syncPush = createPushRegistrationSync({ getUser: () => auth.currentUser, register: requestNotificationPermission });
+    const unsubscribeAuth = auth.onAuthStateChanged(() => { syncPush(); });
+    const reconnectPush = () => { syncPush({ forceRetry: true }); };
+    const resumePush = () => { if (document.visibilityState === 'visible') syncPush(); };
+    window.addEventListener('online', reconnectPush);
+    window.addEventListener('focus', resumePush);
+    document.addEventListener('visibilitychange', resumePush);
 
     // Check if Google Maps script is already loaded or being loaded
     if (!window.google && !document.querySelector('script[src*="maps.googleapis.com"]')) {
@@ -137,7 +133,12 @@ function AppContent() {
       document.body.appendChild(script);
     }
 
-    return () => unsubscribeAuth();
+    return () => {
+      unsubscribeAuth();
+      window.removeEventListener('online', reconnectPush);
+      window.removeEventListener('focus', resumePush);
+      document.removeEventListener('visibilitychange', resumePush);
+    };
   }, []);
 
   useEffect(() => {
