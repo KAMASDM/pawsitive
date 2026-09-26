@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";
 import { onValue, ref, update } from "firebase/database";
 import {
-  FiArrowLeft,
   FiBell,
   FiCheck,
   FiClock,
@@ -13,6 +12,8 @@ import {
 } from "react-icons/fi";
 import { auth, database } from "../../firebase";
 import { clearUnreadNotifications } from "../../services/badgeService";
+import { PageHeader } from "../UI/AppUI";
+import "./NotificationsInbox.css";
 
 const toMillis = (value) => {
   if (!value) return 0;
@@ -217,36 +218,24 @@ export default function NotificationsInbox() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-24">
-      <div className="sticky top-0 z-20 bg-white/95 backdrop-blur border-b border-violet-100 px-4 py-3 flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-full bg-violet-50 text-violet-600 flex items-center justify-center" aria-label="Back">
-          <FiArrowLeft size={17} />
-        </button>
-        <div className="flex-1 min-w-0">
-          <h1 className="text-lg font-extrabold text-slate-800">Notifications</h1>
-          <button onClick={() => navigate("/settings")} className="text-xs font-semibold text-violet-700 py-1">Reminders & preferences</button>
-          <p className="text-xs text-gray-400 truncate">{unreadCount} unread across personal and Pawppy updates</p>
-        </div>
-        <button
-          onClick={markAllRead}
-          disabled={unreadCount === 0}
-          className="text-xs font-bold text-violet-600 px-3 py-2 rounded-full bg-violet-50 disabled:opacity-40"
-        >
-          Mark read
-        </button>
-      </div>
-
-      <div className="max-w-2xl mx-auto p-4">
-        <div className="flex gap-2 mb-4">
-          {["all", "unread"].map((item) => (
-            <button
-              key={item}
-              onClick={() => setFilter(item)}
-              className={`px-4 py-2 rounded-full text-xs font-bold border ${filter === item ? "bg-violet-600 text-white border-violet-600" : "bg-white text-gray-500 border-violet-100"}`}
-            >
-              {item === "all" ? "All" : "Unread"}
-            </button>
-          ))}
+    <div className="app-page app-page-narrow inbox-page">
+      <PageHeader eyebrow="You’re in the loop" title="Notifications" description={unreadCount ? `${unreadCount} unread ${unreadCount === 1 ? 'update' : 'updates'}` : 'All caught up. A little peace of mind.'} />
+      <div>
+        <div className="inbox-toolbar">
+          <div className="inbox-filters" role="group" aria-label="Filter notifications">
+            {["all", "unread"].map((item) => (
+              <button
+                type="button"
+                key={item}
+                onClick={() => setFilter(item)}
+                aria-pressed={filter === item}
+                className="inbox-filter"
+              >
+                {item === "all" ? "All" : "Unread"}
+              </button>
+            ))}
+          </div>
+          <button type="button" onClick={markAllRead} disabled={isLoading || unreadCount === 0} className="app-text-button inbox-mark-read">Mark all read</button>
         </div>
 
         {error && (
@@ -273,25 +262,26 @@ export default function NotificationsInbox() {
               const Icon = meta.Icon;
               return (
                 <button
+                  type="button"
                   key={`${item.source}-${item.id}`}
                   onClick={() => goForNotification(item)}
-                  className="w-full bg-white border border-violet-100 rounded-2xl p-4 flex items-start gap-3 text-left shadow-sm hover:border-violet-200 transition-colors"
+                  className="inbox-notification app-panel"
                 >
-                  <span className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${item.read ? "bg-gray-100 text-gray-400" : meta.tone}`}>
+                  <span aria-hidden="true" className={`inbox-notification-icon ${item.read ? "bg-gray-100 text-gray-400" : meta.tone}`}>
                     {item.read ? <FiCheck size={16} /> : <Icon size={16} />}
                   </span>
-                  <span className="flex-1 min-w-0">
-                    <span className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-violet-400">{meta.label}</span>
-                      {item.source === "broadcast" && <span className="text-[10px] font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full">Pawppy</span>}
-                      {!item.read && <span className="w-2 h-2 rounded-full bg-violet-500" />}
+                  <span className="inbox-notification-copy">
+                    <span className="inbox-notification-meta">
+                      <span className="inbox-notification-type">{meta.label}</span>
+                      {item.source === "broadcast" && <span className="inbox-notification-source">Pawppy</span>}
+                      {!item.read && <span className="inbox-notification-unread"><span className="sr-only">Unread</span></span>}
                     </span>
-                    <span className="block text-sm font-bold text-slate-800 truncate mt-1">{item.title}</span>
-                    {item.body && <span className="block text-xs text-gray-500 mt-1 line-clamp-2">{item.body}</span>}
+                    <span className="inbox-notification-title">{item.title}</span>
+                    {item.body && <span className="inbox-notification-body">{item.body}</span>}
                     {item.timestamp > 0 && (
-                      <span className="flex items-center gap-1 text-[10px] text-gray-300 mt-2">
-                        <FiClock size={11} />
-                        {new Date(item.timestamp).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
+                      <span className="inbox-notification-time">
+                        <FiClock size={12} aria-hidden="true" />
+                        <time dateTime={new Date(item.timestamp).toISOString()}>{new Date(item.timestamp).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}</time>
                       </span>
                     )}
                   </span>

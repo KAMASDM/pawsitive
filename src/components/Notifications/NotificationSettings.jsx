@@ -7,6 +7,10 @@ import { auth, database, functions } from '../../firebase';
 import { requestNotificationPermission, disableNotificationDevice } from '../../services/notificationService';
 import { setProductMeasurementEnabled, trackProductEvent } from '../../services/productAnalytics';
 import CheckForUpdatesButton from '../PWA/CheckForUpdatesButton';
+import { PageHeader, PageLoading, Sheet } from '../UI/AppUI';
+import { Bell, LogOut, RefreshCw } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { signOutWithNotifications } from '../../services/notificationService';
 
 const CATEGORIES = [
   ['routines', 'Daily routine briefing'],
@@ -17,6 +21,8 @@ const CATEGORIES = [
 ];
 
 export default function NotificationSettings() {
+  const navigate = useNavigate();
+  const [confirmLogout, setConfirmLogout] = useState(false);
   const [prefs, setPrefs] = useState(null);
   const [measurement, setMeasurement] = useState(true);
   const [status, setStatus] = useState('');
@@ -72,45 +78,31 @@ export default function NotificationSettings() {
     finally { setBusy(false); }
   };
 
-  return <div className="min-h-screen bg-slate-50 px-4 py-8 pb-28">
-    <div className="max-w-2xl mx-auto space-y-6">
-      <Link to="/notifications" className="text-violet-700 text-sm font-semibold">← Notifications</Link>
-      <div><h1 className="text-3xl font-bold text-slate-900">Reminders & preferences</h1><p className="text-slate-600 mt-2">Choose the updates that help you care for your pet.</p></div>
-      <section className="rounded-2xl bg-white border border-slate-200 p-5">
-        <h2 className="font-bold text-slate-900">App updates</h2>
-        <p className="text-sm text-slate-600 mt-2 mb-4">Get the latest Pawppy here, without reinstalling. Your account and saved records stay in place.</p>
-        <CheckForUpdatesButton />
+  return <div className="app-page app-page-narrow settings-page">
+    <PageHeader eyebrow="Make yourself at home" title="Settings" description="A few thoughtful choices for your everyday." />
+    <section className="app-panel settings-device"><div className="app-section-top"><h2 className="app-section-title">Notifications on this device</h2><Bell size={21} aria-hidden="true" /></div>
+      <p className="settings-connection"><span className={registered && typeof Notification !== 'undefined' && Notification.permission === 'granted' ? 'is-connected' : ''} />{registered && typeof Notification !== 'undefined' && Notification.permission === 'granted' ? 'Connected and ready' : 'Not connected yet'}</p>
+      {prefs?.push?.enabled === false && <p className="app-caption mt-3">Push is turned off for your account. Enable “Allow this channel” in the Push column and save.</p>}
+      <p className="app-caption mt-3">On iPhone, open Pawppy from your Home Screen to enable reminders.</p>
+      <div className="settings-device-actions"><button type="button" disabled={busy} onClick={enable} className="app-button">Enable reminders</button><button type="button" disabled={busy || !registered} onClick={testDevice} className="app-button app-button-secondary">Send test notification</button></div>
+      <details className="settings-details"><summary>More about device notifications</summary><p>Scheduled dates are checked after 9 AM in your chosen time zone. A test sends one push to this device, even during quiet hours. Send a test, switch apps, then check your notification centre. Delivery may take a minute.</p><button type="button" disabled={busy} onClick={disable} className="app-text-button">Disable this device</button></details>
+    </section>
+    <h2 className="app-section-label">Reminders & preferences</h2>
+    {loadError ? <p role="alert" className="app-notice app-notice-error">{loadError}</p> : !prefs ? <PageLoading label="Loading preferences…" /> : <form onSubmit={save} className="settings-form">
+      <section className="app-panel"><label className="app-field">Daily care reminder time<input type="time" required className="app-input" value={prefs.routineReminderTime || '08:00'} onChange={event => setPrefs({ ...prefs, routineReminderTime: event.target.value })} /></label><p className="app-caption mt-3">One briefing when routines remain open. Turn on Daily routine briefing below. We check every 15 minutes after your chosen time, outside quiet hours.</p></section>
+      <section className="app-panel settings-channels"><div className="settings-channel-row settings-channel-heading"><span>Updates you want</span><span>Email</span><span>Push</span></div>
+        {[['enabled', 'Allow this channel'], ...CATEGORIES].map(([key, label]) => <div key={key} className="settings-channel-row"><span>{label}</span>{['email', 'push'].map(channel => <label key={channel} className="app-switch"><input aria-label={`${label}: ${channel}`} type="checkbox" checked={key === 'routines' ? prefs[channel]?.[key] === true : prefs[channel]?.[key] !== false} onChange={event => toggle(channel, key, event.target.checked)} /><span aria-hidden="true" /></label>)}</div>)}
+        <p className="app-caption mt-4">These choices apply to personal updates and scheduled care emails. Community broadcasts are managed separately.</p>
       </section>
-      <div className="rounded-2xl bg-white border border-slate-200 p-5">
-        <h2 className="font-bold text-slate-900">This device</h2>
-        <p className="text-sm font-semibold mt-2">{registered && typeof Notification !== 'undefined' && Notification.permission === 'granted' ? 'This device is registered for push notifications.' : 'Push notifications are not connected on this device. Enable reminders below.'}</p>
-        {prefs?.push?.enabled === false && <p className="text-sm text-amber-800 mt-2">Push is turned off for your account. Enable “Allow this channel” in the Push column and save your preferences.</p>}
-        <p className="text-sm text-slate-600 mt-2">On iPhone, add Pawppy to your Home Screen and open it there before enabling reminders. Scheduled dates are checked after 9 AM in your chosen time zone.</p>
-        <div className="flex flex-wrap gap-3 mt-4">
-          <button type="button" disabled={busy} onClick={enable} className="rounded-xl bg-violet-600 text-white px-4 py-3 font-semibold disabled:opacity-50">Enable reminders</button>
-          <button type="button" disabled={busy || !registered} onClick={testDevice} className="rounded-xl border border-violet-300 text-violet-800 px-4 py-3 font-semibold disabled:opacity-50">Send test notification</button>
-          <button type="button" disabled={busy} onClick={disable} className="rounded-xl border border-slate-200 px-4 py-3 font-semibold disabled:opacity-50">Disable this device</button>
-        </div>
-        <p className="text-xs text-slate-500 mt-3">The test sends one push to this device, even during quiet hours. To check background delivery, send a test and switch to another app. Allow up to a minute and check your notification centre.</p>
-      </div>
-      {loadError ? <p role="alert">{loadError}</p> : !prefs ? <p role="status">Loading preferences…</p> : <form onSubmit={save} className="space-y-6">
-        <div className="rounded-2xl bg-white border border-slate-200 p-5"><label className="block font-semibold">Daily care reminder time<input type="time" required className="block mt-2 rounded-xl border p-3" value={prefs.routineReminderTime || '08:00'} onChange={event => setPrefs({ ...prefs, routineReminderTime: event.target.value })} /></label><p className="text-sm text-slate-600 mt-3">Opt in to Daily routine briefing below for one reminder when routines remain open. Checked every 15 minutes after your chosen time, outside quiet hours. This does not send an alert for each activity.</p></div>
-        <div className="rounded-2xl bg-white border border-slate-200 p-5 space-y-4">
-          <div className="grid grid-cols-[1fr_64px_64px] gap-2 text-sm font-bold"><span>Updates</span><span>Email</span><span>Push</span></div>
-          {[['enabled', 'Allow this channel'], ...CATEGORIES].map(([key, label]) => <div key={key} className="grid grid-cols-[1fr_64px_64px] gap-2 items-center text-sm"><span>{label}</span>{['email', 'push'].map((channel) => <input key={channel} aria-label={`${label}: ${channel}`} type="checkbox" className="w-5 h-5 accent-violet-600" checked={key === 'routines' ? prefs[channel]?.[key] === true : prefs[channel]?.[key] !== false} onChange={(event) => toggle(channel, key, event.target.checked)} />)}</div>)}
-          <p className="text-xs text-slate-500">These controls apply to personal updates and scheduled care emails. Community broadcasts are managed separately.</p>
-        </div>
-        <div className="rounded-2xl bg-white border border-slate-200 p-5 space-y-4">
-          <label className="block text-sm font-semibold">Time zone<input required value={prefs.timeZone} onChange={(event) => setPrefs({ ...prefs, timeZone: event.target.value })} placeholder="Asia/Kolkata" className="block w-full mt-2 rounded-xl border border-slate-300 p-3" /></label>
-          <label className="flex items-center gap-3 text-sm"><input type="checkbox" checked={prefs.quietHours?.enabled === true} onChange={(event) => setPrefs({ ...prefs, quietHours: { start: '22:00', end: '07:00', ...prefs.quietHours, enabled: event.target.checked } })} />Quiet hours for personal reminders</label>
-          {prefs.quietHours?.enabled && <div className="flex gap-4">{['start', 'end'].map((key) => <label key={key} className="text-sm capitalize">{key}<input type="time" required value={prefs.quietHours[key] || ''} onChange={(event) => setPrefs({ ...prefs, quietHours: { ...prefs.quietHours, [key]: event.target.value } })} className="block mt-1 border rounded-lg p-2" /></label>)}</div>}
-        </div>
-        <div className="rounded-2xl bg-white border border-slate-200 p-5">
-          <label className="flex items-start gap-3"><input type="checkbox" checked={measurement} onChange={(event) => setMeasurement(event.target.checked)} className="mt-1" /><span><span className="font-bold block">Help improve Pawppy</span><span className="text-sm text-slate-600">Record basic actions, such as returning to the app or saving a record. Activity is linked to your account for up to 90 days. We do not include pet names, medical notes, document text, or message contents in these events. Browser privacy signals are respected.</span></span></label>
-        </div>
-        <button disabled={busy} className="rounded-xl bg-violet-600 text-white px-6 py-3 font-bold disabled:opacity-50">{busy ? 'Working…' : 'Save preferences'}</button>
-      </form>}
-      {status && <p role="status" className="rounded-xl bg-violet-50 p-4 text-sm text-violet-900">{status}</p>}
-    </div>
+      <section className="app-panel"><label className="app-field">Time zone<input required value={prefs.timeZone} onChange={event => setPrefs({ ...prefs, timeZone: event.target.value })} placeholder="Asia/Kolkata" className="app-input" /></label><label className="settings-toggle-row"><span><strong>Quiet hours for personal reminders</strong><small>A little time to switch off.</small></span><span className="app-switch"><input type="checkbox" checked={prefs.quietHours?.enabled === true} onChange={event => setPrefs({ ...prefs, quietHours: { start: '22:00', end: '07:00', ...prefs.quietHours, enabled: event.target.checked } })} /><span aria-hidden="true" /></span></label>
+        {prefs.quietHours?.enabled && <div className="app-form-grid mt-4">{['start', 'end'].map(key => <label key={key} className="app-field capitalize">{key}<input type="time" required value={prefs.quietHours[key] || ''} onChange={event => setPrefs({ ...prefs, quietHours: { ...prefs.quietHours, [key]: event.target.value } })} className="app-input" /></label>)}</div>}
+      </section>
+      <section className="app-panel"><label className="settings-toggle-row"><span><strong>Help improve Pawppy</strong><small>Share basic app activity.</small></span><span className="app-switch"><input type="checkbox" checked={measurement} onChange={event => setMeasurement(event.target.checked)} /><span aria-hidden="true" /></span></label><details className="settings-details"><summary>What is shared?</summary><p>Basic actions, such as returning to the app or saving a record, are linked to your account for up to 90 days. Pet names, medical notes, document text and message contents are excluded. Browser privacy signals are respected.</p></details></section>
+      <div className="settings-save"><button disabled={busy} className="app-button">{busy ? 'Saving…' : 'Save preferences'}</button><span className="app-caption">Changes apply when you save.</span></div>
+    </form>}
+    {status && <p role="status" className="app-notice mt-5">{status}</p>}
+    <p className="app-section-label">Your app</p><section className="app-panel"><div className="app-section-top"><h2 className="app-section-title">App updates</h2><RefreshCw size={19} className="text-stone-400" aria-hidden="true" /></div><p className="app-caption mb-4">The latest improvements, without reinstalling. Your account and saved records stay in place.</p><CheckForUpdatesButton /></section>
+    <div className="settings-account"><Link to="/privacy-policy" className="app-text-button">Privacy policy</Link><button type="button" className="app-text-button" onClick={() => setConfirmLogout(true)}><LogOut size={16} />Sign out</button></div>
+    <Sheet open={confirmLogout} onClose={() => setConfirmLogout(false)} busy={busy} title="Sign out of Pawppy?" description="Your saved care records will be here when you sign back in."><div className="app-form-actions"><button type="button" className="app-text-button" disabled={busy} onClick={() => setConfirmLogout(false)}>Stay signed in</button><button type="button" className="app-button" disabled={busy} onClick={async () => { setBusy(true); try { await signOutWithNotifications(); navigate('/'); } catch { setStatus('Could not sign out. Please try again.'); setConfirmLogout(false); } finally { setBusy(false); } }}>Sign out</button></div></Sheet>
   </div>;
 }

@@ -1,6 +1,6 @@
 import React, { useEffect, lazy, Suspense } from "react";
 import { Route, Routes, Navigate, useLocation } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, MotionConfig } from "framer-motion";
 
 // Eagerly loaded — tiny, always needed on first paint
 import Landing from "./components/Landing/Landing";
@@ -158,20 +158,20 @@ function AppContent() {
       <ScrollToTop />
       <UpdateNotification />
       {location.pathname !== "/" && <GlobalSearch />}
-      <div className="min-h-screen bg-lavender-50 flex flex-col">
+      <div className="app-frame flex flex-col">
         <Header />
-        <main className="flex-grow main-content">
+        <main id="app-content" className={`flex-grow ${["/", "/login"].includes(location.pathname) ? "" : "app-main"}`}>
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={location.pathname}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               transition={{
                 duration: 0.18,
                 ease: [0.25, 0.46, 0.45, 0.94],
               }}
-              className="will-change-[opacity,transform]"
+              className="app-route"
             >
               <Suspense fallback={<PawLoader fullScreen />}>
                 {subdomainStoreSlug ? (
@@ -425,5 +425,5 @@ function AppContent() {
 }
 
 export default function App() {
-  return <PWAUpdateProvider><RouteLoadBoundary><AppContent /></RouteLoadBoundary></PWAUpdateProvider>;
+  return <MotionConfig reducedMotion="user"><PWAUpdateProvider><RouteLoadBoundary><AppContent /></RouteLoadBoundary></PWAUpdateProvider></MotionConfig>;
 }

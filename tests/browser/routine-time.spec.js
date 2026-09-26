@@ -13,7 +13,7 @@ test('routine time picker saves midnight and noon correctly and weekly recap fol
   const recap = page.getByRole('region', { name: 'Weekly care recap' });
   await expect(recap).toContainText('2 care moments'); await recap.getByRole('button', { name: 'Explore your week' }).click();
   await expect(recap.getByText('Milo', { exact: true })).toBeVisible(); await expect(recap.getByText('Luna', { exact: true })).toBeVisible();
-  await page.getByLabel('Filter by pet').selectOption('milo'); await expect(recap).toContainText('1 care moment'); await expect(recap.getByText('Luna', { exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Show Milo’s routines', exact: true }).click(); await expect(recap).toContainText('1 care moment'); await expect(recap.getByText('Luna', { exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: 'Add a routine', exact: true }).click();
   await page.getByLabel('Routine hour').selectOption('12'); await page.getByLabel('Routine minute').selectOption('5'); await page.getByRole('button', { name: 'AM', exact: true }).click();
   await page.screenshot({ path: 'test-results/routine-time-mobile.png', fullPage: true });

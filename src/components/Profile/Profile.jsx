@@ -31,6 +31,7 @@ import {
   DesktopRequestsSection as DesktopRequestsSectionComponent,
 } from "./components";
 import ConversationsList from "./components/ConversationsList";
+import { PageHeader } from "../UI/AppUI";
 
 // Memoize components to prevent unnecessary re-renders
 const PetsSection = memo(PetsSectionComponent);
@@ -60,10 +61,6 @@ const ProfileExperience = ({
   navigate,
   isLoading,
 }) => {
-  const pendingCount = matingRequests.filter(
-    (request) => request.direction === "incoming" && request.status === "pending"
-  ).length;
-  const publicProfiles = pets.filter((pet) => Boolean(pet.slug)).length;
   const initials = user.displayName
     ?.split(" ")
     .filter(Boolean)
@@ -74,136 +71,21 @@ const ProfileExperience = ({
   const locationLabel = [user.city, user.country].filter(Boolean).join(", ");
   const activeTabDetails = tabs.find((tab) => tab.id === activeTab) || tabs[0];
 
-  const quickActions = [
-    {
-      label: "Add a pet",
-      detail: "Create a care profile",
-      icon: FiPlus,
-      onClick: handleAddPet,
-      accent: "bg-violet-600 text-white",
-    },
-    {
-      label: "Find matches",
-      detail: "Discover nearby pets",
-      icon: FiHeart,
-      onClick: () => navigate("/nearby-mates"),
-      accent: "bg-rose-50 text-rose-600",
-    },
-    {
-      label: "Adopt a pet",
-      detail: "Browse pets needing homes",
-      icon: FiHome,
-      onClick: () => navigate("/adopt-pets"),
-      accent: "bg-emerald-50 text-emerald-600",
-    },
-  ];
-
   return (
-    <div className="min-h-screen bg-[#f7f5fb] pb-28 lg:pb-14">
-      <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8 lg:py-9">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35 }}
-          className="grid gap-4 lg:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.55fr)] lg:gap-6"
-        >
-          <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#6d5dbf] via-[#51428e] to-[#30264f] p-5 text-white shadow-[0_20px_55px_rgba(64,48,112,0.2)] sm:p-7 lg:min-h-[292px] lg:p-9">
-            <div className="pointer-events-none absolute -right-14 -top-20 h-56 w-56 rounded-full border border-white/10 bg-white/[0.04]" />
-            <div className="pointer-events-none absolute -bottom-28 right-24 h-64 w-64 rounded-full border border-white/10" />
-            <FaPaw className="pointer-events-none absolute right-8 top-16 rotate-12 text-6xl text-white/[0.06] lg:right-14 lg:text-8xl" />
-
-            <div className="relative z-10 flex items-start justify-between gap-4">
-              <div>
-                <div className="mb-1 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-violet-200">
-                  <span className="h-1.5 w-1.5 rounded-full bg-violet-300" />
-                  Your Pawppy account
-                </div>
-                <p className="text-sm text-white/60">Everything about you and your pet family, together.</p>
-              </div>
-              <button
-                type="button"
-                onClick={handleEditProfile}
-                className="flex shrink-0 items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs font-bold text-white backdrop-blur transition hover:bg-white/20"
-              >
-                <FiEdit3 size={14} />
-                <span className="hidden sm:inline">Edit account</span>
-                <span className="sm:hidden">Edit</span>
-              </button>
-            </div>
-
-            <div className="relative z-10 mt-7 flex items-center gap-4 sm:gap-5">
-              <div className="flex h-[74px] w-[74px] shrink-0 items-center justify-center rounded-[24px] border border-white/20 bg-white/15 text-2xl font-black shadow-inner backdrop-blur sm:h-24 sm:w-24 sm:text-3xl">
-                {initials}
-              </div>
-              <div className="min-w-0">
-                <h1 className="truncate text-2xl font-black tracking-tight sm:text-3xl">
-                  {user.displayName || "Pet Parent"}
-                </h1>
-                <div className="mt-2 flex min-w-0 items-center gap-2 text-xs text-white/70 sm:text-sm">
-                  <FiMail className="shrink-0" />
-                  <span className="truncate">{user.email}</span>
-                </div>
-                {locationLabel && (
-                  <div className="mt-1.5 flex items-center gap-2 text-xs text-white/60 sm:text-sm">
-                    <FiMapPin className="shrink-0" />
-                    <span className="truncate">{locationLabel}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="relative z-10 mt-7 grid grid-cols-3 gap-2 sm:max-w-xl sm:gap-3">
-              {[
-                { value: isLoading ? "—" : pets.length, label: pets.length === 1 ? "Pet" : "Pets" },
-                { value: isLoading ? "—" : publicProfiles, label: "Social profiles" },
-                { value: isLoading ? "—" : pendingCount, label: "Pending" },
-              ].map((stat) => (
-                <div key={stat.label} className="rounded-2xl border border-white/10 bg-white/[0.09] px-2 py-3 text-center backdrop-blur-sm sm:px-4">
-                  <p className="text-xl font-black leading-none sm:text-2xl">{stat.value}</p>
-                  <p className="mt-1.5 truncate text-[10px] font-semibold text-white/60 sm:text-xs">{stat.label}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="rounded-[28px] border border-violet-100 bg-white p-4 shadow-[0_14px_40px_rgba(74,61,125,0.08)] sm:p-5">
-            <div className="mb-4 flex items-center justify-between px-1">
-              <div>
-                <h2 className="text-base font-extrabold text-slate-900">Quick actions</h2>
-                <p className="mt-0.5 text-xs text-slate-500">Your most useful next steps</p>
-              </div>
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
-                <FaPaw size={16} />
-              </div>
-            </div>
-            <div className="grid grid-cols-3 gap-2 lg:grid-cols-1 lg:gap-2.5">
-              {quickActions.map(({ label, detail, icon: Icon, onClick, accent }) => (
-                <button
-                  type="button"
-                  key={label}
-                  onClick={onClick}
-                  className="group flex min-w-0 flex-col items-center rounded-2xl border border-slate-100 bg-slate-50/70 p-3 text-center transition hover:border-violet-200 hover:bg-violet-50/60 lg:flex-row lg:p-3.5 lg:text-left"
-                >
-                  <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${accent}`}>
-                    <Icon size={18} />
-                  </span>
-                  <span className="mt-2 min-w-0 lg:ml-3 lg:mt-0 lg:flex-1">
-                    <span className="block truncate text-[11px] font-extrabold text-slate-800 sm:text-xs lg:text-sm">{label}</span>
-                    <span className="mt-0.5 hidden text-xs text-slate-500 lg:block">{detail}</span>
-                  </span>
-                  <FiArrowRight className="hidden text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-violet-500 lg:block" />
-                </button>
-              ))}
-            </div>
-          </section>
-        </motion.div>
-
+    <div className="app-page profile-page">
+      <PageHeader eyebrow="A home for you and your pets" title="Profile" />
+      <div>
+        <section className="app-panel profile-identity">
+          <div className="profile-avatar">{initials}</div>
+          <div className="profile-identity-copy"><h2>{user.displayName || 'Pet parent'}</h2><p>{user.email}</p>{locationLabel && <p>{locationLabel}</p>}</div>
+          <button type="button" onClick={handleEditProfile} className="app-text-button">Edit account</button>
+        </section>
         <motion.nav
           aria-label="Profile sections"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           transition={{ delay: 0.08, duration: 0.3 }}
-          className="mt-5 grid grid-cols-4 gap-1 rounded-[22px] border border-violet-100 bg-white p-1.5 shadow-[0_8px_28px_rgba(74,61,125,0.07)] sm:gap-2 sm:p-2"
+          className="profile-sections"
         >
           {tabs.map((tab) => (
             <button
@@ -211,11 +93,7 @@ const ProfileExperience = ({
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               aria-current={activeTab === tab.id ? "page" : undefined}
-              className={`relative flex min-w-0 items-center justify-center gap-2 rounded-2xl px-1.5 py-3 text-[11px] font-bold transition sm:px-4 sm:text-sm ${
-                activeTab === tab.id
-                  ? "bg-[#4e417f] text-white shadow-[0_8px_18px_rgba(78,65,127,0.22)]"
-                  : "text-slate-500 hover:bg-violet-50 hover:text-violet-700"
-              }`}
+              className={activeTab === tab.id ? "is-active" : ""}
             >
               <span className="text-sm sm:text-base">{tab.icon}</span>
               <span className="truncate">{tab.shortLabel || tab.label}</span>
@@ -230,9 +108,6 @@ const ProfileExperience = ({
 
         <div className="mb-4 mt-6 flex items-end justify-between gap-4 px-1 sm:mb-5 sm:mt-8">
           <div>
-            <div className="mb-1 flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.16em] text-violet-500">
-              <FiUsers /> Account workspace
-            </div>
             <h2 className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl">{activeTabDetails.label}</h2>
             <p className="mt-1 max-w-2xl text-xs leading-5 text-slate-500 sm:text-sm">{activeTabDetails.description}</p>
           </div>
@@ -240,16 +115,16 @@ const ProfileExperience = ({
             <button
               type="button"
               onClick={handleAddPet}
-              className="hidden shrink-0 items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-violet-700 sm:flex"
+              className="app-button"
             >
               <FiPlus /> Add pet
             </button>
           )}
         </div>
 
-        <motion.main
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           transition={{ delay: 0.14, duration: 0.3 }}
         >
           {isLoading ? (
@@ -281,7 +156,7 @@ const ProfileExperience = ({
               {activeTab === "compare" && <MultiPetCompare key="compare" pets={pets} />}
             </AnimatePresence>
           )}
-        </motion.main>
+        </motion.div>
       </div>
     </div>
   );

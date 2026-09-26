@@ -2,17 +2,18 @@ import React, { useEffect, useState } from 'react';
 import { httpsCallable } from 'firebase/functions';
 import { Link, useSearchParams } from 'react-router-dom';
 import { endAt, onValue, orderByKey, query, ref, startAt } from 'firebase/database';
-import { ArrowRight, Heart, PawPrint, Plus } from 'lucide-react';
+import { ArrowRight, Check, Heart, Plus, Settings2, Sparkles, Users } from 'lucide-react';
 import { auth, database, functions } from '../../firebase';
 import { careDate, careTimeZone, ROUTINE_KINDS, shiftDate, todayTasks } from '../../domain/care.mjs';
 import { createFirstPet, createRoutine, recordCare, setRoutineActive } from '../../services/careService';
 import CareTask from './CareTask';
 import WeeklyCareRecap from './WeeklyCareRecap';
 import RoutineTimePicker from './RoutineTimePicker';
-import TodayWelcome, { TodayDiscover } from './TodayWelcome';
+import TodayWelcome from './TodayWelcome';
+import { ActionRow, EmptyState, PageLoading, Sheet } from '../UI/AppUI';
 
-const inputClass = 'mt-1 w-full rounded-xl border border-slate-300 p-3 text-slate-900 bg-white focus:ring-2 focus:ring-violet-500';
-const primaryClass = 'inline-flex items-center justify-center gap-2 rounded-xl bg-violet-700 px-5 py-3 font-semibold text-white hover:bg-violet-800 disabled:opacity-50';
+const inputClass = 'app-input';
+const primaryClass = 'app-button';
 
 export default function Today() {
   const uid = auth.currentUser.uid;
@@ -82,41 +83,64 @@ export default function Today() {
   const canRecord = !isShared || (access?.expiresAt > now.getTime() && ['caregiver', 'sitter'].includes(access?.role));
   const completed = tasks.filter(task => task.completed).length;
   const ready = loaded.pets && loaded.user && loaded.routines && loaded.days;
-  useEffect(() => {
-    if (!showForm || !ready || !petList.length) return;
-    const timer = setTimeout(() => { const section = document.getElementById('routine-form'); section?.scrollIntoView({ block: 'center' }); section?.querySelector('select')?.focus({ preventScroll: true }); }, 50);
-    return () => clearTimeout(timer);
-  }, [showForm, ready, petList.length]);
   const run = async (key, action) => {
     setBusy(key); setError(''); setNotice('');
     try { await action(); } catch (err) { setError(err.code === 'PERMISSION_DENIED' ? 'This action is not available for your account. Please reload and try again.' : err.message || 'Could not save. Please try again.'); }
     finally { setBusy(''); }
   };
-  const openForm = () => { setForm(previous => ({ ...previous, petId: filter || previous.petId || petList[0]?.[0] || '' })); setParams({ add: '1' }); };
+  const openForm = event => { event?.currentTarget?.focus({ preventScroll: true }); setForm(previous => ({ ...previous, petId: filter || previous.petId || petList[0]?.[0] || '' })); setParams({ add: '1' }); };
 
 
-  return <div className="today-home">
-    <div className="today-shell">
-      <TodayWelcome user={user} now={now} timeZone={timeZone} pets={petList} filter={filter} onFilter={setFilter} ready={ready} isShared={isShared} onStart={() => document.getElementById('today-care')?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' })} />
-      <div id="today-care" className="scroll-mt-24" />
-      {isShared && <div className="p-4 mb-5 rounded-xl bg-violet-100"><p className="font-semibold">Shared care · {shared.ownerName || "Family"}’s pets</p><p className="text-sm mt-1">{canRecord ? "You can view and record daily care." : "You have view-only access to this plan."}</p><Link to="/today" className="inline-block mt-2 text-sm underline text-violet-800">Return to my Today</Link></div>}
-      {error && <p role="alert" className="p-4 mb-4 bg-red-50 border border-red-200 rounded-xl text-red-800">{error}</p>}
-      <p role="status" className="text-sm text-emerald-800 mb-3">{notice}</p>
-      {!ready ? <p className="p-8 bg-white rounded-2xl">Loading your care plan…</p> : <>
-        {!petList.length ? isShared ? <p>No pets have been added to this care plan yet.</p> : <section className="max-w-xl bg-white rounded-3xl p-6 sm:p-8 border border-violet-100"><PawPrint className="text-violet-700 mb-4" /><h2 className="text-2xl font-bold">Who are we caring for?</h2><p className="mt-2 text-slate-600">Start with a name. Then choose one daily routine that would help you.</p><form className="space-y-4 mt-6" onSubmit={event => { event.preventDefault(); run('pet', async () => { const id = await createFirstPet(petName, petType); setForm(previous => ({ ...previous, petId: id })); setParams({ add: '1' }); setNotice('Pet added. Choose your first routine below.'); }); }}><label className="block">Pet’s name<input className={inputClass} value={petName} onChange={event => setPetName(event.target.value)} required maxLength={60} /></label><label className="block">Pet type<select className={inputClass} value={petType} onChange={event => setPetType(event.target.value)}><option>Dog</option><option>Cat</option><option>Other</option></select></label><p className="text-sm text-slate-500">Your new pet profile starts private. You can add a photo, health records, and sharing preferences later.</p><button className={primaryClass} disabled={!!busy}>Add my pet <ArrowRight size={18} /></button></form></section> : <>
-          <div className="flex flex-wrap items-end justify-between gap-4 mb-6"><label className="text-sm font-semibold">Showing care for<select aria-label="Filter by pet" className={inputClass} value={filter} onChange={event => setFilter(event.target.value)}><option value="">All my pets</option>{petList.map(([id, pet]) => <option key={id} value={id}>{pet.name}</option>)}</select></label>{!isShared && <button onClick={openForm} className={primaryClass}><Plus size={18} /> Add a routine</button>}</div>
-          <div className="grid lg:grid-cols-[1.5fr_1fr] gap-6 items-start"><section className="today-care-panel bg-white rounded-3xl border border-violet-100 p-5 sm:p-7"><div className="flex items-center justify-between mb-2"><div><p className="today-eyebrow">THE LITTLE THINGS THAT MATTER</p><h2 className="text-2xl font-bold">Today’s care</h2></div><span className="text-sm font-semibold text-violet-700">{completed} of {tasks.length} done</span></div><p className="text-sm text-slate-600 mb-5">Your chosen routines. Times help organise your day.</p>
-            {tasks.length > 0 && <div role="progressbar" aria-label="Today's care progress" aria-valuemin={0} aria-valuemax={tasks.length} aria-valuenow={completed} className="h-2 rounded-full bg-violet-100 mb-6 overflow-hidden"><div className="h-full bg-emerald-600 transition-all" style={{ width: `${completed / tasks.length * 100}%` }} /></div>}
-            <div className="space-y-3">{tasks.map(task => <CareTask key={task.id} task={task} busy={!!busy || !canRecord} onToggle={() => run(task.id, async () => { const saved = await recordCare(day, task, task.completed ? 'open' : 'done', ownerId); setNotice(saved ? task.completed ? 'Completion corrected.' : `${task.title} recorded for ${task.petName}.` : 'This task changed on another device. Your plan has been refreshed.'); })} />)}</div>
-            {!tasks.length && <div className="py-8"><Heart className="text-violet-500 mb-3" /><h3 className="font-semibold text-lg">Make tomorrow easier, starting today.</h3><p className="text-slate-600 my-3">Choose a meal, fresh water, play, or another daily activity. Start with just one.</p>{!isShared && <button onClick={openForm} className="font-semibold text-violet-700 underline underline-offset-4">Choose my first routine</button>}</div>}
-            {!!tasks.length && completed === tasks.length && <p className="mt-5 text-emerald-800 bg-emerald-50 rounded-xl p-4">Today’s routines are recorded. Enjoy some time together.</p>}
-            {!isShared && <button className="mt-6 text-sm text-violet-700 underline underline-offset-4" onClick={() => setManage(!manage)} aria-expanded={manage}>Manage routines</button>}
-            {manage && !isShared && <div className="mt-4 space-y-3">{Object.entries(routines).filter(([, routine]) => pets[routine.petId] && (!filter || routine.petId === filter)).map(([id, routine]) => <div key={id} className="flex items-center justify-between gap-3 text-sm border-t pt-3"><span>{routine.title} · {pets[routine.petId].name} · {routine.active ? 'Daily' : 'Paused'}</span><button disabled={!!busy} onClick={() => run(id, () => setRoutineActive(id, !routine.active))} className="px-3 py-2 rounded-lg bg-violet-50 text-violet-800">{routine.active ? 'Pause' : 'Resume'}</button></div>)}</div>}
-          </section><aside className="space-y-5"><WeeklyCareRecap days={days} pets={pets} day={day} filter={filter} />{!isShared && <section className="bg-white p-6 rounded-3xl border border-violet-100"><h2 className="font-bold text-xl">Keep the bigger picture close</h2><p className="text-slate-600 text-sm mt-2 mb-4">Vaccinations, medications, weight, and expenses live in each pet’s care record.</p>{petList.filter(([id]) => !filter || filter === id).map(([id, pet]) => <Link key={id} to={`/pet-details/${id}`} className="flex justify-between gap-3 py-3 text-violet-800 font-semibold border-t">{pet.name}’s care <ArrowRight size={18} /></Link>)}<Link to="/care" className="text-sm underline text-violet-700">All care tools</Link></section>}<Link to="/settings" className="block bg-violet-100 rounded-3xl p-6"><h2 className="font-bold">Make reminders work for you</h2><p className="text-sm text-slate-700 mt-2">Choose health reminders, quiet hours, and your time zone. Opt in to a daily briefing when routines remain open. Activity times organise Today; they do not send individual alerts.</p></Link></aside></div>
-          {showForm && !isShared && <section id="routine-form" className="mt-6 bg-white border-2 border-violet-200 rounded-3xl p-5 sm:p-7 max-w-2xl"><h2 className="text-2xl font-bold">Choose a daily routine</h2><p className="text-sm text-slate-600 mt-2">Use routines for everyday care. Keep medication instructions and doses in your pet’s health record.</p><form className="grid sm:grid-cols-2 gap-4 mt-5" onSubmit={event => { event.preventDefault(); run('routine', async () => { await createRoutine({ ...form, petId: form.petId || petList[0][0], startDate: day }); setParams({}); setNotice('Routine added to Today. You can record it when it is done.'); }); }}><label>Pet<select className={inputClass} value={form.petId || petList[0][0]} onChange={event => setForm({ ...form, petId: event.target.value })}>{petList.map(([id, pet]) => <option key={id} value={id}>{pet.name}</option>)}</select></label><label>Activity<select className={inputClass} value={form.kind} onChange={event => setForm({ ...form, kind: event.target.value, title: ROUTINE_KINDS[event.target.value] })}>{Object.entries(ROUTINE_KINDS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label><label>Routine name<input className={inputClass} value={form.title} required maxLength={80} onChange={event => setForm({ ...form, title: event.target.value })} /></label><RoutineTimePicker value={form.time} onChange={time => setForm({ ...form, time })} timeZone={timeZone} /><div className="sm:col-span-2 flex gap-3"><button className={primaryClass} disabled={!!busy}>Save daily routine</button><button type="button" onClick={() => setParams({})} className="px-4 py-3 text-slate-600">Cancel</button></div></form></section>}
-        </>}
-      </>}
-      {!isShared && <TodayDiscover />}
-    </div>
+  const closeForm = () => setParams(previous => { const next = new URLSearchParams(previous); next.delete('add'); return next; });
+  const pending = tasks.filter(task => !task.completed);
+  const done = tasks.filter(task => task.completed);
+  const taskRow = task => <CareTask key={task.id} task={task} busy={!!busy || !canRecord} saving={busy === task.id} onToggle={() => run(task.id, async () => {
+    const saved = await recordCare(day, task, task.completed ? 'open' : 'done', ownerId);
+    setNotice(saved ? task.completed ? 'Completion corrected.' : `${task.title} recorded for ${task.petName}.` : 'This task changed on another device. Your plan has been refreshed.');
+  })} />;
+
+  return <div className="app-page today-home">
+    <TodayWelcome user={user} now={now} timeZone={timeZone} pets={petList} filter={filter} onFilter={setFilter} ready={ready} isShared={isShared} />
+    {isShared && <div className="today-shared"><Users size={20} aria-hidden="true" /><div><p>Shared care · {shared.ownerName || 'Family'}’s pets</p><small>{canRecord ? 'You can view and record daily care.' : 'You have view-only access to this plan.'}</small><Link to="/today">Return to my Today <ArrowRight size={14} /></Link></div></div>}
+    {error && !showForm && !manage && <p role="alert" className="app-notice app-notice-error">{error}</p>}
+    <p role="status" className="app-notice">{notice}</p>
+    {!ready ? !error && <PageLoading /> : !petList.length ? isShared ? <EmptyState title="A care plan is on its way">Pets will appear here when their parent adds them.</EmptyState> : <section className="app-panel today-onboarding">
+      <EmptyState title="Who are we caring for?">Start with a name. Build a daily rhythm around the little things they need.</EmptyState>
+      <form className="today-pet-form" onSubmit={event => { event.preventDefault(); run('pet', async () => { const id = await createFirstPet(petName, petType); setForm(previous => ({ ...previous, petId: id })); setParams({ add: '1' }); setNotice('Pet added. Choose your first routine.'); }); }}>
+        <label className="app-field">Pet’s name<input className={inputClass} value={petName} onChange={event => setPetName(event.target.value)} placeholder="e.g. Milo" required maxLength={60} autoComplete="off" /></label>
+        <label className="app-field">Pet type<select className={inputClass} value={petType} onChange={event => setPetType(event.target.value)}><option>Dog</option><option>Cat</option><option>Other</option></select></label>
+        <p className="app-caption">Their profile starts private. You can add photos and health records later.</p><button className={primaryClass} disabled={!!busy}>{busy ? 'Adding your pet…' : 'Add my pet'} <ArrowRight size={17} /></button>
+      </form>
+    </section> : <>
+      <div className="today-layout">
+        <section className="app-panel today-care-panel" aria-label="Today’s care">
+          <div className="app-section-top"><div><h2 className="app-section-title">Today’s care</h2><p className="app-caption">{tasks.length ? `${completed} of ${tasks.length} done${filter ? ` for ${pets[filter]?.name || 'your pet'}` : ''}` : 'Your daily rhythm starts here'}</p></div>{!isShared && <button type="button" onClick={openForm} className="app-button today-add-routine"><Plus size={18} aria-hidden="true" /><span>Add a routine</span></button>}</div>
+          {tasks.length > 0 && <div role="progressbar" aria-label="Today's care progress" aria-valuemin={0} aria-valuemax={tasks.length} aria-valuenow={completed} className="today-progress"><div style={{ width: `${completed / tasks.length * 100}%` }} /></div>}
+          {pending.length > 0 && <div className="today-task-list">{pending.map(taskRow)}</div>}
+          {done.length > 0 && <div className="today-completed"><h3>Completed <span>{done.length}</span></h3>{done.map(taskRow)}<p className="app-caption today-undo-hint">{canRecord ? 'Tap a checkmark to undo a completion.' : 'Care is recorded by the parent and caregivers.'}</p></div>}
+          {!tasks.length && <EmptyState icon={Heart} title={filter ? `A little routine for ${pets[filter]?.name}` : 'Small routines. Happier days.'} action={!isShared && <button onClick={openForm} className="app-button">Choose my first routine</button>}>Fresh water, a walk, a little play. Choose one thing to make part of their day.</EmptyState>}
+          {!!tasks.length && completed === tasks.length && <div className="today-all-done"><Check size={18} aria-hidden="true" /><span>All cared for. Enjoy some time together.</span></div>}
+          {!isShared && Object.keys(routines).length > 0 && <button className="app-text-button today-manage" onClick={() => setManage(true)} aria-expanded={manage}><Settings2 size={15} aria-hidden="true" />Manage routines</button>}
+        </section>
+        <aside className="today-aside"><WeeklyCareRecap days={days} pets={pets} day={day} filter={filter} />
+          {!isShared && <div className="app-action-list"><ActionRow to="/care" icon={Heart} title="Their health, all together" detail="Records, weight & vet visits" /><ActionRow to="/copilot" icon={Sparkles} title="A little help with care" detail="Questions & record summaries · AI beta" /></div>}
+        </aside>
+      </div>
+      {!isShared && <nav className="today-secondary" aria-label="Pet care shortcuts"><ActionRow to="/family" icon={Users} title="Share the everyday" detail="Invite family or a trusted caregiver" /><ActionRow to="/settings" icon={Settings2} title="Reminders that fit your day" detail="Choose updates, quiet hours & your time zone" /></nav>}
+    </>}
+    <Sheet open={showForm && ready && petList.length > 0 && !isShared} onClose={closeForm} busy={!!busy} title="Choose a daily routine" description="For the everyday things. Keep medication instructions and doses in your pet’s health record.">
+      {error && <p role="alert" className="app-notice app-notice-error">{error}</p>}
+      <form onSubmit={event => { event.preventDefault(); run('routine', async () => { await createRoutine({ ...form, petId: form.petId || petList[0][0], startDate: day }); closeForm(); setNotice('Routine added to Today. You can record it when it is done.'); }); }}>
+        <div className="app-form-grid"><label className="app-field">Pet<select className={inputClass} value={form.petId || petList[0]?.[0]} onChange={event => setForm({ ...form, petId: event.target.value })}>{petList.map(([id, pet]) => <option key={id} value={id}>{pet.name}</option>)}</select></label>
+        <label className="app-field">Activity<select className={inputClass} value={form.kind} onChange={event => setForm({ ...form, kind: event.target.value, title: ROUTINE_KINDS[event.target.value] })}>{Object.entries(ROUTINE_KINDS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>
+        <label className="app-field app-form-wide">Routine name<input className={inputClass} value={form.title} required maxLength={80} onChange={event => setForm({ ...form, title: event.target.value })} /></label>
+        <div className="app-form-wide"><RoutineTimePicker value={form.time} onChange={time => setForm({ ...form, time })} timeZone={timeZone} /></div></div>
+        <div className="app-form-actions"><button type="button" onClick={closeForm} disabled={!!busy} className="app-text-button">Cancel</button><button className={primaryClass} disabled={!!busy}>{busy === 'routine' ? 'Saving…' : 'Save daily routine'}</button></div>
+      </form>
+    </Sheet>
+    <Sheet open={manage && !isShared} onClose={() => setManage(false)} busy={!!busy} title="Manage routines" description="Pause a routine when plans change. Your recorded care stays in your history.">
+      {error && <p role="alert" className="app-notice app-notice-error">{error}</p>}
+      <div className="today-managed-list">{Object.entries(routines).filter(([, routine]) => pets[routine.petId] && (!filter || routine.petId === filter)).map(([id, routine]) => <div key={id}><div><strong>{routine.title}</strong><p>{pets[routine.petId].name} · {routine.active ? 'Daily' : 'Paused'}</p></div><button disabled={!!busy} onClick={() => run(id, () => setRoutineActive(id, !routine.active))} className="app-button app-button-secondary">{routine.active ? 'Pause' : 'Resume'}</button></div>)}</div>
+    </Sheet>
   </div>;
 }

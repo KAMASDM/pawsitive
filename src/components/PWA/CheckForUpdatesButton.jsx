@@ -20,7 +20,7 @@ export default function CheckForUpdatesButton({ compact = false }) {
     finally { setBusy(false); }
   };
   return <div className={compact ? 'app-update-control' : ''}>
-    <button type="button" onClick={check} disabled={!!busy} className={`inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-colors disabled:opacity-60 ${compact ? 'px-3 py-2 text-xs bg-white/90 text-violet-800 border border-violet-200 hover:bg-violet-50' : 'w-full px-4 py-3 text-sm bg-violet-700 text-white hover:bg-violet-800'}`}>
+    <button type="button" onClick={check} disabled={!!busy} className={`app-button app-button-secondary ${compact ? "" : "w-full"}`}>
       <FiRefreshCw className={busy ? 'animate-spin' : ''} aria-hidden="true" />
       {busy ? busy === 'update' ? 'Updating…' : 'Checking…' : needRefresh ? 'Update app' : 'Check for updates'}
     </button>

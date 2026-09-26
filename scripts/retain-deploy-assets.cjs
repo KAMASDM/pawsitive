@@ -18,7 +18,7 @@ async function fetchFile(url) {
 }
 async function manifestFromWorker(origin) {
   const source = await (await fetchFile(`${origin}/sw.js`)).text();
-  const assets = [...source.matchAll(/\burl:\s*"(assets\/[^"\n]+)"/g)].map(match => match[1]).filter(name => ASSET.test(name));
+  const assets = [...source.matchAll(/\burl"?\s*:\s*"(assets\/[^"\n]+)"/g)].map(match => match[1]).filter(name => ASSET.test(name));
   if (!assets.length) throw new Error(`No release assets found at ${origin}`);
   return { origin, assets: [...new Set(assets)] };
 }

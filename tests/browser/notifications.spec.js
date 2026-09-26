@@ -10,7 +10,7 @@ test('Settings shows device registration and sends a test only after an explicit
   await page.getByLabel('Email Address').fill(email); await page.getByLabel('Password', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Sign In', exact: true }).click(); await expect(page).toHaveURL(/today/);
   await page.goto('/settings');
-  await expect(page.getByText('Push notifications are not connected on this device.', { exact: false })).toBeVisible();
+  await expect(page.getByText('Not connected yet', { exact: false })).toBeVisible();
   await expect(page.getByText('Push is turned off for your account.', { exact: false })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Send test notification' })).toBeDisabled();
   await page.evaluate(() => localStorage.setItem('pawppy_notification_device', 'browser-test-device'));

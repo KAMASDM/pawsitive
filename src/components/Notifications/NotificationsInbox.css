@@ -1,0 +1,67 @@
+.inbox-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-bottom: 20px;
+}
+
+.inbox-filters {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 15px;
+  background: var(--app-surface-soft);
+}
+
+.inbox-filter {
+  min-height: 44px;
+  padding: 10px 14px;
+  border-radius: 11px;
+  color: var(--app-muted);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.inbox-filter[aria-pressed="true"] {
+  background: var(--app-surface);
+  color: var(--app-accent);
+  box-shadow: var(--app-shadow);
+}
+
+.inbox-mark-read { margin-left: auto; }
+.inbox-mark-read:disabled { cursor: default; }
+
+.inbox-page .inbox-notification {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 14px;
+  width: 100%;
+  padding: 20px;
+  text-align: left;
+}
+
+.inbox-notification-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 13px;
+}
+
+.inbox-notification-copy { min-width: 0; overflow-wrap: anywhere; }
+.inbox-notification-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; min-height: 20px; }
+.inbox-notification-type { font-size: 11px; font-weight: 650; text-transform: uppercase; letter-spacing: .06em; color: var(--app-accent); }
+.inbox-notification-source { padding: 2px 7px; border-radius: 20px; background: var(--app-tint); color: var(--app-accent); font-size: 11px; font-weight: 600; }
+.inbox-notification-unread { flex: 0 0 7px; width: 7px; height: 7px; border-radius: 50%; background: var(--app-accent); }
+.inbox-notification-title { display: block; margin-top: 4px; color: var(--app-ink); font-size: 15px; font-weight: 650; line-height: 1.45; }
+.inbox-notification-body { display: block; margin-top: 5px; color: var(--app-muted); font-size: 14px; line-height: 1.5; }
+.inbox-notification-time { display: flex; align-items: flex-start; gap: 5px; margin-top: 10px; color: var(--app-muted); font-size: 12px; line-height: 1.5; }
+.inbox-notification-time svg { flex-shrink: 0; margin-top: 3px; }
+.inbox-notification-time time { min-width: 0; }
+
+@media (max-width: 767px) {
+  .inbox-page .inbox-notification { grid-template-columns: 36px minmax(0, 1fr); gap: 12px; padding: 16px; border-radius: 20px; }
+  .inbox-notification-icon { width: 36px; height: 36px; border-radius: 12px; }
+}

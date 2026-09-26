@@ -18,7 +18,7 @@ test('questions require consent, send no records, and clear without storing a co
   let payload;
   await page.route('**/getCopilotStatus', route => callable(route, { enabled: true, consentVersion: 'copilot-v1', dailyLimit: 5 }));
   await page.route('**/askPetCopilot', route => { if (route.request().method() === 'POST') payload = route.request().postDataJSON().data; return callable(route, { answer: 'Try short, supervised play sessions.', references: [], followUpQuestions: ['Which games does your pet enjoy?'], provider: 'Google Gemini on Vertex AI', model: 'test-model' }); });
-  await page.getByRole('link', { name: /A little help from Pawppy Copilot/ }).click();
+  await page.getByRole('link', { name: /A little help with care/ }).click();
   await page.getByLabel('Your question').fill('Suggest indoor enrichment for my cat.');
   await expect(page.getByRole('button', { name: 'Ask Copilot', exact: true })).toBeDisabled();
   await page.getByLabel('I agree to send this question', { exact: false }).check();

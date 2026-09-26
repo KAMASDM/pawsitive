@@ -36,7 +36,7 @@ const Login = () => {
   const createUserProfile = async (user, displayName) => {
     const userRef = ref(database, `users/${user.uid}`);
     const snapshot = await get(userRef);
-    
+
     if (!snapshot.exists()) {
       const userData = {
         uid: user.uid,
@@ -67,12 +67,12 @@ const Login = () => {
           },
         },
       };
-      
+
       await set(userRef, { ...userData, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kolkata' });
       sessionStorage.setItem('pawppy_signup_pending', user.uid);
       trackProductEvent('signup_completed', 'login').then((recorded) => { if (recorded) sessionStorage.removeItem('pawppy_signup_pending'); });
-      
-      
+
+
       // Send welcome email
       sendWelcomeEmail({
         uid: user.uid,
@@ -80,7 +80,7 @@ const Login = () => {
         email: user.email,
         photoURL: userData.photoURL,
       }).catch(err => console.error('Failed to send welcome email:', err));
-      
+
       return true; // New user
     }
     return false; // Existing user
@@ -93,7 +93,7 @@ const Login = () => {
       const result = await signInWithPopup(auth, googleProvider);
       await createUserProfile(result.user);
 
-      
+
       // Navigate to pet-first landing after login
       navigate(destination);
     } catch (error) {
@@ -108,32 +108,32 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     setError("");
-    
+
     try {
       const result = await signInWithEmailAndPassword(auth, email, password);
-      
+
       // Check if email is verified
       if (!result.user.emailVerified) {
         // Save credentials and show verification pending screen
         const userEmail = email;
         const userPassword = password;
-        
+
         setVerificationEmail(userEmail);
         setSavedPassword(userPassword);
         setEmail("");
         setPassword("");
-        
+
         // Sign out the user
         await auth.signOut();
-        
+
         // Set ref and state to show verification message
         isShowingVerification.current = true;
         setShowVerificationMessage(true);
         setLoading(false);
         return;
       }
-      
-      
+
+
       navigate(destination);
     } catch (error) {
       console.error("Error during email sign in:", error);
@@ -153,34 +153,34 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     setError("");
-    
+
     if (!name.trim()) {
       setError("Please enter your name");
       setLoading(false);
       return;
     }
-    
+
     // Set ref IMMEDIATELY to block auth state redirect
     isShowingVerification.current = true;
-    
+
     try {
       const result = await createUserWithEmailAndPassword(auth, email, password);
-      
+
       // Send email verification
       await sendEmailVerification(result.user);
-      
+
       console.log("Verification email sent to:", email);
-      
+
       // Save credentials before clearing
       const userEmail = email;
       const userPassword = password;
-      
+
       // Create user profile (but they won't be able to access it until verified)
       await createUserProfile(result.user, name);
-      
+
       // Sign out the user IMMEDIATELY
       await auth.signOut();
-      
+
       // NOW set the UI states
       setVerificationEmail(userEmail);
       setSavedPassword(userPassword);
@@ -188,11 +188,11 @@ const Login = () => {
       setEmail("");
       setPassword("");
       setName("");
-      
+
     } catch (error) {
       // Reset ref on error
       isShowingVerification.current = false;
-      
+
       console.error("Error during email sign up:", error);
       if (error.code === 'auth/email-already-in-use') {
         setError("Email already in use. Please login instead.");
@@ -241,7 +241,7 @@ const Login = () => {
     setLoading(true);
     setError("");
     setSuccessMessage("");
-    
+
     try {
       await sendPasswordResetEmail(auth, email);
       setSuccessMessage("Password reset email sent! Check your inbox.");
@@ -265,7 +265,7 @@ const Login = () => {
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
-      
+
       // Check ref instead of state to avoid race condition
       if (user && !isShowingVerification.current && (user.emailVerified || !user.providerData.some(provider => provider.providerId === 'password'))) {
         navigate(destination);
@@ -275,7 +275,7 @@ const Login = () => {
     return unsubscribe;
   }, [navigate, destination]);
 
-  return <div className="min-h-screen bg-[#faf9f6] px-4 py-8 flex flex-col items-center">
+  return <div className="login-page min-h-screen px-4 py-8 flex flex-col items-center">
     <a href="/" className="font-bold text-2xl text-violet-800 flex items-center gap-2 mb-8"><FaPaw /> pawppy</a>
     <div className="w-full max-w-md"><AnimatePresence mode="wait">
             {showVerificationMessage ? (
@@ -284,7 +284,7 @@ const Login = () => {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl p-6 lg:p-8 border border-violet-100"
+                className="app-panel login-panel"
               >
                 <div className="text-center">
                   <motion.div
@@ -295,7 +295,7 @@ const Login = () => {
                   >
                     <FiMail className="text-white text-4xl" />
                   </motion.div>
-                  
+
                   <h2 className="text-3xl font-bold text-gray-900 mb-2">Verify Your Email</h2>
                   <p className="text-gray-600 mb-6">
                     We've sent a verification link to<br />
@@ -349,7 +349,7 @@ const Login = () => {
                     >
                       Back to Login
                     </button>
-                    
+
                     <button
                       onClick={handleResendVerification}
                       disabled={loading}
@@ -370,7 +370,7 @@ const Login = () => {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl p-6 lg:p-8 border border-violet-100"
+                className="app-panel login-panel"
               >
                 <button
                   onClick={() => setShowForgotPassword(false)}
@@ -438,7 +438,7 @@ const Login = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl p-6 lg:p-8 border border-violet-100"
+                className="app-panel login-panel"
               >
                 {/* Mobile Logo Already shown in header */}
                 <div className="lg:flex hidden justify-center mb-6">
@@ -542,7 +542,7 @@ const Login = () => {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-gradient-to-r from-violet-600 to-purple-600 text-white py-3 lg:py-4 rounded-xl font-semibold hover:from-violet-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center group"
+                    className="app-button w-full"
                   >
                     {loading ? (
                       <div className="flex items-center">

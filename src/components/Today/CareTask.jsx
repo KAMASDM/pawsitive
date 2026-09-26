@@ -1,13 +1,14 @@
 import React from 'react';
-import { Check, Circle } from 'lucide-react';
+import { Check, LoaderCircle } from 'lucide-react';
 
-export default function CareTask({ task, busy, onToggle, sample = false }) {
-  return <div className={`flex items-center gap-3 p-4 rounded-2xl border ${task.completed ? 'bg-emerald-50 border-emerald-100' : 'bg-white border-violet-100'}`}>
-    <button type="button" disabled={busy} onClick={onToggle} aria-label={`${task.completed ? 'Undo' : 'Complete'} ${task.title} for ${task.petName}`} aria-pressed={task.completed} className="shrink-0 min-w-11 min-h-11 flex items-center justify-center rounded-full text-violet-700 focus-visible:ring-4 focus-visible:ring-violet-300 disabled:opacity-50">
-      {task.completed ? <Check size={26} className="text-emerald-700" /> : <Circle size={26} />}
+export default function CareTask({ task, busy, onToggle, sample = false, saving = false }) {
+  const [hour, minute] = (task.time || '00:00').split(':').map(Number);
+  const time = `${hour % 12 || 12}:${String(minute).padStart(2, '0')} ${hour >= 12 ? 'PM' : 'AM'}`;
+  return <div className={`care-task ${task.completed ? 'is-complete' : ''}`}>
+    <button type="button" disabled={busy} onClick={onToggle} aria-label={`${task.completed ? 'Undo' : 'Complete'} ${task.title} for ${task.petName}`} aria-pressed={task.completed} className="care-task-toggle">
+      <span className="care-task-check">{saving ? <LoaderCircle size={18} className="animate-spin" aria-hidden="true" /> : task.completed ? <Check size={17} strokeWidth={2.5} aria-hidden="true" /> : null}</span>
     </button>
-    <div className="min-w-0 flex-1"><p className="font-semibold text-slate-900 break-words">{task.title}</p><p className="text-sm text-slate-600">{task.petName} · {task.time}</p>
-      {task.completed && <p className="text-xs text-emerald-800 mt-1">{sample ? 'Sample completion' : `Recorded by ${task.recordedBy || 'you'}`} · tap the check to undo</p>}
-    </div>
+    <div className="care-task-copy"><p>{task.title}</p><span>{task.petName}{task.completed ? ` · ${sample ? 'Sample completion' : `Recorded by ${task.recordedBy || 'you'}`}` : ''}</span></div>
+    <time className="care-task-time" dateTime={task.time}>{time}</time>
   </div>;
 }

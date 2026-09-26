@@ -2,6 +2,41 @@ import React, { createContext, useCallback, useContext, useEffect, useRef, useSt
 
 const PWAUpdateContext = createContext(null);
 
+function workerBuildId(worker) {
+  if (!worker) return Promise.resolve(null);
+  return new Promise(resolve => {
+    const channel = new MessageChannel();
+    const finish = value => { clearTimeout(timer); channel.port1.close(); channel.port2.close(); resolve(value); };
+    const timer = setTimeout(() => finish(null), 2000);
+    channel.port1.onmessage = event => finish(event.data?.buildId);
+    try { worker.postMessage({ type: 'GET_BUILD_ID' }, [channel.port2]); }
+    catch { finish(null); }
+  });
+}
+
+function activateWorker(worker) {
+  return new Promise((resolve, reject) => {
+    const finish = error => {
+      clearTimeout(timer);
+      clearInterval(poll);
+      navigator.serviceWorker.removeEventListener('controllerchange', changed);
+      worker.removeEventListener('statechange', changed);
+      error ? reject(error) : resolve();
+    };
+    const changed = () => {
+      if (navigator.serviceWorker.controller === worker && worker.state === 'activated') finish();
+      else if (worker.state === 'redundant') finish(new Error('A newer update replaced this one. Please try again.'));
+    };
+    const timer = setTimeout(() => finish(new Error('Update activation timed out. Please retry.')), 20000);
+    // Mobile browsers can suspend the page between lifecycle events.
+    const poll = setInterval(changed, 250);
+    navigator.serviceWorker.addEventListener('controllerchange', changed);
+    worker.addEventListener('statechange', changed);
+    try { worker.postMessage({ type: 'SKIP_WAITING' }); changed(); }
+    catch (error) { finish(error); }
+  });
+}
+
 function waitForInstall(worker) {
   if (!worker) return Promise.resolve();
   return new Promise((resolve, reject) => {
@@ -23,9 +58,9 @@ export function PWAUpdateProvider({ children }) {
   const registrationPromise = useRef(null);
   const checkingRef = useRef(null);
   const updatingRef = useRef(null);
-  const reloadRequested = useRef(false);
   const activatedUpdate = useRef(false);
   const remoteUpdate = useRef(false);
+  const remoteBuild = useRef(null);
   const [registration, setRegistration] = useState(null);
   const [offlineReady, setOfflineReady] = useState(false);
   const [needRefresh, setNeedRefresh] = useState(false);
@@ -34,7 +69,7 @@ export function PWAUpdateProvider({ children }) {
   const register = useCallback(() => {
     if (!('serviceWorker' in navigator)) return Promise.reject(new Error('App updates are unavailable in this browser.'));
     if (!registrationPromise.current) {
-      registrationPromise.current = navigator.serviceWorker.register(import.meta.env.PROD ? '/sw.js' : '/dev-sw.js?dev-sw', { scope: '/', updateViaCache: 'none' }).then(value => {
+      registrationPromise.current = navigator.serviceWorker.register(import.meta.env.PROD ? '/sw.js' : '/dev-sw.js?dev-sw', { scope: '/', updateViaCache: 'none', type: import.meta.env.PROD ? 'classic' : 'module' }).then(value => {
         registrationRef.current = value;
         setRegistration(value);
         return value;
@@ -60,11 +95,12 @@ export function PWAUpdateProvider({ children }) {
           const version = await response.json();
           if (typeof version.buildId !== 'string' || !version.buildId) throw new Error('Invalid release information.');
           remoteUpdate.current = version.buildId !== __APP_BUILD__;
+          remoteBuild.current = version.buildId;
           if (remoteUpdate.current) setNeedRefresh(true);
         } finally { clearTimeout(timer); }
       };
       const [versionResult, workerResult] = await Promise.allSettled([checkVersion(), current.update()]);
-      if (workerResult.status === 'rejected') throw workerResult.reason;
+      if (workerResult.status === 'rejected' && !current.waiting) throw workerResult.reason;
       await waitForInstall(current.installing);
       // The registration's waiting slot can be assigned just after statechange.
       await new Promise(resolve => setTimeout(resolve, 0));
@@ -102,11 +138,6 @@ export function PWAUpdateProvider({ children }) {
     };
     const controlled = () => {
       const controller = navigator.serviceWorker.controller;
-      if (controller && reloadRequested.current) {
-        reloadRequested.current = false;
-        window.location.reload();
-        return;
-      }
       if (previousController && controller !== previousController) {
         activatedUpdate.current = true;
         setDismissed(false);
@@ -139,24 +170,21 @@ export function PWAUpdateProvider({ children }) {
     if (updatingRef.current) return updatingRef.current;
     updatingRef.current = (async () => {
       if (!navigator.onLine) throw new Error('Reconnect to update Pawppy.');
-      const available = await checkForUpdates();
-      if (!available) return;
+      // A waiting worker is already downloaded. A second network check must not
+      // prevent accepting it when mobile connectivity is intermittent.
+      if (!registrationRef.current?.waiting && !await checkForUpdates()) return;
       const worker = registrationRef.current?.waiting;
       if (worker) {
-        // Reload only after the accepted worker controls this page. Never delete
-        // registrations, app data, or caches to force an update.
-        await new Promise((resolve, reject) => {
-          const finish = error => { clearTimeout(timer); navigator.serviceWorker.removeEventListener('controllerchange', changed); error ? reject(error) : resolve(); };
-          const changed = () => { if (navigator.serviceWorker.controller === worker) finish(); };
-          const timer = setTimeout(() => { reloadRequested.current = false; finish(new Error('Update activation timed out. Please retry.')); }, 15000);
-          navigator.serviceWorker.addEventListener('controllerchange', changed);
-          reloadRequested.current = true;
-          worker.postMessage({ type: 'SKIP_WAITING' });
-        });
-      } else if (activatedUpdate.current || remoteUpdate.current) {
-        // The new worker may already be active, e.g. accepted in another tab.
-        window.location.reload();
+        await activateWorker(worker);
+      } else if (!activatedUpdate.current) {
+        // A changed version.json is not proof that the controlling worker has
+        // updated. Reloading here used to reopen the same cached release.
+        const activeBuild = await workerBuildId(navigator.serviceWorker.controller);
+        if (!activeBuild || activeBuild !== remoteBuild.current) {
+          throw new Error('The new version is still downloading. Keep Pawppy open and try again shortly.');
+        }
       }
+      window.location.reload();
     })().finally(() => { updatingRef.current = null; });
     return updatingRef.current;
   };

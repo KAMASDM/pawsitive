@@ -94,3 +94,16 @@ Release-transition review used the actual prior and new deployed bundles through
 - Added an explicit weekly breakdown by pet, routine and day, using existing saved care records and corrections. Missing entries are labelled as no entries, not missed care.
 - Replaced the routine form’s native time field with hour/minute selectors, AM/PM, and morning/afternoon/evening presets; the underlying HH:mm storage format is unchanged.
 - Push audit and the remaining public-key/device receipt gate are documented in PUSH_NOTIFICATION_AUDIT.md.
+
+**Mobile loading and PWA update repair — awaiting deployment**
+
+- Accepting an already-downloaded worker bypasses a redundant network check. Activation is confirmed before reloading, including when a mobile browser delays lifecycle events. A release-version mismatch alone cannot trigger a reload of the old cached app.
+- `src/sw.js` uses fresh HTML for online navigation and the installed, precached shell when the network fails or takes more than eight seconds. Hashed assets remain precached. Open pages still require update acceptance before a waiting worker takes control.
+- The HTML entry point has a recovery action independent of React, so a missing or failed entry script leaves a usable retry screen. Recovery preserves browser storage and sign-in data.
+- `playwright.pwa.config.cjs` covers desktop Chrome, Android Chrome emulation, and iPhone WebKit emulation. The 14 scenarios per browser cover activation, multiple tabs, stale releases, slow downloads, network failures, missing assets, and startup recovery. Version changes and navigation failures are simulated by the test server because WebKit request interception does not consistently intercept service-worker traffic.
+- Local transition checks using the current deployed release and the new build passed in Android and iPhone emulation: the existing update card activated the replacement worker, loaded the new build, preserved storage, and did not repeat the prompt. These checks do not establish physical-device behavior or deploy the change to `pawppy.in`.
+
+**Pre-push validation — 2026-09-26**
+
+- Production build, 32 unit tests, and 16 browser checks passed, including notification layouts at 320px, 390px, 768px, and 1280px in Chromium and WebKit.
+- PWA checks passed 41 of 42 scenarios. The iPhone WebKit missing-route recovery test repeatedly stays on the recovery screen after the simulated Login chunk failure is removed and Reload app is clicked. This remains unresolved; do not treat the PWA suite as fully passing.

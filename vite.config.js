@@ -15,6 +15,9 @@ export default defineConfig({
       include: '**/*.{jsx,js}',
     }),
     VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
       registerType: 'prompt',
       injectRegister: false, // PWAUpdateProvider owns the single registration.
       includeAssets: ['paw-icon.svg', 'favicon-v2.png', 'apple-touch-icon-v2.png', 'paw-icon-v2-192.png', 'paw-icon-v2-512.png', 'paw-icon-maskable-v2-512.png', 'robots.txt', 'sitemap.xml'],
@@ -22,8 +25,8 @@ export default defineConfig({
         name: 'Pawppy - Pet Parent Operating System',
         short_name: 'Pawppy',
         description: 'Daily routines, shared care, and pet records in one place.',
-        theme_color: '#7c3aed',
-        background_color: '#ffffff',
+        theme_color: '#f6f5f2',
+        background_color: '#f6f5f2',
         display: 'standalone',
         orientation: 'portrait',
         scope: '/',
@@ -77,59 +80,14 @@ export default defineConfig({
           }
         ]
       },
-      workbox: {
+      injectManifest: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp}'],
-        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024, // 3 MB
-        cleanupOutdatedCaches: true,
-        skipWaiting: false, // Wait for user to accept update
-        clientsClaim: true,
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-fonts-cache',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          },
-          {
-            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'gstatic-fonts-cache',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          },
-          {
-            urlPattern: /^https:\/\/firebasestorage\.googleapis\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'firebase-storage-cache',
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 * 7 // 1 week
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          }
-        ]
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
       },
       devOptions: {
-        enabled: true
+        enabled: true,
+        type: 'module',
+        navigateFallback: 'index.html'
       }
     })
   ],

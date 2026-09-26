@@ -5,8 +5,8 @@
   <meta charset="UTF-8" />
   <link rel="icon" href="/paw-icon.svg" type="image/svg+xml" />
   <link rel="icon" href="/favicon-v2.png" sizes="64x64" type="image/png" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#7c3aed" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#f6f5f2" />
 
   <!-- Primary Meta Tags -->
   <title>Pawppy - Pet Parent Operating System</title>
@@ -56,8 +56,7 @@
       padding: 0;
       width: 100%;
       height: 100%;
-      /* Match the React SplashScreen so there's no white flash before it mounts */
-      background: linear-gradient(160deg, #6b5aad 0%, #4a3d7d 55%, #2e2550 100%);
+      background: #f6f5f2;
     }
   </style>
 </head>
@@ -65,6 +64,64 @@
 <body>
   <noscript>You need to enable JavaScript to run this app.</noscript>
   <div id="root"></div>
+  <section id="startup-recovery" hidden role="alert" style="max-width:420px;margin:15vh auto;padding:28px;background:white;color:#292038;border-radius:20px;font:16px/1.5 system-ui">
+    <h1 style="font-size:24px">Let’s get you back to Pawppy</h1>
+    <p>The app couldn’t open. Check your connection and try again.</p>
+    <button id="startup-retry" type="button" style="padding:12px 24px;border:0;border-radius:24px;background:#71568e;color:white;font:inherit">Reload app</button>
+    <p id="startup-message" aria-live="polite"></p>
+  </section>
+  <!-- Independent of the app bundle: missing or broken entry scripts must still
+       leave a usable recovery action on mobile. Never clear sign-in or app data. -->
+  <script>
+    (function () {
+      var root = document.getElementById('root');
+      var recovery = document.getElementById('startup-recovery');
+      var button = document.getElementById('startup-retry');
+      var message = document.getElementById('startup-message');
+      function showRecovery() { if (!root.hasChildNodes()) recovery.hidden = false; }
+      var timer = setTimeout(showRecovery, 15000);
+      var observer = new MutationObserver(function () {
+        if (root.hasChildNodes()) {
+          clearTimeout(timer);
+          recovery.hidden = true;
+          observer.disconnect();
+        }
+      });
+      observer.observe(root, { childList: true });
+      window.addEventListener('error', showRecovery, true);
+      window.addEventListener('unhandledrejection', showRecovery);
+      button.onclick = async function () {
+        if (!navigator.onLine) { message.textContent = 'Reconnect, then try again.'; return; }
+        button.disabled = true;
+        message.textContent = 'Opening Pawppy…';
+        try {
+          if ('serviceWorker' in navigator) {
+            var registration = await navigator.serviceWorker.getRegistration('/');
+            if (registration) {
+              if (!registration.waiting) await registration.update();
+              await new Promise(function (resolve, reject) {
+                var deadline = Date.now() + 120000;
+                var accepted;
+                var poll = setInterval(function () {
+                  var worker = registration.waiting;
+                  if (worker && worker !== accepted) { accepted = worker; worker.postMessage({ type: 'SKIP_WAITING' }); }
+                  if (!registration.installing && !registration.waiting && (!accepted || navigator.serviceWorker.controller === accepted && accepted.state === 'activated')) {
+                    clearInterval(poll); resolve();
+                  } else if (Date.now() > deadline) {
+                    clearInterval(poll); reject(new Error('Update timed out'));
+                  }
+                }, 250);
+              });
+            }
+          }
+          window.location.reload();
+        } catch (error) {
+          message.textContent = 'Pawppy couldn’t finish loading. Check your connection and try again.';
+          button.disabled = false;
+        }
+      };
+    }());
+  </script>
   <script type="module" src="/src/index.js"></script>
 </body>
 
