@@ -251,7 +251,7 @@
           ".write": "auth != null && auth.uid == $userId && !data.exists() && newData.exists() && root.child('users').child($userId).child('productMeasurementEnabled').val() != false",
           ".validate": "newData.hasChildren(['name', 'screen', 'sessionId', 'timestamp', 'platform'])",
           "name": {
-            ".validate": "newData.isString() && newData.val().matches(/^(session_started|signup_completed|pet_created|health_record_saved|medication_saved|notification_setup_succeeded|notification_setup_failed|notification_opened|preferences_saved|routine_created|routine_completed|routine_corrected)$/)"
+            ".validate": "newData.isString() && newData.val().matches(/^(session_started|signup_completed|pet_created|health_record_saved|medication_saved|notification_setup_succeeded|notification_setup_failed|notification_opened|preferences_saved|routine_created|routine_completed|routine_corrected|record_import_started|record_import_saved|safety_card_enabled|safety_card_shared|care_invitation_shared|care_invitation_accepted|handover_saved|care_update_saved|weekly_card_created|weekly_card_shared|starter_plan_saved|safety_link_signup|week_link_signup|family_link_signup)$/)"
           },
           "screen": {
             ".validate": "newData.isString() && newData.val().matches(/^(login|home|pets|care|notifications|settings|discover|shop|activity|other)$/)"
@@ -359,6 +359,79 @@
       ".write": false
     },
     "copilotUsage": {
+      ".read": false,
+      ".write": false
+    },
+    "careHandovers": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid == $uid || (root.child('careFamilies').child($uid).child('members').child(auth.uid).child('expiresAt').val() > now && root.child('careFamilies').child($uid).child('members').child(auth.uid).child('role').val().matches(/^(caregiver|viewer|sitter)$/)))",
+        "$petId": {
+          ".write": "auth != null && auth.uid == $uid && (!newData.exists() || (root.child('petOwners').child($petId).val() == auth.uid && root.child('userPets').child($uid).child($petId).exists()))",
+          ".validate": "newData.hasChildren(['feeding','routineNotes','emergencyName','emergencyPhone','extraNotes','updatedAt'])",
+          "$other": {
+            ".validate": false
+          },
+          "feeding": {
+            ".validate": "newData.isString() && newData.val().length <= 1500"
+          },
+          "routineNotes": {
+            ".validate": "newData.isString() && newData.val().length <= 1500"
+          },
+          "extraNotes": {
+            ".validate": "newData.isString() && newData.val().length <= 1500"
+          },
+          "emergencyName": {
+            ".validate": "newData.isString() && newData.val().length <= 100"
+          },
+          "emergencyPhone": {
+            ".validate": "newData.isString() && newData.val().length <= 40"
+          },
+          "updatedAt": {
+            ".validate": "newData.isNumber() && newData.val() <= now && newData.val() >= now - 60000"
+          }
+        }
+      }
+    },
+    "careUpdates": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid == $uid || (root.child('careFamilies').child($uid).child('members').child(auth.uid).child('expiresAt').val() > now && root.child('careFamilies').child($uid).child('members').child(auth.uid).child('role').val().matches(/^(caregiver|viewer|sitter)$/)))",
+        "$day": {
+          ".validate": "$day.matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)",
+          "$id": {
+            ".write": "auth != null && (auth.uid == $uid || (root.child('careFamilies').child($uid).child('members').child(auth.uid).child('expiresAt').val() > now && root.child('careFamilies').child($uid).child('members').child(auth.uid).child('role').val().matches(/^(caregiver|sitter)$/))) && newData.exists() && (!data.exists() || auth.uid == $uid || data.child('authorId').val() == auth.uid) && root.child('careDays').child($uid).child($day).child($id).child('status').val() == 'done'",
+            ".validate": "newData.hasChildren(['authorId','note','photo','updatedAt']) && (newData.child('note').val().length > 0 || newData.child('photo').val().length > 0)",
+            "authorId": {
+              ".validate": "newData.val() == auth.uid"
+            },
+            "note": {
+              ".validate": "newData.isString() && newData.val().length <= 500"
+            },
+            "photo": {
+              ".validate": "newData.isString() && newData.val().length <= 350000 && (newData.val() == '' || newData.val().beginsWith('data:image/jpeg;base64,'))"
+            },
+            "updatedAt": {
+              ".validate": "newData.isNumber() && newData.val() <= now && newData.val() >= now - 60000"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        }
+      }
+    },
+    "petSafetyCards": {
+      ".read": false,
+      ".write": false
+    },
+    "safetyCardLinks": {
+      ".read": false,
+      ".write": false
+    },
+    "weeklyCardLinks": {
+      ".read": false,
+      ".write": false
+    },
+    "weeklyCardIndex": {
       ".read": false,
       ".write": false
     }

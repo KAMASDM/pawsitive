@@ -9,6 +9,7 @@
     "@tailwindcss/aspect-ratio": "^0.4.2",
     "@tailwindcss/forms": "^0.5.9",
     "@tailwindcss/typography": "^0.5.15",
+    "@tesseract.js-data/eng": "1.0.0",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "browser-image-compression": "^2.0.2",
@@ -22,17 +23,19 @@
     "lottie-react": "^2.4.1",
     "lucide-react": "^0.453.0",
     "node-fetch": "^2.7.0",
+    "pdfjs-dist": "6.4.299",
     "qrcode.react": "^4.2.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-icons": "^5.5.0",
     "react-router-dom": "^6.26.2",
+    "tesseract.js": "7.0.0",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
     "dev": "vite",
     "dev:netlify": "netlify dev",
-    "prebuild": "node scripts/generate-firebase-sw.js",
+    "prebuild": "node scripts/generate-firebase-sw.js && node scripts/prepare-document-reader.cjs",
     "build": "vite build && node scripts/retain-deploy-assets.cjs && npm run generate-sitemap",
     "generate-sitemap": "node generate-sitemap.js",
     "preview": "vite preview",
@@ -40,8 +43,10 @@
     "test-email-function": "node netlify/functions/test-daily-reminders.js",
     "test": "node --test functions/test/*.test.js",
     "report:retention": "node scripts/report-retention.cjs",
-    "test:rules": "firebase emulators:exec --project demo-pawppy --only database --config firebase.emulators.json \"node --test --test-concurrency=1 tests/databaseRules.emulator.cjs tests/scheduledReminders.emulator.cjs tests/familyApi.emulator.cjs tests/copilotApi.emulator.cjs\"",
-    "test:browser": "firebase emulators:exec --project demo-pawppy --only database,auth --config firebase.emulators.json \"playwright test\""
+    "test:rules": "firebase emulators:exec --project demo-pawppy --only database --config firebase.emulators.json \"node --test --test-concurrency=1 tests/databaseRules.emulator.cjs tests/scheduledReminders.emulator.cjs tests/familyApi.emulator.cjs tests/copilotApi.emulator.cjs tests/growthApi.emulator.cjs\"",
+    "test:growth": "firebase emulators:exec --project demo-pawppy --only database,auth --config firebase.emulators.json \"playwright test --config playwright.growth.config.cjs\"",
+    "test:browser": "firebase emulators:exec --project demo-pawppy --only database,auth --config firebase.emulators.json \"playwright test\"",
+    "predev": "node scripts/prepare-document-reader.cjs"
   },
   "eslintConfig": {
     "extends": [

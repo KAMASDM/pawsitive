@@ -120,7 +120,7 @@ export function usePetOperations(pets, setPets) {
       if (!user) return;
       try {
         const pet = pets.find((p) => p.id === petId);
-        await remove(ref(database, `userPets/${user.uid}/${petId}`));
+        await update(ref(database), { [`userPets/${user.uid}/${petId}`]: null, [`careHandovers/${user.uid}/${petId}`]: null });
         if (pet?.slug) {
           await remove(ref(database, `petSlugs/${pet.slug}`));
         }

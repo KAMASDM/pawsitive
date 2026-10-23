@@ -7,6 +7,9 @@ import { auth, database, functions } from '../../firebase';
 import { careDate, careTimeZone, ROUTINE_KINDS, shiftDate, todayTasks } from '../../domain/care.mjs';
 import { createFirstPet, createRoutine, recordCare, setRoutineActive } from '../../services/careService';
 import CareTask from './CareTask';
+import CareUpdate from '../../features/growth/CareUpdate';
+import NextCareAction from '../../features/growth/NextCareAction';
+import useDraft from '../../hooks/useDraft';
 import WeeklyCareRecap from './WeeklyCareRecap';
 import RoutineTimePicker from './RoutineTimePicker';
 import TodayWelcome from './TodayWelcome';
@@ -32,9 +35,9 @@ export default function Today() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState('');
-  const [petName, setPetName] = useState('');
-  const [petType, setPetType] = useState('Dog');
-  const [form, setForm] = useState({ petId: '', title: 'Fresh water', kind: 'water', time: '08:00' });
+  const [petName, setPetName] = useDraft(`pawppy:first-pet-name:${uid}`, '');
+  const [petType, setPetType] = useDraft(`pawppy:first-pet-type:${uid}`, 'Dog');
+  const [form, setForm, clearRoutineDraft] = useDraft(`pawppy:routine:${uid}`, { petId: '', title: 'Fresh water', kind: 'water', time: '08:00' });
   const [manage, setManage] = useState(false);
   const timeZone = careTimeZone(user);
   const day = careDate(now, timeZone);
@@ -94,14 +97,14 @@ export default function Today() {
   const closeForm = () => setParams(previous => { const next = new URLSearchParams(previous); next.delete('add'); return next; });
   const pending = tasks.filter(task => !task.completed);
   const done = tasks.filter(task => task.completed);
-  const taskRow = task => <CareTask key={task.id} task={task} busy={!!busy || !canRecord} saving={busy === task.id} onToggle={() => run(task.id, async () => {
+  const taskRow = task => <React.Fragment key={task.id}><CareTask task={task} busy={!!busy || !canRecord} saving={busy === task.id} onToggle={() => run(task.id, async () => {
     const saved = await recordCare(day, task, task.completed ? 'open' : 'done', ownerId);
     setNotice(saved ? task.completed ? 'Completion corrected.' : `${task.title} recorded for ${task.petName}.` : 'This task changed on another device. Your plan has been refreshed.');
-  })} />;
+  })} />{task.completed && <CareUpdate task={task} day={day} ownerId={ownerId} canRecord={canRecord} />}</React.Fragment>;
 
   return <div className="app-page today-home">
     <TodayWelcome user={user} now={now} timeZone={timeZone} pets={petList} filter={filter} onFilter={setFilter} ready={ready} isShared={isShared} />
-    {isShared && <div className="today-shared"><Users size={20} aria-hidden="true" /><div><p>Shared care · {shared.ownerName || 'Family'}’s pets</p><small>{canRecord ? 'You can view and record daily care.' : 'You have view-only access to this plan.'}</small><Link to="/today">Return to my Today <ArrowRight size={14} /></Link></div></div>}
+    {isShared && <div className="today-shared"><Users size={20} aria-hidden="true" /><div><p>Shared care · {shared.ownerName || 'Family'}’s pets</p><small>{canRecord ? 'You can view and record daily care.' : 'You have view-only access to this plan.'}</small><Link to="/today">Return to my Today <ArrowRight size={14} /></Link><Link to={`/family/handover?family=${encodeURIComponent(ownerId)}`}>Read care instructions <ArrowRight size={14} /></Link></div></div>}
     {error && !showForm && !manage && <p role="alert" className="app-notice app-notice-error">{error}</p>}
     <p role="status" className="app-notice">{notice}</p>
     {!ready ? !error && <PageLoading /> : !petList.length ? isShared ? <EmptyState title="A care plan is on its way">Pets will appear here when their parent adds them.</EmptyState> : <section className="app-panel today-onboarding">
@@ -122,7 +125,7 @@ export default function Today() {
           {!!tasks.length && completed === tasks.length && <div className="today-all-done"><Check size={18} aria-hidden="true" /><span>All cared for. Enjoy some time together.</span></div>}
           {!isShared && Object.keys(routines).length > 0 && <button className="app-text-button today-manage" onClick={() => setManage(true)} aria-expanded={manage}><Settings2 size={15} aria-hidden="true" />Manage routines</button>}
         </section>
-        <aside className="today-aside"><WeeklyCareRecap days={days} pets={pets} day={day} filter={filter} />
+        <aside className="today-aside">{!isShared && <NextCareAction pets={pets} routines={routines} filter={filter} />}<WeeklyCareRecap canShare={!isShared && petList.length > 0} days={days} pets={pets} day={day} filter={filter} />
           {!isShared && <div className="app-action-list"><ActionRow to="/care" icon={Heart} title="Their health, all together" detail="Records, weight & vet visits" /><ActionRow to="/copilot" icon={Sparkles} title="A little help with care" detail="Questions & record summaries · AI beta" /></div>}
         </aside>
       </div>
@@ -130,7 +133,7 @@ export default function Today() {
     </>}
     <Sheet open={showForm && ready && petList.length > 0 && !isShared} onClose={closeForm} busy={!!busy} title="Choose a daily routine" description="For the everyday things. Keep medication instructions and doses in your pet’s health record.">
       {error && <p role="alert" className="app-notice app-notice-error">{error}</p>}
-      <form onSubmit={event => { event.preventDefault(); run('routine', async () => { await createRoutine({ ...form, petId: form.petId || petList[0][0], startDate: day }); closeForm(); setNotice('Routine added to Today. You can record it when it is done.'); }); }}>
+      <form onSubmit={event => { event.preventDefault(); run('routine', async () => { await createRoutine({ ...form, petId: form.petId || petList[0][0], startDate: day }); clearRoutineDraft(); closeForm(); setNotice('Routine added to Today. You can record it when it is done.'); }); }}>
         <div className="app-form-grid"><label className="app-field">Pet<select className={inputClass} value={form.petId || petList[0]?.[0]} onChange={event => setForm({ ...form, petId: event.target.value })}>{petList.map(([id, pet]) => <option key={id} value={id}>{pet.name}</option>)}</select></label>
         <label className="app-field">Activity<select className={inputClass} value={form.kind} onChange={event => setForm({ ...form, kind: event.target.value, title: ROUTINE_KINDS[event.target.value] })}>{Object.entries(ROUTINE_KINDS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>
         <label className="app-field app-form-wide">Routine name<input className={inputClass} value={form.title} required maxLength={80} onChange={event => setForm({ ...form, title: event.target.value })} /></label>

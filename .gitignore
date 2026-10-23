@@ -77,3 +77,6 @@ public/firebase-messaging-sw.js
 # Local browser test artifacts
 test-results/
 playwright-report/
+
+# Optional on-device OCR assets copied from npm dependencies
+public/document-reader/

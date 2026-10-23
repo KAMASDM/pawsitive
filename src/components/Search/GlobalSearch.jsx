@@ -11,6 +11,7 @@ export const triggerSearch = event => { event?.currentTarget?.focus({ preventScr
 const QUICK_LINKS = [
   { label: 'Today’s care', detail: 'Daily routines for your pets', path: '/today', keywords: 'routine complete water meal' },
   { label: 'Care records', detail: 'Health, weight and expenses', path: '/care', keywords: 'health vaccination medication vet' },
+  { label: 'Sitter handover', detail: 'Shared instructions and emergency contacts', path: '/family/handover', keywords: 'sitter handover feeding instructions emergency' },
   { label: 'Family care', detail: 'Caregivers and shared plans', path: '/family', keywords: 'invite family sitter' },
   { label: 'Places & services', detail: 'Find vets, stores and services', path: '/resource', keywords: 'vet resource groomer store' },
   { label: 'Shop', detail: 'Browse pet products', path: '/shop', keywords: 'shop market food toys treats' },
@@ -37,10 +38,17 @@ export default function GlobalSearch() {
   useEffect(() => onAuthStateChanged(auth, setUser), []);
   useEffect(() => {
     if (!user) { setPets([]); return; }
-    return onValue(ref(database, `userPets/${user.uid}`), snapshot => setPets(Object.entries(snapshot.val() || {}).map(([id, pet]) => ({ label: pet.name || 'Pet', detail: [pet.breed, pet.type].filter(Boolean).join(' · ') || 'Pet profile', path: `/my-pets/${id}`, keywords: `${pet.name || ''} ${pet.breed || ''}` }))), () => setPets([]));
+    return onValue(ref(database, `userPets/${user.uid}`), snapshot => setPets(Object.entries(snapshot.val() || {}).map(([id, pet]) => ({ petId: id, label: pet.name || 'Pet', detail: [pet.breed, pet.type].filter(Boolean).join(' · ') || 'Pet profile', path: `/my-pets/${id}`, keywords: `${pet.name || ''} ${pet.breed || ''}` }))), () => setPets([]));
   }, [user]);
   const results = useMemo(() => {
-    const all = [...pets, ...QUICK_LINKS]; const term = query.trim().toLowerCase();
+    const term = query.trim().toLowerCase();
+    const tools = term ? pets.flatMap(pet => [
+      { label: `${pet.label}’s safety card`, detail: 'QR contact card for a finder', path: `/care/${pet.petId}/safety`, keywords: 'qr safety collar contact found' },
+      { label: `Read ${pet.label}’s vaccination card`, detail: 'Import and review records', path: `/care/${pet.petId}/import`, keywords: 'import scan upload vaccine vaccination record' },
+      { label: `${pet.label}’s care starter plan`, detail: 'Choose a few daily routines', path: `/care/${pet.petId}/start`, keywords: 'starter routine plan' },
+      { label: `${pet.label}’s weekly card`, detail: 'A photo and milestones to share', path: `/care/${pet.petId}/week`, keywords: 'share week photo memories' },
+    ]) : [];
+    const all = [...pets, ...tools, ...QUICK_LINKS];
     return (term ? all.filter(item => `${item.label} ${item.detail} ${item.keywords}`.toLowerCase().includes(term)) : all).slice(0, term ? 10 : 7);
   }, [pets, query]);
   const close = () => { setOpen(false); setQuery(''); };

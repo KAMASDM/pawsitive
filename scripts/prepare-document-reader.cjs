@@ -1,0 +1,11 @@
+const fs = require('node:fs');
+const path = require('node:path');
+const root = path.resolve('public/document-reader/v1');
+fs.mkdirSync(root, { recursive: true });
+const copy = (from, to) => fs.copyFileSync(from, path.join(root, to));
+copy('node_modules/tesseract.js/dist/worker.min.js', 'worker.min.js');
+copy('node_modules/tesseract.js/dist/worker.min.js.LICENSE.txt', 'worker.LICENSE.txt');
+copy('node_modules/tesseract.js/LICENSE.md', 'tesseract.LICENSE.md');
+for (const name of fs.readdirSync('node_modules/tesseract.js-core').filter(name => /-lstm\.(?:wasm|wasm.js|js)$/.test(name) || name === 'LICENSE')) copy(path.join('node_modules/tesseract.js-core', name), name);
+copy('node_modules/@tesseract.js-data/eng/4.0.0_best_int/eng.traineddata.gz', 'eng.traineddata.gz');
+console.log('Document reader prepared for on-device use.');

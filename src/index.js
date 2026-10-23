@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import "./index.css";
 import "./styles/app-system.css";
 import "./styles/feature-theme.css";
+import "./features/growth/Growth.css";
 import App from "./App";
 import { BrowserRouter } from "react-router-dom";
 

@@ -1654,3 +1654,5 @@ Object.assign(exports, require("./publicApi")({ functions, admin }));
 Object.assign(exports, require("./familyApi")({ functions, admin }));
 
 Object.assign(exports, require("./copilotApi")({ functions, admin }));
+
+Object.assign(exports, require('./growthApi')({ functions, admin }));

@@ -9,6 +9,14 @@ module.exports = ({ functions, admin }) => {
   const callable = handler => functions.runWith({ memory: '256MB', timeoutSeconds: 30, maxInstances: 10 }).https.onCall(handler);
   const active = member => member && member.expiresAt > Date.now() && ['caregiver', 'viewer', 'sitter'].includes(member.role);
   return {
+    previewCareInvitation: callable(async data => {
+      if (!idPattern.test(data?.ownerId || '') || !/^[a-zA-Z0-9_-]{43}$/.test(data?.token || '')) return null;
+      const db = admin.database();
+      const invitation = (await db.ref(`careFamilies/${data.ownerId}/invitations/${hash(data.token)}`).once('value')).val();
+      if (!invitation || invitation.status !== 'pending' || invitation.expiresAt <= Date.now()) return null;
+      const owner = (await db.ref(`users/${data.ownerId}/displayName`).once('value')).val();
+      return { ownerName: typeof owner === 'string' ? owner.slice(0, 80) : 'A pet parent', role: invitation.role, accessDays: invitation.accessDays, expiresAt: invitation.expiresAt };
+    }),
     createCareInvitation: callable(async (data, context) => {
       const uid = signedIn(context);
       if (!['caregiver', 'viewer', 'sitter'].includes(data?.role)) fail('invalid-argument', 'Choose a caregiver role.');

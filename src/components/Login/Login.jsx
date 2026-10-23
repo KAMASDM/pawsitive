@@ -1,4 +1,4 @@
-import { trackProductEvent } from "../../services/productAnalytics";
+import { trackSignupCompletion } from "../../services/productAnalytics";
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth, signInWithPopup, googleProvider } from "../../firebase";
@@ -12,6 +12,12 @@ import { FiMail, FiLock, FiUser, FiArrowRight, FiCheck } from "react-icons/fi";
 
 const Login = () => {
   const navigate = useNavigate();
+  useEffect(() => {
+    const source = new URLSearchParams(window.location.search).get('source');
+    if (['safety', 'week', 'family'].includes(source)) {
+      try { sessionStorage.setItem('pawppy_share_source', JSON.stringify({ source, at: Date.now() })); } catch { /* Joining still works. */ }
+    }
+  }, []);
   const next = new URLSearchParams(window.location.search).get("next");
   let destination = '/today';
   if (next?.startsWith('/')) {
@@ -70,7 +76,7 @@ const Login = () => {
 
       await set(userRef, { ...userData, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kolkata' });
       sessionStorage.setItem('pawppy_signup_pending', user.uid);
-      trackProductEvent('signup_completed', 'login').then((recorded) => { if (recorded) sessionStorage.removeItem('pawppy_signup_pending'); });
+      trackSignupCompletion(user.uid);
 
 
       // Send welcome email

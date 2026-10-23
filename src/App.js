@@ -10,6 +10,13 @@ const Today = lazy(() => import("./components/Today/Today"));
 const Copilot = lazy(() => import("./components/Copilot/Copilot"));
 const CareBrief = lazy(() => import("./components/Today/CareBrief"));
 const CareHome = lazy(() => import("./components/Today/CareHome"));
+const RecordImport = lazy(() => import('./features/growth/RecordImport'));
+const SafetyCard = lazy(() => import('./features/growth/SafetyCard'));
+const WeeklyCard = lazy(() => import('./features/growth/WeeklyCard'));
+const StarterPlan = lazy(() => import('./features/growth/StarterPlan'));
+const Handover = lazy(() => import('./features/growth/Handover'));
+const PublicSharedPage = lazy(() => import('./features/growth/PublicSharedPage'));
+const InvitationPreview = lazy(() => import('./features/growth/InvitationPreview'));
 const Discover = lazy(() => import("./components/Today/Discover"));
 import Header from "./components/Header/Header";
 import Footer from "./components/Footer/Footer";
@@ -185,6 +192,14 @@ function AppContent() {
                 <Route path="/family" element={<PR><Family /></PR>} />
                 <Route path="/care/:petId/visit" element={<PR><CareBrief /></PR>} />
                 <Route path="/care" element={<PR><CareHome /></PR>} />
+                <Route path="/care/:petId/import" element={<PR><RecordImport /></PR>} />
+                <Route path="/care/:petId/safety" element={<PR><SafetyCard /></PR>} />
+                <Route path="/care/:petId/week" element={<PR><WeeklyCard /></PR>} />
+                <Route path="/care/:petId/start" element={<PR><StarterPlan /></PR>} />
+                <Route path="/family/handover" element={<PR><Handover /></PR>} />
+                <Route path="/found/:token" element={<PublicSharedPage kind="safety" />} />
+                <Route path="/week/:token" element={<PublicSharedPage kind="week" />} />
+                <Route path="/invite/:ownerId/:token" element={<InvitationPreview />} />
                 <Route path="/discover" element={<PR><Discover /></PR>} />
                 <Route path="/settings" element={<PR><NotificationSettings /></PR>} />
 

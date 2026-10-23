@@ -9,7 +9,7 @@ export const APP_TABS = [
 export function activeTab(pathname) {
   if (pathname === '/today' || pathname === '/home') return '/today';
   if (/^\/(care|my-pets|pet-details|copilot)(\/|$)/.test(pathname)) return '/care';
-  if (pathname === '/family') return '/family';
+  if (pathname === '/family' || pathname.startsWith('/family/')) return '/family';
   if (/^\/(profile|settings|notifications)(\/|$)/.test(pathname)) return '/profile';
   if (/^\/(discover|shop|store|products|cart|checkout|orders|quiz|challenge|resource|adopt-pets|nearby-mates|lost-and-found|place-tagging|activity)(\/|$)/.test(pathname)) return '/discover';
   return null;

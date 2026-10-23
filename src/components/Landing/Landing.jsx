@@ -19,6 +19,8 @@ const QUESTIONS = [
   ['Can my family or pet sitter help?', 'Yes. Invite a caregiver to view and record daily care, a viewer to follow along, or a temporary sitter. You can revoke access. Shared daily care includes basic pet profiles and routines, while medical records and expenses stay with the owner.'],
   ['How do reminders work?', 'Opt in to one daily briefing when routines remain open, at a time you choose. Saved health-date reminders and weekly digests have separate settings. Individual activity times organise your Today list; they do not trigger individual alerts.'],
   ['What does it cost?', 'There is no subscription checkout for the care features in this version. Shop purchases are separate, with prices shown before checkout.'],
+  ['Can I make a safety tag for my pet?', 'Yes. Create a printable QR safety card and choose the contact details a finder can see. A finder can call or email you without an account. Turn off the link whenever you like. The card is not a location tracker.'],
+  ['Can I share my pet’s memories?', 'Create a weekly card with a favourite photo, a caption and selected milestones. Download the image or share a link friends can open without an account. Private health records are excluded.'],
   ['Does Pawppy have an AI assistant?', 'Pawppy Copilot is an optional beta powered by Google Gemini. Ask general care questions or approve a preview of your own pet’s records for a draft summary. It cannot diagnose, prescribe, or change records. Pawppy does not have a proprietary neural network; veterinary decisions belong with your veterinarian.'],
 ];
 
@@ -137,13 +139,13 @@ export default function Landing() {
           </article>
           <article className="lp-feature lp-feature-records">
             <div className="lp-feature-icon"><ShieldCheck size={22} /></div><span className="lp-feature-number">02 / THEIR WHOLE STORY</span>
-            <h3>All those details.<br /><em>Right here.</em></h3><p>Health records, weight, expenses, and visit preparation. Keep their history close when you need it.</p>
+            <h3>All those details.<br /><em>Right here.</em></h3><p>Read a vaccination card, review its details, and keep records, weight and visit notes together. Less typing, more peace of mind.</p>
             <div className="lp-record-stack" aria-hidden="true"><span><Heart size={16} />Health records<ArrowUpRight size={14} /></span><span><PawPrint size={16} />Little milestones<ArrowUpRight size={14} /></span></div>
             <Link to="/login?signup=1" className="lp-card-link">A home for their history <ArrowUpRight size={18} /></Link>
           </article>
           <article className="lp-feature lp-feature-family">
             <div className="lp-feature-icon"><Users size={22} /></div><span className="lp-feature-number">03 / YOUR FAVOURITE HUMANS</span>
-            <h3>Love is a<br />team effort.</h3><p>Bring family or a trusted sitter into daily care. See who helped, and manage their access as plans change.</p>
+            <h3>Love is a<br />team effort.</h3><p>Bring family or a trusted sitter into daily care. Share instructions, record care and send photo updates, with access you control.</p>
             <div className="lp-team-art" aria-hidden="true"><span>You</span><span><PawPrint size={23} /></span><span>Your<br />people</span><i>Better, together.</i></div>
             <Link to="/login?signup=1" className="lp-card-link">Make a little care team <ArrowUpRight size={18} /></Link>
           </article>

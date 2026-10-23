@@ -5,7 +5,7 @@ const fs = require('node:fs/promises');
 const path = require('node:path');
 const SITE = 'https://pawppy.in';
 const ORIGIN = /^https:\/\/[a-f0-9]{24}--pawppy\.netlify\.app$/;
-const ASSET = /^assets\/[a-zA-Z0-9_.-]+\.(?:js|css|svg|png|jpg|jpeg|webp|woff2?)$/;
+const ASSET = /^assets\/[a-zA-Z0-9_.-]+\.(?:js|mjs|css|svg|png|jpg|jpeg|webp|woff2?)$/;
 const BOOTSTRAP = [
   'https://6aa2aa04c6fb5b00086ede30--pawppy.netlify.app',
   'https://6aa2a4779dae4a71334fd838--pawppy.netlify.app',
@@ -47,7 +47,7 @@ async function main() {
         try { await fs.access(target); continue; } catch { /* Fetch only missing assets. */ }
         const response = await fetchFile(`${release.origin}/${asset}`);
         const type = response.headers.get('content-type') || '';
-        if (type.includes('text/html') || (asset.endsWith('.js') && !/javascript|ecmascript/.test(type))) throw new Error(`Invalid asset MIME type for ${asset}`);
+        if (type.includes('text/html') || ((asset.endsWith('.js') || asset.endsWith('.mjs')) && !/javascript|ecmascript/.test(type))) throw new Error(`Invalid asset MIME type for ${asset}`);
         const body = Buffer.from(await response.arrayBuffer());
         await fs.writeFile(target, body, { flag: 'wx' });
         retained++;

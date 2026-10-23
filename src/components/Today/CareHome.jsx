@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { onValue, ref } from 'firebase/database';
-import { CalendarHeart, FileHeart, PawPrint, Plus, Settings2, Sparkles } from 'lucide-react';
+import { CalendarHeart, FileHeart, FileUp, PawPrint, Plus, Settings2, ShieldCheck, Share2, Sparkles } from 'lucide-react';
 import { auth, database } from '../../firebase';
 import { ActionRow, EmptyState, PageHeader, PageLoading, PetAvatar } from '../UI/AppUI';
 
@@ -18,6 +18,12 @@ export default function CareHome() {
       <ActionRow to={`/care/${id}/visit`} icon={CalendarHeart} title="Prepare for a vet visit" detail="Bring the important details together" />
       <ActionRow to={`/copilot?pet=${encodeURIComponent(id)}`} icon={Sparkles} title="Understand their records" detail="Optional AI summary for you to review" />
       <ActionRow to={`/my-pets/${id}`} icon={PawPrint} title="Profile & memories" />
+      <div className="growth-care-tools"><p className="app-section-label">A little more for {pet.name}</p>
+        <ActionRow to={`/care/${id}/import`} icon={FileUp} title="Read a vaccination card" detail="Import, review and save" />
+        <ActionRow to={`/care/${id}/safety`} icon={ShieldCheck} title="QR safety card" detail="Help a finder contact you" />
+        <ActionRow to={`/care/${id}/week`} icon={Share2} title="Share their week" detail="A favourite photo & little milestones" />
+        <ActionRow to={`/care/${id}/start`} icon={Sparkles} title="Care starter plan" detail="A few routines to make your own" />
+      </div>
     </section>)}</div>}
     <p className="app-section-label">Everyday essentials</p><div className="app-action-list"><ActionRow to="/today?add=1" icon={Plus} title="Add a daily routine" detail="Make room for the little things" /><ActionRow to="/settings" icon={Settings2} title="Reminder preferences" detail="Choose when and how to hear from us" /></div>
   </div>;

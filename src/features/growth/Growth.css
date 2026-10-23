@@ -1,0 +1,74 @@
+.growth-screen { min-width: 0; }
+.growth-screen > .app-text-button:first-child { margin: -12px 0 18px; }
+.growth-screen .app-page-heading { margin-bottom: 28px; }
+.growth-inline { display: flex; align-items: end; flex-wrap: wrap; gap: 12px; }
+.growth-stack { display: grid; gap: 20px; }
+.growth-two-columns { display: grid; grid-template-columns: minmax(0,1.15fr) minmax(0,1fr); align-items: start; gap: 28px; }
+.growth-two-columns > * { min-width: 0; }
+.growth-upload { min-height: 100px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px; border: 1px dashed #b8a6c8; border-radius: 18px; background: var(--app-tint); padding: 20px; color: var(--app-accent); font-size: 14px; font-weight: 600; margin-top: 20px; }
+.growth-upload input { width: 100%; max-width: 100%; font-size: 13px; font-weight: 400; }
+.growth-upload input::file-selector-button { border: 1px solid var(--app-line); background: var(--app-surface); color: var(--app-accent); padding: 10px 12px; border-radius: 10px; cursor: pointer; margin-right: 10px; }
+.growth-check { display: flex; align-items: flex-start; gap: 12px; font-size: 14px; font-weight: 500; line-height: 1.65; min-height: 44px; padding: 10px 0; cursor: pointer; }
+.growth-check input { width: 20px; height: 20px; flex: 0 0 20px; accent-color: var(--app-accent); margin-top: 2px; }
+.growth-record { min-width: 0; padding: 18px; border: 1px solid var(--app-line); border-radius: 18px; margin-top: 18px; }
+.growth-record legend { font-size: 12px; color: var(--app-muted); font-weight: 600; padding: 0 6px; }
+.growth-details { margin-top: 20px; }
+.growth-details summary { cursor: pointer; padding: 12px 0; min-height: 44px; font-size: 14px; color: var(--app-accent); font-weight: 600; }
+.growth-details > label { margin-top: 14px; }
+.growth-wordmark { display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--app-accent); font-weight: 750; font-size: 23px; letter-spacing: -1px; }
+.safety-print-area { max-width: 330px; padding: 26px; margin: 24px auto; border: 2px dashed var(--app-line); border-radius: 24px; text-align: center; background: white; color: #292733; }
+.safety-print-area h2 { font-size: 28px; font-weight: 700; margin: 16px 0; overflow-wrap: anywhere; }
+.safety-print-area svg { display: block; margin: auto; max-width: 100%; }
+.safety-print-area .growth-wordmark svg { margin: 0; }
+.safety-print-area p { font-size: 14px; margin-top: 16px; line-height: 1.6; }
+.safety-print-area small { display: block; margin-top: 12px; color: var(--app-muted); }
+.shared-public > .app-wordmark { margin-bottom: 20px; }
+.safety-public-card { padding: 32px; margin-top: 24px; }
+.growth-pet-photo { width: 112px; height: 112px; object-fit: cover; border-radius: 28px; margin: 16px 0 24px; }
+.growth-finder-message { margin: 20px 0; padding: 20px; background: var(--app-tint); border-radius: 16px; font-size: 15px; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; }
+.growth-public-cta { text-align: center; padding: 32px 20px; border-top: 1px solid var(--app-line); margin-top: 32px; }
+.growth-public-cta > svg { color: var(--app-accent); margin: 0 auto 16px; }
+.growth-public-cta h2 { font-size: 22px; font-weight: 650; letter-spacing: -.03em; }
+.growth-public-cta p { font-size: 14px; color: var(--app-muted); line-height: 1.7; margin: 12px auto 20px; max-width: 350px; }
+.growth-public-cta .app-text-button { display: flex; margin-top: 8px; }
+.growth-week-card { border: 1px solid var(--app-line); background: white; border-radius: 26px; padding: 28px; text-align: center; overflow: hidden; }
+.growth-week-card .app-eyebrow { margin-top: 24px; font-size: 11px; }
+.growth-week-card h2 { font-size: 32px; letter-spacing: -.04em; font-weight: 700; margin: 10px 0 24px; overflow-wrap: anywhere; }
+.growth-week-card > img { width: 100%; aspect-ratio: 1.2; object-fit: cover; border-radius: 18px; }
+.growth-week-paw { display: grid; place-items: center; background: var(--app-tint); color: var(--app-accent); border-radius: 20px; min-height: 180px; }
+.growth-week-caption { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 17px; line-height: 1.7; margin: 24px 0; }
+.growth-week-card ul { display: grid; gap: 10px; list-style: none; font-size: 15px; line-height: 1.6; margin-top: 20px; }
+.growth-week-card li { padding: 10px; border-radius: 12px; background: var(--app-surface-soft); overflow-wrap: anywhere; }
+.growth-week-count { color: var(--app-success); font-size: 14px; margin-top: 20px; }
+.growth-week-card > small { display: block; font-size: 12px; color: var(--app-muted); margin-top: 24px; }
+.growth-instructions { display: grid; gap: 22px; }
+.growth-instructions dt { font-size: 13px; font-weight: 650; }
+.growth-instructions dd { font-size: 14px; color: var(--app-muted); line-height: 1.7; margin-top: 8px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.growth-saved-update { padding-bottom: 20px; border-bottom: 1px solid var(--app-line); }
+.growth-saved-update img, .growth-photo-draft img { width: 100%; max-height: 280px; object-fit: contain; border-radius: 18px; margin-bottom: 14px; }
+.growth-saved-update p { font-size: 14px; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; }
+.growth-saved-update small { display: block; color: var(--app-muted); font-size: 12px; margin-top: 12px; }
+.growth-photo-draft { margin-top: 18px; }
+.care-update-button { margin: 0 0 8px 44px; font-size: 12px; min-height: 40px; }
+.growth-care-tools { border-top: 1px solid var(--app-line); padding-top: 4px; }
+.growth-care-tools .app-section-label { margin: 16px 24px 6px; }
+.growth-wrap { overflow-wrap: anywhere; min-width: 0; }
+@media(max-width: 767px) {
+ .growth-two-columns { grid-template-columns: 1fr; gap: 24px; }
+ .growth-screen .app-form-grid { grid-template-columns: 1fr; }
+ .growth-inline > .app-field { width: 100%; }
+ .growth-record { padding: 16px; }
+ .safety-public-card { padding: 24px 20px; }
+ .growth-week-card { padding: 24px 20px; }
+ .growth-care-tools .app-section-label { margin-left: 20px; }
+}
+@media print {
+ body:has(.safety-print-area) * { visibility: hidden !important; }
+ body:has(.safety-print-area) .safety-print-area, body:has(.safety-print-area) .safety-print-area * { visibility: visible !important; }
+ body:has(.safety-print-area) .safety-print-area { position: fixed; left: 0; top: 0; width: 85mm; margin: 10mm; box-shadow: none; }
+}
+.growth-screen :is(h1, h2, p, dd, strong, legend, label) { overflow-wrap: anywhere; }
+.growth-screen .app-button { max-width: 100%; white-space: normal; overflow-wrap: anywhere; text-align: center; }
+.growth-screen .app-button svg { flex-shrink: 0; }
+.growth-screen .app-form-actions { flex-wrap: wrap; }
+.care-pet-panel h2 { overflow-wrap: anywhere; }

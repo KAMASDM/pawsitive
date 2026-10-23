@@ -11,6 +11,7 @@ test.beforeEach(async ({ page, request }) => {
   await request.post('http://127.0.0.1:9098/identitytoolkit.googleapis.com/v1/accounts:update?key=demo-key', { headers: { Authorization: 'Bearer owner' }, data: { localId: account.localId, emailVerified: true } });
   await request.patch('http://127.0.0.1:9015/.json?ns=demo-pawppy-default-rtdb&access_token=owner', { data: {
     [`users/${account.localId}`]: { displayName: 'Local parent', email, timeZone: 'UTC' },
+    [`petOwners/milo`]: account.localId,
     [`userPets/${account.localId}/milo`]: { name: 'Milo', type: 'dog', breed: 'Labrador Retriever' },
     [`careRoutines/${account.localId}/water`]: { petId: 'milo', title: 'Fresh water', kind: 'water', time: '08:00', startDate: '2020-01-01', active: true },
   } });

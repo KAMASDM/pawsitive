@@ -82,6 +82,7 @@ export default defineConfig({
       },
       injectManifest: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp}'],
+        globIgnores: ['**/document-reader/**', '**/pdf.worker*.mjs'],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
       },
       devOptions: {
