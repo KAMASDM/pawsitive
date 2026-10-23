@@ -64,6 +64,7 @@ export function PWAUpdateProvider({ children }) {
   const [registration, setRegistration] = useState(null);
   const [offlineReady, setOfflineReady] = useState(false);
   const [needRefresh, setNeedRefresh] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 
   const register = useCallback(() => {
@@ -96,17 +97,28 @@ export function PWAUpdateProvider({ children }) {
           if (typeof version.buildId !== 'string' || !version.buildId) throw new Error('Invalid release information.');
           remoteUpdate.current = version.buildId !== __APP_BUILD__;
           remoteBuild.current = version.buildId;
-          if (remoteUpdate.current) setNeedRefresh(true);
+          // A release announcement is not an installed update. Download it in
+          // the background before offering an action that promises to reload.
+          if (remoteUpdate.current && !current.waiting && !activatedUpdate.current) setIsDownloading(true);
         } finally { clearTimeout(timer); }
       };
       const [versionResult, workerResult] = await Promise.allSettled([checkVersion(), current.update()]);
       if (workerResult.status === 'rejected' && !current.waiting) throw workerResult.reason;
-      await waitForInstall(current.installing);
+      if (current.installing && navigator.serviceWorker.controller && !current.waiting) setIsDownloading(true);
+      try { await waitForInstall(current.installing); }
+      catch (error) { setIsDownloading(false); throw error; }
       // The registration's waiting slot can be assigned just after statechange.
       await new Promise(resolve => setTimeout(resolve, 0));
-      const available = Boolean(current.waiting || activatedUpdate.current || remoteUpdate.current);
+      // Another tab may have updated the worker before this page subscribed.
+      if (!current.waiting && remoteUpdate.current && !activatedUpdate.current) {
+        const activeBuild = await workerBuildId(navigator.serviceWorker.controller);
+        activatedUpdate.current = Boolean(activeBuild && activeBuild !== __APP_BUILD__ && activeBuild === remoteBuild.current);
+      }
+      const available = Boolean(current.waiting || activatedUpdate.current);
       setNeedRefresh(available);
+      setIsDownloading(!available && remoteUpdate.current);
       if (!available && versionResult.status === 'rejected') throw versionResult.reason;
+      if (!available && remoteUpdate.current) throw new Error('The new release is not ready on this device yet. Pawppy will check again automatically.');
       return available;
     })().finally(() => { checkingRef.current = null; });
     return checkingRef.current;
@@ -123,7 +135,9 @@ export function PWAUpdateProvider({ children }) {
     const sync = () => {
       if (disposed) return;
       const worker = registration.waiting;
-      setNeedRefresh(Boolean(worker || activatedUpdate.current || remoteUpdate.current));
+      const ready = Boolean(worker || activatedUpdate.current);
+      setNeedRefresh(ready);
+      setIsDownloading(!ready && Boolean((registration.installing && navigator.serviceWorker.controller) || remoteUpdate.current));
       if (worker && worker !== observedWorker) setDismissed(false);
       observedWorker = worker;
     };
@@ -152,7 +166,12 @@ export function PWAUpdateProvider({ children }) {
     navigator.serviceWorker.addEventListener('controllerchange', controlled);
     document.addEventListener('visibilitychange', check);
     for (const event of ['focus', 'pageshow', 'online']) window.addEventListener(event, check);
-    const timer = setInterval(check, 5 * 60 * 1000);
+    let lastCheck = Date.now();
+    const timer = setInterval(() => {
+      // Retry a release still propagating without making normal checks noisier.
+      const pendingRelease = remoteUpdate.current && !registration.waiting && !activatedUpdate.current;
+      if (pendingRelease || Date.now() - lastCheck >= 5 * 60 * 1000) { lastCheck = Date.now(); check(); }
+    }, 30000);
     watch();
     check();
     return () => {
@@ -170,9 +189,9 @@ export function PWAUpdateProvider({ children }) {
     if (updatingRef.current) return updatingRef.current;
     updatingRef.current = (async () => {
       if (!navigator.onLine) throw new Error('Reconnect to update Pawppy.');
-      // A waiting worker is already downloaded. A second network check must not
-      // prevent accepting it when mobile connectivity is intermittent.
-      if (!registrationRef.current?.waiting && !await checkForUpdates()) return;
+      // A downloaded or already activated worker needs no further network check.
+      // Accept it immediately even when mobile connectivity is intermittent.
+      if (!registrationRef.current?.waiting && !activatedUpdate.current && !await checkForUpdates()) return;
       const worker = registrationRef.current?.waiting;
       if (worker) {
         await activateWorker(worker);
@@ -195,7 +214,7 @@ export function PWAUpdateProvider({ children }) {
     else window.location.reload();
   };
 
-  return <PWAUpdateContext.Provider value={{ offlineReady, setOfflineReady, needRefresh, showUpdatePrompt: needRefresh && !dismissed, dismissUpdate: () => setDismissed(true), updateApp, checkForUpdates, reloadApp }}>{children}</PWAUpdateContext.Provider>;
+  return <PWAUpdateContext.Provider value={{ offlineReady, setOfflineReady, needRefresh, isDownloading, showUpdatePrompt: (needRefresh || isDownloading) && !dismissed, dismissUpdate: () => setDismissed(true), updateApp, checkForUpdates, reloadApp }}>{children}</PWAUpdateContext.Provider>;
 }
 
 export const usePWAUpdate = () => {

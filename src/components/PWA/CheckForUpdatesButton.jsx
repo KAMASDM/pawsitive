@@ -3,7 +3,7 @@ import { FiRefreshCw } from 'react-icons/fi';
 import { usePWAUpdate } from '../../hooks/usePWAUpdate';
 
 export default function CheckForUpdatesButton({ compact = false }) {
-  const { checkForUpdates, updateApp, needRefresh } = usePWAUpdate();
+  const { checkForUpdates, updateApp, needRefresh, isDownloading } = usePWAUpdate();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [failed, setFailed] = useState(false);
@@ -20,9 +20,9 @@ export default function CheckForUpdatesButton({ compact = false }) {
     finally { setBusy(false); }
   };
   return <div className={compact ? 'app-update-control' : ''}>
-    <button type="button" onClick={check} disabled={!!busy} className={`app-button app-button-secondary ${compact ? "" : "w-full"}`}>
-      <FiRefreshCw className={busy ? 'animate-spin' : ''} aria-hidden="true" />
-      {busy ? busy === 'update' ? 'Updating…' : 'Checking…' : needRefresh ? 'Update app' : 'Check for updates'}
+    <button type="button" onClick={check} disabled={!!busy || isDownloading} className={`app-button app-button-secondary ${compact ? "" : "w-full"}`}>
+      <FiRefreshCw className={busy || isDownloading ? 'animate-spin' : ''} aria-hidden="true" />
+      {isDownloading ? 'Downloading update…' : busy ? busy === 'update' ? 'Opening latest version…' : 'Checking…' : needRefresh ? 'Update app' : 'Check for updates'}
     </button>
     {message && <p role={failed ? 'alert' : 'status'} className={`mt-2 text-xs ${failed ? 'text-red-700' : 'text-slate-600'}`}>{message}</p>}
   </div>;

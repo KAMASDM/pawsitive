@@ -72,22 +72,29 @@ test('another tab activating an update offers a reload without interrupting this
   await expect.poll(() => page.evaluate(async () => Boolean((await navigator.serviceWorker.getRegistration()).waiting))).toBe(false);
   await expect(page.getByRole('button', { name: 'Update Now', exact: true })).toBeVisible();
   expect(navigations).toBe(0);
+  await page.evaluate(() => { ServiceWorkerRegistration.prototype.update = () => Promise.reject(new Error('An active update needs no network recheck')); });
   await page.getByRole('button', { name: 'Update Now', exact: true }).click();
-  await expect.poll(() => navigations).toBe(1);
+  await expect.poll(() => navigations, { timeout: 5000 }).toBe(1);
   await expect(page.getByRole('button', { name: 'Update Now', exact: true })).toHaveCount(0);
 });
 
-test('the independent release check detects stale code even without a waiting worker', async ({ page, context, request }) => {
+test('a release announcement does not offer an update before the worker is ready', async ({ page, context, request }) => {
   await installedPage(page, context);
   await request.post('/__release-version', { data: { buildId: 'new-release-for-stale-tab' } });
   await page.evaluate(() => window.dispatchEvent(new Event('pageshow')));
-  await expect(page.getByRole('button', { name: 'Update Now', exact: true })).toBeVisible();
+  await expect(page.getByText('Downloading update…', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Update Now', exact: true })).toHaveCount(0);
   expect(await page.evaluate(async () => Boolean((await navigator.serviceWorker.getRegistration()).waiting))).toBe(false);
   let navigations = 0;
   page.on('framenavigated', frame => { if (frame === page.mainFrame()) navigations++; });
-  await page.getByRole('button', { name: 'Update Now', exact: true }).click();
-  await expect(page.getByRole('alert')).toHaveText('The new version is still downloading. Keep Pawppy open and try again shortly.');
+  await page.getByRole('button', { name: 'Later', exact: true }).click();
+  await expect(page.getByText('Downloading update…', { exact: true })).toHaveCount(0);
   expect(navigations).toBe(0);
+  // When the worker arrives, a dismissed download notice must not hide readiness.
+  await request.post('/__release-version', { data: { buildId: null } });
+  await request.post('/__next-worker');
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await expect(page.getByRole('button', { name: 'Update Now', exact: true })).toBeVisible();
 });
 
 test('accepts a downloaded update even if another update check would fail', async ({ page, context, request }) => {
@@ -121,22 +128,25 @@ test('online launches fetch current HTML and network failures retain the install
   await expect(page.locator('html')).toHaveAttribute('data-release', installedRelease);
 });
 
-test('a slow update remains in progress beyond 25 seconds and finishes without reinstalling', async ({ page, context, request }) => {
+test('slow updates download in the background and accepting a ready update reloads promptly', async ({ page, context, request }) => {
   test.setTimeout(70000);
   await installedPage(page, context);
   await request.post('/__release-version', { data: { buildId: 'slow-next-release' } });
   await request.post('/__slow-worker');
   await page.evaluate(() => window.dispatchEvent(new Event('focus')));
-  await expect(page.getByRole('button', { name: 'Update Now', exact: true })).toBeVisible();
+  await expect(page.getByText('Downloading update…', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Update Now', exact: true })).toHaveCount(0);
   let navigations = 0;
   page.on('framenavigated', frame => { if (frame === page.mainFrame()) navigations++; });
-  await page.getByRole('button', { name: 'Update Now', exact: true }).click();
   await page.waitForTimeout(28000);
-  await expect(page.getByText('Updating Pawppy…', { exact: true })).toBeVisible();
-  await expect(page.getByText('The update could not finish.', { exact: false })).toHaveCount(0);
+  await expect(page.getByText('Downloading update…', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Update Now', exact: true })).toHaveCount(0);
   expect(navigations).toBe(0);
   await request.post('/__release-version', { data: { buildId: null } });
-  await expect.poll(() => navigations, { timeout: 25000 }).toBe(1);
+  await expect(page.getByRole('button', { name: 'Update Now', exact: true })).toBeVisible({ timeout: 20000 });
+  await page.getByRole('button', { name: 'Update Now', exact: true }).click();
+  await expect.poll(() => navigations, { timeout: 5000 }).toBe(1);
+  await expect(page.getByText('Downloading update…', { exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Update Now', exact: true })).toHaveCount(0);
   await request.post('/__next-worker');
 });
