@@ -11,7 +11,7 @@ test.beforeEach(async ({ page, request }) => {
   await request.post('http://127.0.0.1:9098/identitytoolkit.googleapis.com/v1/accounts:update?key=demo-key', { headers: { Authorization: 'Bearer owner' }, data: { localId: account.localId, emailVerified: true } });
   await request.patch('http://127.0.0.1:9015/.json?ns=demo-pawppy-default-rtdb&access_token=owner', { data: {
     [`users/${account.localId}`]: { displayName: 'Local parent', email, timeZone: 'UTC' },
-    [`userPets/${account.localId}/milo`]: { name: 'Milo', type: 'Dog' },
+    [`userPets/${account.localId}/milo`]: { name: 'Milo', type: 'dog', breed: 'Labrador Retriever' },
     [`careRoutines/${account.localId}/water`]: { petId: 'milo', title: 'Fresh water', kind: 'water', time: '08:00', startDate: '2020-01-01', active: true },
   } });
   await page.goto('/login'); await page.getByLabel('Email Address').fill(email); await page.getByLabel('Password', { exact: true }).fill(password);
@@ -74,4 +74,55 @@ test('removing a caregiver requires a deliberate confirmation', async ({ page })
   await page.getByRole('button', { name: 'Remove', exact: true }).click();
   await dialog.getByRole('button', { name: 'Remove access', exact: true }).click();
   await expect(page.getByRole('status')).toHaveText('Caregiver access removed.'); expect(removed).toBe(true);
+});
+
+
+test('manage pets shares the app shell and fits mobile and desktop layouts', async ({ page }) => {
+  await page.goto('/care');
+  await page.getByRole('link', { name: 'Manage pets', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Manage pets', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Milo', exact: true })).toBeVisible();
+  for (const [width, height] of [[320, 740], [390, 844], [1280, 960]]) {
+    await page.setViewportSize({ width, height });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    const nav = page.getByRole('navigation', { name: 'Main navigation', exact: true }).filter({ visible: true });
+    await expect(nav.getByRole('link', { name: 'Care', exact: true })).toHaveAttribute('aria-current', 'page');
+    await page.screenshot({ path: `test-results/manage-pets-${width}.png`, fullPage: true });
+  }
+  await page.getByRole('link', { name: 'Care & profile' }).click();
+  await expect(page).toHaveURL(/my-pets\/milo/);
+  await expect(page.getByRole('button', { name: 'Edit Profile', exact: true })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: "Milo's care record" })).toBeVisible();
+  await page.getByRole('button', { name: 'Close health center', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: "Milo's care record" })).toHaveCount(0);
+  await page.screenshot({ path: 'test-results/pet-dashboard-desktop.png', fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.getByRole('heading', { name: 'Milo', exact: true })).toBeVisible();
+  await page.screenshot({ path: 'test-results/pet-dashboard-mobile.png', fullPage: true });
+});
+
+test('manage pets preserves editing, saves changes and confirms deletion', async ({ page }) => {
+  await page.goto('/my-pets?picker=true');
+  await page.getByRole('button', { name: 'Options for Milo', exact: true }).click();
+  await page.getByRole('button', { name: 'Edit pet details', exact: false }).click();
+  await expect(page.getByRole('heading', { name: "Edit Milo's Profile", exact: true })).toBeVisible();
+  await page.getByPlaceholder('Enter pet name', { exact: true }).fill('Milo Junior');
+  await page.getByRole('button', { name: 'Update Pet', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Milo Junior', exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Milo Junior', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Options for Milo Junior', exact: true }).click();
+  await page.getByRole('button', { name: 'Delete pet', exact: false }).click();
+  const confirmation = page.getByRole('dialog', { name: 'Delete Milo Junior?' });
+  await expect(confirmation).toBeVisible();
+  await confirmation.getByRole('button', { name: 'Keep pet', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Milo Junior', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Options for Milo Junior', exact: true }).click();
+  await page.getByRole('button', { name: 'Delete pet', exact: false }).click();
+  await confirmation.getByRole('button', { name: 'Delete pet', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Their story starts here' })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Their story starts here' })).toBeVisible();
+  await page.getByRole('button', { name: 'Add pet', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Save Pet', exact: true })).toBeVisible();
 });

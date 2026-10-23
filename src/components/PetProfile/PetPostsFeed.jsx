@@ -49,7 +49,7 @@ const PetPostsFeed = ({
           {/* Hero Header */}
           <div
             className="relative overflow-hidden pb-8"
-            style={{ background: "linear-gradient(160deg, #6d5dbf 0%, #4a3d7d 60%, #2e2550 100%)" }}
+            style={{ background: "var(--app-accent-hover)" }}
           >
             {/* Decorative paw prints */}
             {[
@@ -148,14 +148,14 @@ const PetPostsFeed = ({
             </motion.div>
 
             {/* Curved bottom */}
-            <div className="absolute bottom-0 left-0 right-0 h-7 bg-[#f4f1fb]" style={{ borderRadius: "40px 40px 0 0" }} />
+            <div className="absolute bottom-0 left-0 right-0 h-7 bg-[var(--app-bg)]" style={{ borderRadius: "40px 40px 0 0" }} />
           </div>
 
           {/* Tab bar */}
-          <div className="px-4 pt-2 pb-3" style={{ marginTop: -4, background: "#f4f1fb" }}>
+          <div className="px-4 pt-2 pb-3" style={{ marginTop: -4, background: "var(--app-bg)" }}>
             <div
               className="rounded-2xl p-1.5 flex gap-1"
-              style={{ background: "#fff", boxShadow: "0 2px 12px rgba(109,93,183,0.08)" }}
+              style={{ background: "#fff", boxShadow: "var(--app-shadow)" }}
             >
               {['posts', 'events'].map((tab) => (
                 <button
@@ -164,8 +164,8 @@ const PetPostsFeed = ({
                   className="flex-1 py-2.5 rounded-xl text-sm font-semibold capitalize transition-colors"
                   style={
                     activeTab === tab
-                      ? { background: "linear-gradient(135deg, #7c3aed, #4f46e5)", color: "#fff" }
-                      : { color: "#64748b" }
+                      ? { background: "var(--app-accent)", color: "#fff" }
+                      : { color: "var(--app-muted)" }
                   }
                 >
                   {tab}
@@ -175,7 +175,7 @@ const PetPostsFeed = ({
                 <button
                   onClick={() => setShowCreatePost(true)}
                   className="flex items-center gap-1 px-4 py-2.5 rounded-xl text-sm font-semibold"
-                  style={{ background: "#ede9f6", color: "#7c3aed" }}
+                  style={{ background: "var(--app-tint)", color: "var(--app-accent)" }}
                 >
                   <FiPlus size={14} /> Post
                 </button>
@@ -190,7 +190,7 @@ const PetPostsFeed = ({
         <div className="px-4 py-3">
           <div
             className="rounded-2xl p-1.5 flex gap-1"
-            style={{ background: "#fff", boxShadow: "0 2px 12px rgba(109,93,183,0.08)" }}
+            style={{ background: "#fff", boxShadow: "var(--app-shadow)" }}
           >
             {['posts', 'events'].map((tab) => (
               <button
@@ -199,8 +199,8 @@ const PetPostsFeed = ({
                 className="flex-1 py-2.5 rounded-xl text-sm font-semibold capitalize transition-colors"
                 style={
                   activeTab === tab
-                    ? { background: "linear-gradient(135deg, #7c3aed, #4f46e5)", color: "#fff" }
-                    : { color: "#64748b" }
+                    ? { background: "var(--app-accent)", color: "#fff" }
+                    : { color: "var(--app-muted)" }
                 }
               >
                 {tab}
@@ -210,7 +210,7 @@ const PetPostsFeed = ({
               <button
                 onClick={() => setShowCreatePost(true)}
                 className="flex items-center gap-1 px-4 py-2.5 rounded-xl text-sm font-semibold"
-                style={{ background: "#ede9f6", color: "#7c3aed" }}
+                style={{ background: "var(--app-tint)", color: "var(--app-accent)" }}
               >
                 <FiPlus size={14} /> Post
               </button>
@@ -221,7 +221,7 @@ const PetPostsFeed = ({
 
       {/* Mobile Events Tab Content */}
       {isMobile && activeTab === 'events' && (
-        <div className="p-4" style={{ background: "#f4f1fb", minHeight: "50vh" }}>
+        <div className="p-4" style={{ background: "var(--app-bg)", minHeight: "50vh" }}>
           <PetEventsTimeline
             events={events}
             pet={pet}
@@ -233,7 +233,7 @@ const PetPostsFeed = ({
 
       {/* Mobile Posts Tab Content */}
       {isMobile && activeTab === 'posts' && (
-        <div style={{ background: "#f4f1fb", minHeight: "50vh" }}>
+        <div style={{ background: "var(--app-bg)", minHeight: "50vh" }}>
           {/* Pet Age Card for Mobile */}
           <div className="p-4 pb-0">
             <PetAgeCard pet={pet} compact={true} />

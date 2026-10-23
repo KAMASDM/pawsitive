@@ -469,7 +469,7 @@ const PetDialog = ({
   return createPortal(
     <AnimatePresence>
       {open && (
-        <div key="pet-dialog-overlay" className="fixed inset-0 z-50 bg-black bg-opacity-30 flex items-center justify-center lg:p-4">
+        <div key="pet-dialog-overlay" className="app-feature-theme fixed inset-0 z-[240] bg-black bg-opacity-30 flex items-center justify-center lg:p-4">
           <AnimatePresence>
             {showDeleteConfirmation && (
               <motion.div
@@ -571,7 +571,7 @@ const PetDialog = ({
               )}
             </AnimatePresence>
 
-            <div className="px-6 py-4 bg-gradient-to-r from-lavender-600 to-purple-600 text-white lg:rounded-t-2xl flex justify-between items-center shrink-0">
+            <div className="px-6 py-4 bg-white text-gray-900 border-b border-gray-200 lg:rounded-t-2xl flex justify-between items-center shrink-0">
               <h2 className="text-xl font-bold">
                 {isEditMode
                   ? `Edit ${currentPet?.name}'s Profile`
@@ -580,7 +580,7 @@ const PetDialog = ({
               <button
                 onClick={onClose}
                 disabled={isSaving}
-                className="text-white/80 hover:text-white p-2 rounded-full hover:bg-lavender-500/30 transition-colors disabled:opacity-50"
+                className="text-gray-500 hover:text-gray-900 p-2 rounded-full hover:bg-lavender-50 transition-colors disabled:opacity-50"
               >
                 <FiX className="w-5 h-5" />
               </button>

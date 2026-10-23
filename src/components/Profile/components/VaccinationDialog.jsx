@@ -213,7 +213,7 @@ const VaccinationDialog = ({
   return createPortal(
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-[260] overflow-y-auto bg-black bg-opacity-40 flex items-center justify-center p-4">
+        <div className="app-feature-theme fixed inset-0 z-[260] overflow-y-auto bg-black bg-opacity-40 flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -221,7 +221,7 @@ const VaccinationDialog = ({
             transition={{ duration: 0.2 }}
             className="bg-white rounded-2xl shadow-xl w-full max-w-md"
           >
-            <div className="px-6 py-4 bg-lavender-600 text-white rounded-t-2xl flex justify-between items-center">
+            <div className="px-6 py-4 bg-white text-gray-900 border-b border-gray-200 rounded-t-2xl flex justify-between items-center">
               <div className="flex items-center">
                 <FaSyringe className="mr-2" />
                 <h2 className="text-lg font-semibold">
@@ -230,7 +230,7 @@ const VaccinationDialog = ({
               </div>
               <button
                 onClick={onClose}
-                className="text-white/80 hover:text-white transition-colors p-1 rounded-full hover:bg-lavender-500"
+                className="text-gray-500 hover:text-gray-900 transition-colors p-2 rounded-full hover:bg-lavender-50"
                 disabled={loading}
               >
                 <FiX className="w-5 h-5" />

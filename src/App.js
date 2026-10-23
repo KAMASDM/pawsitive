@@ -171,7 +171,7 @@ function AppContent() {
                 duration: 0.18,
                 ease: [0.25, 0.46, 0.45, 0.94],
               }}
-              className="app-route"
+              className={`app-route ${["/", "/login"].includes(location.pathname) ? "" : "app-feature-theme"}`}
             >
               <Suspense fallback={<PawLoader fullScreen />}>
                 {subdomainStoreSlug ? (

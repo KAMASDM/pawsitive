@@ -2,7 +2,7 @@ import { auth } from "../../firebase";
 import React from "react";
 import { FiActivity, FiBell, FiCheck, FiPlus, FiShare2 } from "react-icons/fi";
 
-export default function OnboardingChecklist({ pets = [], onAddPet, onAddHealthRecord, onEnableNotifications }) {
+export default function OnboardingChecklist({ pets = [], onAddPet, onAddHealthRecord, onEnableNotifications, onEditProfile }) {
   const hasPet = pets.length > 0;
   const hasHealthRecord = pets.some((pet) => (pet.vaccinations || []).length > 0);
   const hasSharedProfile = pets.some((pet) => Boolean(pet.slug));
@@ -33,7 +33,7 @@ export default function OnboardingChecklist({ pets = [], onAddPet, onAddHealthRe
     {
       label: "Create a shareable pet profile",
       done: hasSharedProfile,
-      action: onAddPet,
+      action: onEditProfile || onAddPet,
       actionLabel: "Open",
       Icon: FiShare2,
     },

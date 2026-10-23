@@ -124,7 +124,7 @@ const QRModal = ({ url, petName, onClose }) => (
           <FiX size={18} />
         </button>
       </div>
-      <QRCodeSVG value={url} size={180} fgColor="#4c1d95" />
+      <QRCodeSVG value={url} size={180} fgColor="var(--app-accent)" />
       <p className="text-xs text-gray-400 text-center break-all">{url}</p>
       <button
         onClick={() => { navigator.clipboard?.writeText(url); onClose(); }}
@@ -465,7 +465,7 @@ const HealthCenter = ({ open, pet, onClose, onAdd, onEdit, onEditMedical }) => {
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-[230] flex items-end md:items-center justify-center bg-slate-950/55 md:p-6"
+          className="app-feature-theme fixed inset-0 z-[230] flex items-end md:items-center justify-center bg-slate-950/55 md:p-6"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -479,10 +479,10 @@ const HealthCenter = ({ open, pet, onClose, onAdd, onEdit, onEditMedical }) => {
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 60, opacity: 0, scale: 0.98 }}
             transition={{ type: "spring", stiffness: 360, damping: 34 }}
-            className="w-full md:max-w-3xl max-h-[92dvh] overflow-hidden rounded-t-[30px] md:rounded-[30px] bg-[#f8f7fc] shadow-2xl"
+            className="w-full md:max-w-3xl max-h-[92dvh] overflow-hidden rounded-t-[30px] md:rounded-[30px] bg-[var(--app-bg)] shadow-2xl"
             onClick={(event) => event.stopPropagation()}
           >
-            <header className="relative overflow-hidden bg-gradient-to-br from-[#6857b7] via-[#51418d] to-[#312650] px-5 py-5 text-white md:px-7">
+            <header className="pet-profile-hero relative overflow-hidden px-5 py-5 md:px-7">
               <div className="absolute -right-6 -top-8 opacity-10"><PawPrint size={130} opacity={1} /></div>
               <div className="relative flex items-start gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center flex-shrink-0">
@@ -939,7 +939,7 @@ export default function PetDashboard() {
   const mobileLayout = (
     <div className="min-h-screen bg-slate-50 pb-10">
       {/* Sticky top bar */}
-      <div className="bg-white/90 backdrop-blur-sm border-b border-violet-100 sticky top-0 z-30 h-14 flex items-center px-4 gap-3">
+      <div className="pet-profile-toolbar border-b flex items-center px-4 gap-3">
         <button
           onClick={() => navigate("/my-pets?picker=true")}
           className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-violet-600 font-medium transition-colors"
@@ -958,8 +958,7 @@ export default function PetDashboard() {
 
       {/* Social Profile Hero */}
       <div
-        className="relative pt-8 pb-0 overflow-hidden"
-        style={{ background: "linear-gradient(160deg, #6d5dbf 0%, #4a3d7d 60%, #2e2550 100%)" }}
+        className="pet-profile-hero relative pt-8 pb-0 overflow-hidden"
       >
         {/* Decorative paw watermarks */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -1156,7 +1155,7 @@ export default function PetDashboard() {
   const desktopLayout = (
     <div className="min-h-screen bg-slate-50">
       {/* Desktop top bar */}
-      <div className="bg-white/95 backdrop-blur-sm border-b border-violet-100 sticky top-0 z-30 h-14 flex items-center px-8 gap-4" style={{ boxShadow: "0 1px 0 0 rgba(109,93,191,0.08)" }}>
+      <div className="pet-profile-toolbar border-b flex items-center px-8 gap-4">
         <button
           onClick={() => navigate("/my-pets?picker=true")}
           className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-violet-600 font-medium transition-colors"
@@ -1183,8 +1182,7 @@ export default function PetDashboard() {
         <aside className="w-72 flex-shrink-0 space-y-5 sticky top-20 self-start">
           {/* Profile card */}
           <div
-            className="rounded-3xl overflow-hidden shadow-lg"
-            style={{ background: "linear-gradient(160deg, #6d5dbf 0%, #4a3d7d 60%, #2e2550 100%)" }}
+            className="pet-profile-hero rounded-3xl overflow-hidden"
           >
             <div className="relative p-6 flex flex-col items-center text-center">
               <div className="absolute inset-0 overflow-hidden pointer-events-none">
